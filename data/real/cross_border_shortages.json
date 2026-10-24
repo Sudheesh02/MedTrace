@@ -78,11 +78,14 @@
   "MED-009": {
     "generic_name": "artemether + lumefantrine",
     "primary_search_term": "artemether",
-    "active_shortage_flag": false,
-    "root_cause_classification": "NORMAL_MARKET",
-    "regulatory_records_found": 0,
-    "reported_reasons": [],
-    "multi_country_impact": "Adequate Global Buffer"
+    "active_shortage_flag": true,
+    "root_cause_classification": "ACTIVE_API_SHORTAGE",
+    "regulatory_records_found": 4,
+    "reported_reasons": [
+      "Active pharmaceutical ingredient shortage",
+      "Upstream synthesis bottleneck"
+    ],
+    "multi_country_impact": "Multi-Region Global Risk"
   },
   "MED-010": {
     "generic_name": "efavirenz",

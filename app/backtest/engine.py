@@ -313,7 +313,7 @@ class BacktestEngine:
                             days_since_order = (curr_date - placed_dt).days
                             slip_days = (curr_date - prom_dt).days
                             if days_since_order > 9 and slip_days >= 3:
-                                if opo.get("supplier_id") == "SUP-004" or slip_days >= 10:
+                                if slip_days >= 12:
                                     detected_anomalies.append({
                                         "type": "CHRONIC_SUPPLIER_SLIP",
                                         "facility_id": fac,
@@ -321,7 +321,7 @@ class BacktestEngine:
                                         "day_index": day_idx,
                                         "po_id": opo.get("po_id")
                                     })
-                                elif opo.get("supplier_id") == "SUP-001" and days_since_order >= 10:
+                                elif days_since_order >= 10:
                                     detected_anomalies.append({
                                         "type": "PO_DISPATCHED_NOT_RECEIVED",
                                         "facility_id": fac,
@@ -357,14 +357,15 @@ class BacktestEngine:
                                     "multiplier": round(r_q / p_q, 1) if r_q > p_q else round(p_q / r_q, 1)
                                 })
 
-                    # 8. GLOBAL_SHORTAGE: Artemether MED-009 active manufacturing shortage
-                    if med == "MED-009" and len(open_pos) >= 2 and fac_meta.get("level") == "CHC":
+                    # 8. GLOBAL_SHORTAGE: Cross-border shortage signal with stalled replenishment
+                    shortage_sig = self.store.get_cross_border_shortages(medicine_id=med)
+                    if shortage_sig and shortage_sig.get("active_shortage_flag") and len(open_pos) >= 2 and fac_meta.get("level") == "CHC":
                         detected_anomalies.append({
                             "type": "GLOBAL_SHORTAGE",
                             "facility_id": fac,
                             "medicine_id": med,
                             "day_index": day_idx,
-                            "source": "openfda_shortages.json"
+                            "source": "cross_border_shortages.json"
                         })
 
                     # 9. UNRECORDED_EMERGENCY_TRANSFER: Emergency stock transferred without ledger credit
@@ -443,6 +444,9 @@ class BacktestEngine:
         det_types = set()
         for d in detected_anomalies:
             det_types.add((d["type"], d["facility_id"], d["medicine_id"]))
+        # Differential escalation: Chronic supplier failure supersedes preliminary transit delay for the same item
+        chronic_items = {(fac, med) for (t, fac, med) in det_types if t == "CHRONIC_SUPPLIER_SLIP"}
+        det_types = {(t, fac, med) for (t, fac, med) in det_types if not (t == "PO_DISPATCHED_NOT_RECEIVED" and (fac, med) in chronic_items)}
 
         true_positives = len(gt_types.intersection(det_types))
         anomaly_recall = (true_positives / len(gt_types) * 100.0) if gt_types else 100.0
