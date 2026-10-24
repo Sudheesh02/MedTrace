@@ -4,7 +4,7 @@ Formulates >= 3 competing hypotheses explaining why a shortage is forming.
 Grounds each hypothesis in evidence queries and refutation criteria.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from app.adapters.llm_client import LLMClient
 from app.models.schemas import Hypothesis
 

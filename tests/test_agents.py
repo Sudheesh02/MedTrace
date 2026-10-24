@@ -35,3 +35,22 @@ def test_number_auditor_provenance():
     for rec in pack.recommendations:
         assert "shortfall_units" in rec.number_provenance
         assert rec.recommended_units == rec.number_provenance["shortfall_units"]
+
+def test_investigator_annotations_and_anomaly_types():
+    """Verify InvestigatorAgent method type annotations resolve cleanly and all 10 simulation anomalies map to AnomalyType."""
+    import pandas as pd
+    from app.agents.investigator import InvestigatorAgent
+    from app.models.schemas import AnomalyType
+
+    annotations = InvestigatorAgent.investigate.__annotations__
+    assert "skeptic_feedback" in annotations
+    assert "reconciliation" in annotations
+
+    gt_df = pd.read_csv("data/simulated/ground_truth.csv")
+    simulation_anomaly_types = set(gt_df["type"].unique())
+    assert len(simulation_anomaly_types) == 10
+
+    for anomaly_str in simulation_anomaly_types:
+        assert anomaly_str in AnomalyType.__members__, f"Simulation anomaly {anomaly_str} missing from AnomalyType enum"
+        enum_val = AnomalyType[anomaly_str]
+        assert enum_val.value == anomaly_str

@@ -24,12 +24,13 @@ However, a rigorous inspection of **README claims vs real code** reveals 7 criti
 
 ## 📋 Prioritized Overnight Backlog (Max 12 Concrete Items)
 
-### Item 1: Fix `InvestigatorAgent` Typing Bug (`Optional` NameError) & Schema Enums
+### Item 1: Fix `InvestigatorAgent` Typing Bug (`Optional` NameError) & Schema Enums [DONE]
 - **Priority**: P0 (Immediate Stability)
-- **Files**: [`app/agents/investigator.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/investigator.py#L7), [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/models/schemas.py#L9)
+- **Status**: Completed & Verified
+- **Files**: [`app/agents/investigator.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/investigator.py#L7), [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/models/schemas.py#L9), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_agents.py)
 - **Problem**: `Optional` is used on line 19 of `investigator.py` but never imported from `typing`, causing runtime `NameError` in Python <3.14 and reflection tools. Furthermore, `AnomalyType` in `schemas.py` only defines 8 anomalies, missing `UNRECORDED_EMERGENCY_TRANSFER` and `COLD_CHAIN_TEMPERATURE_EXCURSION` from the 10 planted simulation anomalies.
-- **Action**: Import `Optional` in `investigator.py`. Add the two missing enum values to `AnomalyType` in `schemas.py`.
-- **Acceptance Criteria**: `python -c "import app.agents.investigator; print(app.agents.investigator.InvestigatorAgent.investigate.__annotations__)"` executes with exit code 0. All 10 simulation anomalies map cleanly to `AnomalyType`.
+- **Action**: Import `Optional` in `investigator.py`. Add the two missing enum values to `AnomalyType` in `schemas.py`. Added regression test `test_investigator_annotations_and_anomaly_types` verifying annotations and that all 10 simulation anomalies in `ground_truth.csv` map to `AnomalyType`.
+- **Acceptance Criteria**: `python -c "import app.agents.investigator; print(app.agents.investigator.InvestigatorAgent.investigate.__annotations__)"` executes with exit code 0. All 10 simulation anomalies map cleanly to `AnomalyType`. Tested & 100% passing.
 
 ---
 
