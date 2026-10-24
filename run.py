@@ -54,6 +54,8 @@ def api_run(req: RunRequest):
             ],
             "trace_file": pack.trace_file
         }
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         duration = round(time.time() - start_time, 2)
         return {
@@ -76,7 +78,11 @@ def main():
 
     if args.cli:
         print(f"[*] Starting MedTrace CLI Investigation: Facility={args.facility}, Medicine={args.medicine}...")
-        pack = orchestrator.run_investigation(facility_id=args.facility, medicine_id=args.medicine)
+        try:
+            pack = orchestrator.run_investigation(facility_id=args.facility, medicine_id=args.medicine)
+        except ValueError as ve:
+            print(f"[!] Validation Error: {ve}")
+            sys.exit(1)
         print("\n" + "="*60)
         print("MEDTRACE ACTION PACK SUMMARY")
         print("="*60)
