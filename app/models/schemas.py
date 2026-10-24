@@ -75,3 +75,5 @@ class ActionPack(BaseModel):
     recommendations: List[ActionRecommendation]
     skeptic_rounds: int
     trace_file: str
+    escalated_to_human: bool = False
+    escalation_reason: Optional[str] = None

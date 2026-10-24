@@ -38,7 +38,7 @@ class MedTraceOrchestrator:
         self.reconciler = ReconcilerAgent(self.data_store, self.ingest_service)
         self.investigator = InvestigatorAgent(self.llm_client)
         self.skeptic = SkepticAgent(self.llm_client)
-        self.action_planner = ActionPlannerAgent(self.llm_client, self.hmem)
+        self.action_planner = ActionPlannerAgent(self.llm_client, self.hmem, self.data_store)
 
     def run_investigation(
         self,
@@ -62,6 +62,14 @@ class MedTraceOrchestrator:
             trace_entries.append(entry)
             with open(trace_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry) + "\n")
+
+        # Input validation: ensure requested facility and medicine exist
+        valid_facs = {f["facility_id"] for f in self.data_store.get_facilities()}
+        valid_meds = {m["medicine_id"] for m in self.data_store.get_medicines()}
+        if valid_facs and facility_id not in valid_facs:
+            raise ValueError(f"Unrecognized facility_id '{facility_id}'. Registered facilities: {sorted(list(valid_facs))}")
+        if valid_meds and medicine_id not in valid_meds:
+            raise ValueError(f"Unrecognized medicine_id '{medicine_id}'. Registered medicines: {sorted(list(valid_meds))}")
 
         log_step("Orchestrator", "START_RUN", {"facility_id": facility_id, "medicine_id": medicine_id})
 
@@ -136,11 +144,30 @@ class MedTraceOrchestrator:
         })
 
         det_rec = recon["deterministic_reconciliation"]
+        # Determine whether early warning intercepted an actual stockout risk
+        is_stockout_risk = (
+            det_rec["trust_shortfall"]["shortfall_units"] > 0
+            or det_rec["trust_shortfall"]["gap_days"] > 0
+            or det_rec["understated_gap_percent"] > 0
+        )
+
+        # Execution Plan Phase 3.6: Escalate to human if debate unconcluded or confidence below threshold
+        escalated_to_human = False
+        escalation_reason = None
+        if not (skeptic_review and skeptic_review.accepted) or (winning_hyp and winning_hyp.likelihood < 0.50):
+            escalated_to_human = True
+            conf_str = f"{skeptic_review.confidence_score:.2f}" if skeptic_review else "N/A"
+            escalation_reason = (
+                f"Multi-agent debate unconcluded after {rounds} rounds (Skeptic confidence: {conf_str} < 0.50). "
+                f"Action pack requires manual human officer verification."
+            )
+            log_step("Orchestrator", "HUMAN_ESCALATION", {"reason": escalation_reason})
+
         pack = ActionPack(
             run_id=run_id,
             facility_id=facility_id,
             medicine_id=medicine_id,
-            stockout_prevented=True,
+            stockout_prevented=is_stockout_risk,
             days_of_cover_trust=det_rec["trust_cover_days"],
             days_of_cover_naive=det_rec["naive_cover_days"],
             understated_gap_percent=det_rec["understated_gap_percent"],
@@ -148,7 +175,9 @@ class MedTraceOrchestrator:
             winning_hypothesis=winning_hyp,
             recommendations=recommendations,
             skeptic_rounds=rounds,
-            trace_file=trace_file
+            trace_file=trace_file,
+            escalated_to_human=escalated_to_human,
+            escalation_reason=escalation_reason
         )
 
         log_step("Orchestrator", "RUN_COMPLETE", {"run_id": run_id, "status": "SUCCESS"})

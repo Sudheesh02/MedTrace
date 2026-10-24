@@ -183,3 +183,101 @@ def test_skeptic_number_auditor_rejects_arithmetic_inconsistency():
     assert review.accepted is False
     assert review.audited_numbers_valid is False
     assert any("invariant failed" in inc.lower() for inc in review.flagged_inconsistencies)
+
+
+def test_action_planner_peer_surplus_validation():
+    """
+    Verify that ActionPlannerAgent dynamically evaluates peer facilities for usable surplus,
+    never self-transfers from the target facility, and identifies BATCH_RELEASE when appropriate.
+    """
+    from app.agents.action_planner import ActionPlannerAgent
+    from app.adapters.data_store import DataStore
+    from app.adapters.llm_client import LLMClient
+    from app.engines.hmem import HMemEngine
+    from app.models.schemas import Hypothesis, ActionType
+
+    ds = DataStore(use_zetaris=False)
+    planner = ActionPlannerAgent(LLMClient(), HMemEngine(), data_store=ds)
+
+    hyp = Hypothesis(
+        hypothesis_id="H1-QUAR",
+        title="Batch Quality Assurance Quarantine & Regulatory Recall",
+        cause="Quarantined batch",
+        likelihood=0.90,
+        supporting_evidence=["400 units quarantined"],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+    det_recon = {
+        "trust_shortfall": {"shortfall_units": 150.0, "gap_days": 5.0},
+        "stock_evaluation": {
+            "ledger_stock": 500.0,
+            "usable_stock": 100.0,
+            "quarantined_stock": 400.0,
+            "audit_drift": 0.0,
+            "expiring_stock": 0.0
+        },
+        "trust_cover_days": 3.5
+    }
+
+    # Test case 1: Target is FAC-CHC-01
+    recs = planner.plan_actions("FAC-CHC-01", "MED-001", hyp, det_recon)
+    rec_types = [r.action_type for r in recs]
+    assert ActionType.BATCH_RELEASE in rec_types
+    assert ActionType.PEER_TRANSFER in rec_types
+
+    trf = next(r for r in recs if r.action_type == ActionType.PEER_TRANSFER)
+    assert trf.source_facility_id is not None
+    assert trf.source_facility_id != "FAC-CHC-01"  # No self-transfer!
+    assert "peer warehouse" in trf.justification
+
+    # Test case 2: Target is the main warehouse FAC-WH-01 itself
+    recs_wh = planner.plan_actions("FAC-WH-01", "MED-001", hyp, det_recon)
+    trf_wh = next(r for r in recs_wh if r.action_type == ActionType.PEER_TRANSFER)
+    assert trf_wh.source_facility_id != "FAC-WH-01"  # Must NOT transfer from itself
+
+def test_orchestrator_input_validation():
+    """Verify that orchestrator raises ValueError on unknown facilities or medicines."""
+    orch = MedTraceOrchestrator(use_zetaris=False)
+    with pytest.raises(ValueError, match="Unrecognized facility_id"):
+        orch.run_investigation(facility_id="FAC-DOES-NOT-EXIST", medicine_id="MED-001")
+
+    with pytest.raises(ValueError, match="Unrecognized medicine_id"):
+        orch.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-DOES-NOT-EXIST")
+
+def test_orchestrator_human_escalation_path():
+    """
+    Verify Execution Plan Phase 3.6:
+    When multi-agent debate fails to establish an accepted high-confidence hypothesis,
+    the ActionPack is flagged with escalated_to_human=True and escalation_reason populated.
+    """
+    from unittest.mock import MagicMock
+    from app.models.schemas import SkepticReview, Hypothesis
+
+    orch = MedTraceOrchestrator(use_zetaris=False)
+    # Mock skeptic to persistently challenge with low confidence
+    mock_skeptic = MagicMock()
+    mock_skeptic.review_and_audit.return_value = (
+        Hypothesis(
+            hypothesis_id="H-LOW",
+            title="Uncertain Cause",
+            cause="Unverified cause",
+            likelihood=0.40,
+            supporting_evidence=[],
+            refuting_evidence=[],
+            confirming_query="SELECT 1"
+        ),
+        SkepticReview(
+            accepted=False,
+            confidence_score=0.35,
+            critique_notes="Persistent ambiguity across all competing hypotheses.",
+            audited_numbers_valid=True,
+            flagged_inconsistencies=["Conflicting audit logs"]
+        )
+    )
+    orch.skeptic = mock_skeptic
+
+    pack = orch.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-007")
+    assert pack.escalated_to_human is True
+    assert pack.escalation_reason is not None
+    assert "manual human officer verification" in pack.escalation_reason
