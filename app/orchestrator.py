@@ -94,7 +94,8 @@ class MedTraceOrchestrator:
             hypotheses = self.investigator.investigate(recon, world_context, skeptic_feedback=last_critique)
             log_step("InvestigatorAgent", "HYPOTHESES_GENERATED", {
                 "hypotheses_count": len(hypotheses),
-                "titles": [h.title for h in hypotheses]
+                "titles": [h.title for h in hypotheses],
+                "likelihoods": {h.hypothesis_id: h.likelihood for h in hypotheses}
             })
 
             # Skeptic & Number Auditor
@@ -107,7 +108,8 @@ class MedTraceOrchestrator:
                 "accepted": review.accepted,
                 "confidence": review.confidence_score,
                 "numbers_valid": review.audited_numbers_valid,
-                "critique": review.critique_notes
+                "critique": review.critique_notes,
+                "flagged_inconsistencies": review.flagged_inconsistencies
             })
 
             if review.accepted:

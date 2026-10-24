@@ -39,21 +39,17 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 - **Item A [DONE in Commit `316ab68`]**: Fixed `InvestigatorAgent` typing bug (`Optional` import missing) and mapped all 10 simulation anomalies to `AnomalyType` enum.
 - **Item B [DONE in Commit `3b44a9e`]**: Wired live Zetaris Lightning REST SQL execution into `DataStore` with auto-discovery from `USE_ZETARIS` and graceful offline fallback; added 5 unit tests in `tests/test_data_store.py`.
 - **Item C [DONE in Commit `45d86f7`]**: Eliminated hardcoded entity strings (`FAC-DH-01`, `MED-007`) in `BacktestEngine.run_backtest()`; added automated test suite in `tests/test_backtest.py`.
+- **Item 1 [DONE in Commit `pending`]**: Activated multi-agent adversarial debate loop between Investigator and Skeptic. Recalibrated Round 1 challenge threshold for contested differentials ($\Delta \le 0.15$) and missing secondary corroboration; added reactive hypothesis revision and differential refutation in Investigator; added 3 tests in `tests/test_agents.py` asserting `pack.skeptic_rounds >= 2` and Number Auditor invariants (22 passing tests).
 
 ---
 
-## 🚀 Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
+## 🚀 Prioritized Overnight Backlog (Exactly 11 Remaining Concrete, Small Items)
 
 ### Item 1: Activate Multi-Agent Adversarial Debate (Skeptic Challenge & Round 2 Revision)
+- **Status**: [x] DONE
 - **Priority**: P0 (Track 2 Core Rubric — Innovation 15 pts & Technical 20 pts)
-- **Status**: Ready for Implementation
 - **Files**: [`app/agents/skeptic.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/skeptic.py), [`app/agents/investigator.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/investigator.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/orchestrator.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_agents.py)
-- **Problem**: In 100% of runs, the Skeptic accepts the hypothesis on Round 1 (`skeptic_rounds: 1`). Across all 80+ trace logs, `ROUND_2` never runs. The system operates as a fixed linear chain rather than an adversarial debate, directly violating the hackathon rubric requirement for critique, retries, and revision loops.
-- **Action**:
-  1. In `skeptic.py`, recalibrate Round 1 acceptance criteria: when multiple competing hypotheses have close likelihood scores ($\Delta \le 0.15$) or when an external disruption claim lacks multiple independent source corroborations, set `accepted=False` with explicit critique notes challenging the lack of differential elimination.
-  2. In `investigator.py`, on receiving `skeptic_feedback` in Round 2, adjust hypothesis likelihoods, append targeted corroborating evidence queries, and refute the challenged counter-hypotheses.
-  3. Add test `test_skeptic_adversarial_critique_triggers_round_2` in `tests/test_agents.py` asserting `pack.skeptic_rounds >= 2` on contested cases.
-- **Acceptance Criteria**: Contested investigations trigger `ROUND_1_EVALUATION` (challenge) followed by `ROUND_2_START` with revised likelihoods in trace logs. `tests/test_agents.py` passes with an explicit assertion verifying multi-round debate.
+- **Resolution**: Implemented adversarial critique in Skeptic when $\Delta \le 0.15$ or when external claims lack corroboration. Investigator reactively adjusts likelihoods, refutes counter-hypotheses, and adds differential confirmation upon receiving Round 1 critique notes. Verified by `test_skeptic_adversarial_critique_triggers_round_2`, `test_skeptic_accepts_uncontested_hypothesis_on_round_1`, and `test_skeptic_number_auditor_rejects_arithmetic_inconsistency`. All 22 tests pass.
 
 ---
 
