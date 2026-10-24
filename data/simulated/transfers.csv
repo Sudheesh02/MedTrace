@@ -1,0 +1,2 @@
+transfer_id,from_facility_id,to_facility_id,medicine_id,quantity,transfer_date,lead_days,status,source
+TRF-0001,FAC-PHC-02,FAC-CHC-01,MED-005,120,2026-10-15,1,COMPLETED,SIMULATED

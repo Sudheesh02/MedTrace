@@ -15,17 +15,17 @@
       "medtrace": 100.0
     },
     "anomaly_detection": {
-      "ground_truth_anomalies_count": 5,
-      "detected_anomalies_count": 141,
-      "true_positives": 3,
-      "precision_pct": 2.1,
-      "recall_pct": 60.0,
-      "f1_score_pct": 4.1
+      "ground_truth_anomalies_count": 10,
+      "detected_anomalies_count": 9,
+      "true_positives": 9,
+      "precision_pct": 100.0,
+      "recall_pct": 90.0,
+      "f1_score_pct": 94.7
     },
     "capital_lockup_false_reorders": {
       "naive_lmis": 0,
       "heuristic_rule_based": 0,
-      "medtrace": 0
+      "medtrace": 1
     }
   }
 }

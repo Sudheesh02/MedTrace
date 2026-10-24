@@ -4,28 +4,28 @@
   "total_actual_stockouts": 27,
   "metrics": {
     "early_warning_lead_time_days": {
-      "naive_lmis": 28.22,
+      "naive_lmis": 28.81,
       "heuristic_rule_based": 31.3,
-      "medtrace": 37.22,
-      "lead_time_advantage_days": 9.0
+      "medtrace": 32.81,
+      "lead_time_advantage_days": 4.0
     },
     "stockout_recall_pct": {
-      "naive_lmis": 66.7,
-      "heuristic_rule_based": 81.5,
-      "medtrace": 85.2
+      "naive_lmis": 100.0,
+      "heuristic_rule_based": 100.0,
+      "medtrace": 96.3
     },
     "anomaly_detection": {
-      "ground_truth_anomalies_count": 5,
-      "detected_anomalies_count": 141,
-      "true_positives": 3,
-      "precision_pct": 2.1,
-      "recall_pct": 60.0,
-      "f1_score_pct": 4.1
+      "ground_truth_anomalies_count": 10,
+      "detected_anomalies_count": 9,
+      "true_positives": 9,
+      "precision_pct": 100.0,
+      "recall_pct": 90.0,
+      "f1_score_pct": 94.7
     },
     "capital_lockup_false_reorders": {
-      "naive_lmis": 22,
-      "heuristic_rule_based": 21,
-      "medtrace": 21
+      "naive_lmis": 0,
+      "heuristic_rule_based": 0,
+      "medtrace": 1
     }
   }
 }

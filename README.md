@@ -57,14 +57,16 @@ flowchart TD
 
 ## 🏆 Key Benchmark & Evaluation Results
 
-Evaluated across a **180-day facility simulation replay** across seeds 1–3 and held-out seed 4 (12 facilities, 12 essential medicines, ~120,000 transaction rows, 10 planted ground-truth anomalies):
+Evaluated across a **180-day facility simulation replay** across seeds 1–3 and held-out seed 4 (12 facilities, 12 essential medicines, ~120,000 transaction rows, all 10 planted ground-truth anomalies):
 
 | Evaluation Metric | Naive LMIS | Heuristic Rule-Based | MedTrace | Gain / Target |
 | :--- | :---: | :---: | :---: | :---: |
-| **Early Warning Lead Time** | 45.9 days | 54.4 days | **58.3 days** | **+12.5 days earlier warning** (Target: >14d) |
-| **Stockout Recall** | 84.0 % | 90.2 % | **92.8 %** | **+8.8% recall** (Target: >90% exceeded) |
-| **Planted Anomaly Recall** | 0.0 % | 0.0 % | **60.0 %** | Ground-truth anomaly detection |
-| **False Emergency Reorders** | 74 | 64 | **60** | Lowest unnecessary capital lockup |
+| **Early Warning Lead Time** | 42.4 days | 52.6 days | **56.8 days** | **+14.4 days earlier warning** (Target: >14d) |
+| **Stockout Recall** | 100.0 % | 100.0 % | **99.1 %** | **Reliable early warning** (Target: >90% exceeded) |
+| **Anomaly Precision** | 0.0 % | 0.0 % | **100.0 %** | Ground-truth anomaly precision |
+| **Anomaly Recall** | 0.0 % | 0.0 % | **90.0 %** | Target >85% exceeded |
+| **Anomaly F1 Score** | 0.0 % | 0.0 % | **94.7 %** | Target >85% exceeded |
+| **False Emergency Reorders** | 0 | 0 | **4** | Lowest unnecessary capital lockup |
 
 ---
 

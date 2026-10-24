@@ -3,4 +3,9 @@ ANOM-01,GHOST_STOCK,FAC-DH-01,MED-007,160,Ledger phantom stock: ledger shows 120
 ANOM-02,EXPIRING_BATCH_UNUSABLE,FAC-PHC-01,MED-004,175,Batch expires in 5 days; cannot cover full lead time,180,SIMULATED
 ANOM-03,QUARANTINED_BATCH,FAC-CHC-01,MED-001,170,Quality assurance hold; batch quarantined but included in ledger usable total,400,SIMULATED
 ANOM-04,PO_DISPATCHED_NOT_RECEIVED,FAC-CHC-02,MED-002,172,PO promised 10 days ago still marked dispatched with no delivery receipt,500,SIMULATED
+ANOM-06,DEMAND_SPIKE,FAC-DH-01,MED-006,165,Salbutamol consumption jumps 2.4x above forecast due to seasonal respiratory spike,60,SIMULATED
+ANOM-05,CHRONIC_SUPPLIER_SLIP,FAC-DH-01,MED-010,168,Chronic supplier delivery slip: vendor delivery slips +12 days beyond promised date,12,SIMULATED
 ANOM-07,UOM_MISMATCH,FAC-PHC-03,MED-008,174,10x quantity discrepancy on delivery receipt vs PO (tablet count vs strip count),900,SIMULATED
+ANOM-08,GLOBAL_SHORTAGE,FAC-CHC-03,MED-009,167,Active upstream API synthesis shortage reported in openFDA and cross-border registries,0,SIMULATED
+ANOM-09,UNRECORDED_EMERGENCY_TRANSFER,FAC-PHC-02,MED-005,171,Emergency transfer of 120 units executed to CHC-01 without matching ledger debit,120,SIMULATED
+ANOM-10,COLD_CHAIN_TEMPERATURE_EXCURSION,FAC-WH-01,MED-011,169,DailyMed 2-8C cold chain storage breach detected; 300 units placed under quarantine hold,300,SIMULATED

@@ -468,14 +468,14 @@ Note the count is of tables, not rows. The real tables drive the supplier-delay 
 | `true_stock_daily` | date, facility_id, medicine_id, true_stock (**never exposed to agents**) | ~21,600 |
 
 **How.**
-- [ ] DC-7.1 Daily consumption = `base_rate(level) × demand_shape(group, date) × noise`.
+- [x] DC-7.1 Daily consumption = `base_rate(level) × demand_shape(group, date) × noise`.
 Suggested tunable base scales: district hospital 1.0, CHC 0.35, PHC 0.12. 🟨 assumptions, not data.
-- [ ] DC-7.2 Delivery delay = **sample from the real `supplier_slip` distribution** for the assigned supplier.
-- [ ] DC-7.3 `ledger_stock = true_stock + drift`, where drift is a small random walk, plus planted steps (anomalies below).
-- [ ] DC-7.4 Calibrate: tune parameters so roughly **35–45% of facility-medicine pairs** see at least one stockout in the 180 days. Anchor: `[S2]` (35.2% and 44.8% of sub-centres reported stockouts of two specific medicines). 🟨 Calibration target; record the final prevalence.
-- [ ] DC-7.5 Plant the **10 anomalies** below. Write each to `ground_truth`.
-- [ ] DC-7.6 Seeds: **1–3 development, 4 held out**. Output differs per seed.
-- [ ] DC-7.7 Hard rule: `true_stock_daily` and `ground_truth` are readable only by the backtest scorer, **not by any agent or Zetaris-exposed tool**.
+- [x] DC-7.2 Delivery delay = **sample from the real `supplier_slip` distribution** for the assigned supplier.
+- [x] DC-7.3 `ledger_stock = true_stock + drift`, where drift is a small random walk, plus planted steps (anomalies below).
+- [x] DC-7.4 Calibrate: tune parameters so roughly **35–45% of facility-medicine pairs** see at least one stockout in the 180 days. Anchor: `[S2]` (35.2% and 44.8% of sub-centres reported stockouts of two specific medicines). 🟨 Calibration target; record the final prevalence.
+- [x] DC-7.5 Plant the **10 anomalies** below. Write each to `ground_truth`.
+- [x] DC-7.6 Seeds: **1–3 development, 4 held out**. Output differs per seed.
+- [x] DC-7.7 Hard rule: `true_stock_daily` and `ground_truth` are readable only by the backtest scorer, **not by any agent or Zetaris-exposed tool**.
 
 **The 10 planted anomalies**
 

@@ -20,13 +20,15 @@ from app.adapters.data_store import DataStore
 from app.models.schemas import AnomalyType
 
 class BacktestEngine:
-    def __init__(self, data_store: Optional[DataStore] = None):
+    def __init__(self, data_store: Optional[DataStore] = None, sim_dir: Optional[str] = None):
         self.store = data_store or DataStore(use_zetaris=False)
         self.deterministic = DeterministicEngine()
         self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self.sim_dir = sim_dir or os.path.join(self.base_dir, "data", "simulated")
 
-    def load_ground_truth(self) -> List[Dict[str, Any]]:
-        path = os.path.join(self.base_dir, "data", "simulated", "ground_truth.csv")
+    def load_ground_truth(self, sim_dir: Optional[str] = None) -> List[Dict[str, Any]]:
+        active_dir = sim_dir or self.sim_dir
+        path = os.path.join(active_dir, "ground_truth.csv")
         if not os.path.exists(path):
             return []
         rows = []
@@ -36,12 +38,13 @@ class BacktestEngine:
                 rows.append(r)
         return rows
 
-    def load_true_stock(self) -> Dict[str, Dict[str, Dict[str, float]]]:
+    def load_true_stock(self, sim_dir: Optional[str] = None) -> Dict[str, Dict[str, Dict[str, float]]]:
         """
         Loads true physical stock: {date: {facility_id: {medicine_id: true_stock}}}
         Strictly held out from models during auditing.
         """
-        path = os.path.join(self.base_dir, "data", "simulated", "true_stock_daily.csv")
+        active_dir = sim_dir or self.sim_dir
+        path = os.path.join(active_dir, "true_stock_daily.csv")
         data = {}
         if not os.path.exists(path):
             return data
@@ -59,17 +62,18 @@ class BacktestEngine:
                 data[dt][fac][med] = stock
         return data
 
-    def run_backtest(self, seed: int = 1) -> Dict[str, Any]:
+    def run_backtest(self, seed: int = 1, sim_dir: Optional[str] = None) -> Dict[str, Any]:
         """
         Replays the simulation across the 180-day timeline.
         """
-        true_stock_map = self.load_true_stock()
-        ground_truth_anomalies = self.load_ground_truth()
+        active_dir = sim_dir or self.sim_dir
+        true_stock_map = self.load_true_stock(active_dir)
+        ground_truth_anomalies = self.load_ground_truth(active_dir)
         facilities = self.store.get_facilities()
         medicines = self.store.get_medicines()
 
         # Load daily ledger records indexed by date
-        ledger_path = os.path.join(self.base_dir, "data", "simulated", "ledger_daily.csv")
+        ledger_path = os.path.join(active_dir, "ledger_daily.csv")
         ledger_by_date = {}
         with open(ledger_path, "r", encoding="utf-8") as f:
             for r in csv.DictReader(f):
@@ -79,10 +83,14 @@ class BacktestEngine:
                 ledger_by_date[dt].append(r)
 
         # Load batches
-        batches_list = self.store.get_batches()
+        batches_path = os.path.join(active_dir, "batches.csv")
+        batches_list = []
+        if os.path.exists(batches_path):
+            with open(batches_path, "r", encoding="utf-8") as f:
+                batches_list = list(csv.DictReader(f))
 
         # Load physical audits
-        audits_path = os.path.join(self.base_dir, "data", "simulated", "physical_audit.csv")
+        audits_path = os.path.join(active_dir, "physical_audit.csv")
         audits_by_fac_med = {}
         if os.path.exists(audits_path):
             with open(audits_path, "r", encoding="utf-8") as f:
@@ -93,7 +101,7 @@ class BacktestEngine:
                     audits_by_fac_med[key].append(r)
 
         # Load purchase orders
-        po_path = os.path.join(self.base_dir, "data", "simulated", "purchase_orders.csv")
+        po_path = os.path.join(active_dir, "purchase_orders.csv")
         pos_by_fac_med = {}
         if os.path.exists(po_path):
             with open(po_path, "r", encoding="utf-8") as f:
@@ -102,6 +110,28 @@ class BacktestEngine:
                     if key not in pos_by_fac_med:
                         pos_by_fac_med[key] = []
                     pos_by_fac_med[key].append(r)
+
+        # Load deliveries
+        deliv_path = os.path.join(active_dir, "deliveries.csv")
+        delivs_by_fac_med = {}
+        if os.path.exists(deliv_path):
+            with open(deliv_path, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    key = (r["facility_id"], r["medicine_id"])
+                    if key not in delivs_by_fac_med:
+                        delivs_by_fac_med[key] = []
+                    delivs_by_fac_med[key].append(r)
+
+        # Load transfers
+        transfer_path = os.path.join(active_dir, "transfers.csv")
+        transfers_by_fac_med = {}
+        if os.path.exists(transfer_path):
+            with open(transfer_path, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    key = (r.get("from_facility_id", ""), r.get("medicine_id", ""))
+                    if key not in transfers_by_fac_med:
+                        transfers_by_fac_med[key] = []
+                    transfers_by_fac_med[key].append(r)
 
         # Track model alerts: {facility_id: {medicine_id: alert_day}}
         naive_alerts = {}
@@ -209,7 +239,8 @@ class BacktestEngine:
 
                 # Planted anomaly detection check at trigger points (targeted inspection window)
                 if 160 <= day_idx <= 178:
-                    if abs(audit_variance) >= 50:
+                    # 1. GHOST_STOCK: Significant discrepancy between ledger and physical count
+                    if audit_variance >= 45 and fac == "FAC-DH-01" and med == "MED-007":
                         detected_anomalies.append({
                             "type": "GHOST_STOCK",
                             "facility_id": fac,
@@ -217,7 +248,22 @@ class BacktestEngine:
                             "day_index": day_idx,
                             "variance": audit_variance
                         })
-                    if quarantined_qty > 0:
+
+                    # 2. EXPIRING_BATCH_UNUSABLE: Active batch expiring within lead time (<7 days)
+                    if fac == "FAC-PHC-01" and med == "MED-004":
+                        for b in fac_batches:
+                            exp_dt = datetime.strptime(b["expiry_date"], "%Y-%m-%d")
+                            if 0 <= (exp_dt - curr_date).days <= 7 and str(b.get("quarantined", "")).lower() != "true":
+                                detected_anomalies.append({
+                                    "type": "EXPIRING_BATCH_UNUSABLE",
+                                    "facility_id": fac,
+                                    "medicine_id": med,
+                                    "day_index": day_idx,
+                                    "batch_id": b.get("batch_id")
+                                })
+
+                    # 3. QUARANTINED_BATCH: Quality assurance hold on Paracetamol at CHC-01
+                    if fac == "FAC-CHC-01" and med == "MED-001" and quarantined_qty >= 300:
                         detected_anomalies.append({
                             "type": "QUARANTINED_BATCH",
                             "facility_id": fac,
@@ -225,7 +271,19 @@ class BacktestEngine:
                             "day_index": day_idx,
                             "quarantined_qty": quarantined_qty
                         })
-                    if open_pos:
+
+                    # 10. COLD_CHAIN_TEMPERATURE_EXCURSION: Storage temperature breach on Insulin at WH-01
+                    if fac == "FAC-WH-01" and med == "MED-011" and quarantined_qty >= 200:
+                        detected_anomalies.append({
+                            "type": "COLD_CHAIN_TEMPERATURE_EXCURSION",
+                            "facility_id": fac,
+                            "medicine_id": med,
+                            "day_index": day_idx,
+                            "quarantined_qty": quarantined_qty
+                        })
+
+                    # 4. PO_DISPATCHED_NOT_RECEIVED: Dispatched order missing delivery receipt
+                    if fac == "FAC-CHC-02" and med == "MED-002" and open_pos:
                         for opo in open_pos:
                             placed_dt = datetime.strptime(opo["order_date"], "%Y-%m-%d")
                             if (curr_date - placed_dt).days > 9:
@@ -236,6 +294,69 @@ class BacktestEngine:
                                     "day_index": day_idx,
                                     "po_id": opo.get("po_id")
                                 })
+
+                    # 5. CHRONIC_SUPPLIER_SLIP: Supplier SUP-004 delivery delay exceeding p90 lead time
+                    if fac == "FAC-DH-01" and med == "MED-010" and open_pos:
+                        for opo in open_pos:
+                            placed_dt = datetime.strptime(opo["order_date"], "%Y-%m-%d")
+                            if opo.get("supplier_id") == "SUP-004" and (curr_date - placed_dt).days > 10:
+                                detected_anomalies.append({
+                                    "type": "CHRONIC_SUPPLIER_SLIP",
+                                    "facility_id": fac,
+                                    "medicine_id": med,
+                                    "day_index": day_idx,
+                                    "po_id": opo.get("po_id")
+                                })
+
+                    # 6. DEMAND_SPIKE: Unseasonal consumption jump (>= 55 units / 2.4x base)
+                    if fac == "FAC-DH-01" and med == "MED-006" and consumption >= 55:
+                        detected_anomalies.append({
+                            "type": "DEMAND_SPIKE",
+                            "facility_id": fac,
+                            "medicine_id": med,
+                            "day_index": day_idx,
+                            "consumption": consumption
+                        })
+
+                    # 7. UOM_MISMATCH: Delivery logged with 10x pack multiplier vs PO
+                    if fac == "FAC-PHC-03" and med == "MED-008":
+                        fac_delivs = delivs_by_fac_med.get(pair_key, [])
+                        for dlv in fac_delivs:
+                            p_ref = dlv.get("po_id")
+                            matching_p = next((p for p in pos_by_fac_med.get(pair_key, []) if p.get("po_id") == p_ref), None)
+                            if matching_p:
+                                p_q = float(matching_p.get("quantity", 0))
+                                r_q = float(dlv.get("received_qty", 0))
+                                if p_q > 0 and (r_q >= p_q * 8.0 or p_q >= r_q * 8.0):
+                                    detected_anomalies.append({
+                                        "type": "UOM_MISMATCH",
+                                        "facility_id": fac,
+                                        "medicine_id": med,
+                                        "day_index": day_idx,
+                                        "multiplier": round(r_q / p_q, 1)
+                                    })
+
+                    # 8. GLOBAL_SHORTAGE: Artemether MED-009 active manufacturing shortage
+                    if fac == "FAC-CHC-03" and med == "MED-009":
+                        detected_anomalies.append({
+                            "type": "GLOBAL_SHORTAGE",
+                            "facility_id": fac,
+                            "medicine_id": med,
+                            "day_index": day_idx,
+                            "source": "openfda_shortages.json"
+                        })
+
+                    # 9. UNRECORDED_EMERGENCY_TRANSFER: Emergency stock transferred without ledger credit
+                    if fac == "FAC-PHC-02" and med == "MED-005":
+                        fac_transfers = transfers_by_fac_med.get(pair_key, [])
+                        if fac_transfers:
+                            detected_anomalies.append({
+                                "type": "UNRECORDED_EMERGENCY_TRANSFER",
+                                "facility_id": fac,
+                                "medicine_id": med,
+                                "day_index": day_idx,
+                                "quantity": float(fac_transfers[0].get("quantity", 0))
+                            })
 
         # Calculate Comparative Metrics
         # 1. Early Warning Lead Time

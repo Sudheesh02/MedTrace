@@ -352,6 +352,43 @@ def generate_simulation(seed=1, out_dir="data/simulated"):
         "source": "SIMULATED"
     })
 
+    # 6. Demand spike anomaly on Day 165
+    ground_truth.append({
+        "anomaly_id": "ANOM-06",
+        "type": "DEMAND_SPIKE",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-006",
+        "day_index": 165,
+        "description": "Salbutamol consumption jumps 2.4x above forecast due to seasonal respiratory spike",
+        "magnitude": 60,
+        "source": "SIMULATED"
+    })
+
+    # 5. Chronic supplier slip on recent purchase orders
+    po_slip = f"PO-{po_counter:04d}"
+    po_counter += 1
+    purchase_orders.append({
+        "po_id": po_slip,
+        "supplier_id": "SUP-004",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-010",
+        "quantity": 300,
+        "order_date": (end_date - timedelta(days=22)).strftime("%Y-%m-%d"),
+        "promised_date": (end_date - timedelta(days=15)).strftime("%Y-%m-%d"),
+        "status": "DISPATCHED",
+        "source": "SIMULATED"
+    })
+    ground_truth.append({
+        "anomaly_id": "ANOM-05",
+        "type": "CHRONIC_SUPPLIER_SLIP",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-010",
+        "day_index": 168,
+        "description": "Chronic supplier delivery slip: vendor delivery slips +12 days beyond promised date",
+        "magnitude": 12,
+        "source": "SIMULATED"
+    })
+
     # 7. Unit of measure mismatch (10x quantity jump on receipt)
     po_uom = f"PO-{po_counter:04d}"
     po_counter += 1
@@ -387,6 +424,63 @@ def generate_simulation(seed=1, out_dir="data/simulated"):
         "source": "SIMULATED"
     })
 
+    # 8. Global manufacturing shortage
+    ground_truth.append({
+        "anomaly_id": "ANOM-08",
+        "type": "GLOBAL_SHORTAGE",
+        "facility_id": "FAC-CHC-03",
+        "medicine_id": "MED-009",
+        "day_index": 167,
+        "description": "Active upstream API synthesis shortage reported in openFDA and cross-border registries",
+        "magnitude": 0,
+        "source": "SIMULATED"
+    })
+
+    # 9. Unrecorded emergency stock transfer
+    transfers.append({
+        "transfer_id": "TRF-0001",
+        "from_facility_id": "FAC-PHC-02",
+        "to_facility_id": "FAC-CHC-01",
+        "medicine_id": "MED-005",
+        "quantity": 120,
+        "transfer_date": (end_date - timedelta(days=9)).strftime("%Y-%m-%d"),
+        "lead_days": 1,
+        "status": "COMPLETED",
+        "source": "SIMULATED"
+    })
+    ground_truth.append({
+        "anomaly_id": "ANOM-09",
+        "type": "UNRECORDED_EMERGENCY_TRANSFER",
+        "facility_id": "FAC-PHC-02",
+        "medicine_id": "MED-005",
+        "day_index": 171,
+        "description": "Emergency transfer of 120 units executed to CHC-01 without matching ledger debit",
+        "magnitude": 120,
+        "source": "SIMULATED"
+    })
+
+    # 10. Cold chain temperature excursion quarantine
+    batches.append({
+        "batch_id": f"BAT-{batch_counter:04d}",
+        "medicine_id": "MED-011",
+        "facility_id": "FAC-WH-01",
+        "quantity": 300,
+        "expiry_date": (end_date + timedelta(days=180)).strftime("%Y-%m-%d"),
+        "quarantined": True,
+        "source": "SIMULATED"
+    })
+    batch_counter += 1
+    ground_truth.append({
+        "anomaly_id": "ANOM-10",
+        "type": "COLD_CHAIN_TEMPERATURE_EXCURSION",
+        "facility_id": "FAC-WH-01",
+        "medicine_id": "MED-011",
+        "day_index": 169,
+        "description": "DailyMed 2-8C cold chain storage breach detected; 300 units placed under quarantine hold",
+        "magnitude": 300,
+        "source": "SIMULATED"
+    })
+
     # Save all tables to CSV
     def write_csv(filename, rows):
         filepath = os.path.join(out_dir, filename)
@@ -407,6 +501,7 @@ def generate_simulation(seed=1, out_dir="data/simulated"):
     write_csv("physical_audit.csv", physical_audit)
     write_csv("purchase_orders.csv", purchase_orders)
     write_csv("deliveries.csv", deliveries)
+    write_csv("transfers.csv", transfers)
     write_csv("ground_truth.csv", ground_truth)
     write_csv("true_stock_daily.csv", true_stock_daily)
 
