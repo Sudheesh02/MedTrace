@@ -9,10 +9,14 @@ import json
 import uuid
 import requests
 from typing import Dict, List, Optional, Any
+from datetime import datetime
 
 class DataStore:
-    def __init__(self, use_zetaris: bool = False):
-        self.use_zetaris = use_zetaris
+    def __init__(self, use_zetaris: Optional[bool] = None):
+        if use_zetaris is None:
+            self.use_zetaris = os.getenv("USE_ZETARIS", "false").lower() in ("true", "1")
+        else:
+            self.use_zetaris = use_zetaris
         self.base_url = os.environ.get("ZETARIS_BASE_URL", "http://localhost:3000").rstrip("/")
         self.zetaris_key = os.environ.get("ZETARIS_API_KEY", "")
         self.zetaris_org = os.environ.get("ZETARIS_ORG_ID", "1")
@@ -61,9 +65,18 @@ class DataStore:
             res = requests.post(url, headers=headers, json=body, timeout=30)
             if res.status_code == 200:
                 res_data = res.json()
-                headers_list = res_data.get("headers", [])
-                rows = res_data.get("data", [])
-                return [dict(zip(headers_list, row)) for row in rows]
+                raw_headers = res_data.get("headers") or res_data.get("columns") or []
+                headers_list = []
+                for h in raw_headers:
+                    if isinstance(h, dict):
+                        headers_list.append(h.get("name") or h.get("columnName") or str(h))
+                    else:
+                        headers_list.append(str(h))
+                rows = res_data.get("data") or res_data.get("rows") or []
+                if rows and isinstance(rows[0], dict):
+                    return rows
+                elif rows and headers_list:
+                    return [dict(zip(headers_list, row)) for row in rows]
         except Exception:
             pass
         return None
@@ -80,16 +93,40 @@ class DataStore:
         return rows
 
     def get_facilities(self) -> List[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris("SELECT * FROM zetaris.lightning.facilities")
+            if res:
+                return res
         return self._read_csv("data/simulated/facilities.csv")
 
     def get_medicines(self) -> List[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris("SELECT * FROM zetaris.lightning.medicine_master")
+            if res:
+                return res
         return self._read_csv("data/real/medicine_master.csv")
 
     def get_suppliers(self) -> List[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris("SELECT * FROM zetaris.lightning.suppliers")
+            if res:
+                return res
         return self._read_csv("data/simulated/suppliers.csv")
 
-    def get_batches(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        rows = self._read_csv("data/simulated/batches.csv")
+    def get_batches(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None, as_of_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
+        if self.use_zetaris:
+            where_clauses = []
+            if facility_id:
+                where_clauses.append(f"facility_id = '{facility_id}'")
+            if medicine_id:
+                where_clauses.append(f"medicine_id = '{medicine_id}'")
+            where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.batches{where_sql}")
+            rows = res if res is not None else self._read_csv("data/simulated/batches.csv")
+        else:
+            rows = self._read_csv("data/simulated/batches.csv")
+
+        ref_date = as_of_date or datetime(2026, 10, 24)
         filtered = []
         for r in rows:
             if facility_id and r.get("facility_id") != facility_id:
@@ -99,10 +136,28 @@ class DataStore:
             # convert boolean
             r["quarantined"] = (str(r.get("quarantined", "")).lower() == "true")
             r["quantity"] = float(r.get("quantity", 0))
+            # Calculate days_to_expiry dynamically from expiry_date
+            exp_str = r.get("expiry_date")
+            if exp_str:
+                try:
+                    exp_dt = datetime.strptime(exp_str, "%Y-%m-%d")
+                    r["days_to_expiry"] = (exp_dt - ref_date).days
+                except Exception:
+                    r["days_to_expiry"] = 999
+            else:
+                r["days_to_expiry"] = 999
             filtered.append(r)
         return filtered
 
     def get_latest_ledger(self, facility_id: str, medicine_id: str) -> Optional[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris(
+                f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
+            )
+            if res:
+                latest = res[0]
+                latest["ledger_stock"] = float(latest.get("ledger_stock", 0))
+                return latest
         rows = self._read_csv("data/simulated/ledger_daily.csv")
         matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
         if matching:
@@ -111,7 +166,30 @@ class DataStore:
             return latest
         return None
 
+    def get_ledger_on_date(self, facility_id: str, medicine_id: str, date_str: str) -> Optional[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris(
+                f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' AND date = '{date_str}' LIMIT 1"
+            )
+            if res:
+                res[0]["ledger_stock"] = float(res[0].get("ledger_stock", 0))
+                return res[0]
+        rows = self._read_csv("data/simulated/ledger_daily.csv")
+        for r in rows:
+            if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id and r.get("date") == date_str:
+                r["ledger_stock"] = float(r.get("ledger_stock", 0))
+                return r
+        return None
+
     def get_latest_physical_audit(self, facility_id: str, medicine_id: str) -> Optional[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris(
+                f"SELECT * FROM zetaris.lightning.physical_audit WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
+            )
+            if res:
+                latest = res[0]
+                latest["counted_stock"] = float(latest.get("counted_stock", 0))
+                return latest
         rows = self._read_csv("data/simulated/physical_audit.csv")
         matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
         if matching:
@@ -121,6 +199,15 @@ class DataStore:
         return None
 
     def get_recent_consumption(self, facility_id: str, medicine_id: str, days: int = 14) -> List[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris(
+                f"SELECT * FROM zetaris.lightning.consumption_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT {days}"
+            )
+            if res:
+                res.reverse()
+                for r in res:
+                    r["units_issued"] = float(r.get("units_issued", 0))
+                return res
         rows = self._read_csv("data/simulated/consumption_daily.csv")
         matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
         recent = matching[-days:] if len(matching) > days else matching
@@ -129,11 +216,28 @@ class DataStore:
         return recent
 
     def get_purchase_orders(self, facility_id: str, medicine_id: str) -> List[Dict[str, Any]]:
+        if self.use_zetaris:
+            res = self._query_zetaris(
+                f"SELECT * FROM zetaris.lightning.purchase_orders WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}'"
+            )
+            if res:
+                return res
         rows = self._read_csv("data/simulated/purchase_orders.csv")
         return [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
 
     def get_deliveries(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        rows = self._read_csv("data/simulated/deliveries.csv")
+        if self.use_zetaris:
+            where_clauses = []
+            if facility_id:
+                where_clauses.append(f"facility_id = '{facility_id}'")
+            if medicine_id:
+                where_clauses.append(f"medicine_id = '{medicine_id}'")
+            where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.deliveries{where_sql}")
+            rows = res if res is not None else self._read_csv("data/simulated/deliveries.csv")
+        else:
+            rows = self._read_csv("data/simulated/deliveries.csv")
+
         filtered = []
         for r in rows:
             if facility_id and r.get("facility_id") != facility_id:
@@ -145,7 +249,18 @@ class DataStore:
         return filtered
 
     def get_transfers(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        rows = self._read_csv("data/simulated/transfers.csv")
+        if self.use_zetaris:
+            where_clauses = []
+            if facility_id:
+                where_clauses.append(f"(from_facility_id = '{facility_id}' OR to_facility_id = '{facility_id}')")
+            if medicine_id:
+                where_clauses.append(f"medicine_id = '{medicine_id}'")
+            where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.transfers{where_sql}")
+            rows = res if res is not None else self._read_csv("data/simulated/transfers.csv")
+        else:
+            rows = self._read_csv("data/simulated/transfers.csv")
+
         filtered = []
         for r in rows:
             if facility_id and (r.get("from_facility_id") != facility_id and r.get("to_facility_id") != facility_id):
@@ -157,6 +272,11 @@ class DataStore:
         return filtered
 
     def get_supplier_slip_priors(self, vendor: Optional[str] = None) -> List[Dict[str, Any]]:
+        if self.use_zetaris:
+            where_sql = f" WHERE vendor = '{vendor}'" if vendor else ""
+            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.supplier_slip{where_sql}")
+            if res is not None:
+                return res
         return self._read_csv("data/real/supplier_slip.csv")
 
     def get_openfda_shortages(self, generic_name: str) -> List[Dict[str, Any]]:

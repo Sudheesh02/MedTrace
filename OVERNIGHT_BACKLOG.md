@@ -34,12 +34,13 @@ However, a rigorous inspection of **README claims vs real code** reveals 7 criti
 
 ---
 
-### Item 2: Wire Real Zetaris SQL Execution into `DataStore` with Graceful Fallback
+### Item 2: Wire Real Zetaris SQL Execution into `DataStore` with Graceful Fallback [DONE]
 - **Priority**: P0 (Sponsor Tech 10 pts)
-- **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/adapters/data_store.py#L44-L140), [`.env.example`](file:///C:/Users/Asus/Desktop/Open Agent/.env.example#L6)
-- **Problem**: `_query_zetaris` is dead code. All data reads unconditionally read local CSV files even when `use_zetaris=True`. Additionally, `.env.example` defines `ZETARIS_REST_URL=http://localhost:8888/api/v1.0`, while code and README expect `ZETARIS_BASE_URL=http://localhost:3000`.
-- **Action**: Update `DataStore` getters (`get_facilities`, `get_medicines`, `get_batches`, `get_latest_ledger`, `get_purchase_orders`) to query `_query_zetaris()` when `self.use_zetaris=True`, falling back to local files when Zetaris is unreachable. Standardize `.env.example` to `ZETARIS_BASE_URL=http://localhost:3000`.
-- **Acceptance Criteria**: With `use_zetaris=True`, getters attempt the Zetaris REST query and fall back gracefully to CSV without crashing. `.env.example` matches `smoke_test.py` and `README.md`.
+- **Status**: Completed & Verified
+- **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/adapters/data_store.py#L44-L140), [`.env.example`](file:///C:/Users/Asus/Desktop/Open Agent/.env.example#L6), [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_data_store.py)
+- **Problem**: `_query_zetaris` was dead code. All data reads unconditionally read local CSV files even when `use_zetaris=True`. Additionally, `.env.example` defined `ZETARIS_REST_URL=http://localhost:8888/api/v1.0`, while code and README expect `ZETARIS_BASE_URL=http://localhost:3000`.
+- **Action**: Updated `DataStore` methods (`get_facilities`, `get_medicines`, `get_suppliers`, `get_batches`, `get_latest_ledger`, `get_ledger_on_date`, `get_latest_physical_audit`, `get_recent_consumption`, `get_purchase_orders`, `get_deliveries`, `get_transfers`, `get_supplier_slip_priors`) to query `_query_zetaris()` over Zetaris Lightning REST SQL when `self.use_zetaris=True`, falling back seamlessly to local CSV files if Zetaris is unreachable or unconfigured. Made `use_zetaris` auto-discover from `USE_ZETARIS` environment variable. Standardized `.env.example` to `ZETARIS_BASE_URL=http://localhost:3000` and documented `USE_ZETARIS=false`. Built comprehensive test suite [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_data_store.py) with 5 test suites covering offline CSV reads, graceful offline fallback, mocked REST SQL queries, dynamic SQL generation, and env toggle.
+- **Acceptance Criteria**: With `use_zetaris=True`, getters attempt the Zetaris REST query and fall back gracefully to CSV without crashing. `.env.example` matches `smoke_test.py` and `README.md`. 100% of tests pass.
 
 ---
 

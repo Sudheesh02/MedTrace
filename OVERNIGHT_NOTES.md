@@ -52,3 +52,34 @@
 #### What Is Next
 - **Item 2 (Next Highest Priority)**: Wire real Zetaris REST SQL querying into `DataStore` with offline fallback; synchronize `.env.example`.
 - **Item 3**: Activate multi-agent adversarial debate (recalibrate Skeptic challenge threshold to trigger Round 2 revisions).
+
+
+---
+
+### Session: 2026-10-25 02:45 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 1 — Item 2 Implementation (Zetaris Federated SQL DataStore Integration & Offline Fallback)
+
+#### What Was Done
+1. **Wired Live Zetaris REST SQL Integration with Graceful Fallback**:
+   - Refactored [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/adapters/data_store.py) across all data access methods (`get_facilities`, `get_medicines`, `get_suppliers`, `get_batches`, `get_latest_ledger`, `get_ledger_on_date`, `get_latest_physical_audit`, `get_recent_consumption`, `get_purchase_orders`, `get_deliveries`, `get_transfers`, `get_supplier_slip_priors`).
+   - All methods query Zetaris Lightning SQL proxy endpoint when `use_zetaris=True`, safely parsing column headers and row matrices into dictionary records.
+   - If Zetaris is unconfigured, network-isolated, or returns an error, methods fall back gracefully to local CSV files without throwing unhandled exceptions.
+   - Made `use_zetaris` discoverable from the `USE_ZETARIS` environment variable or explicit boolean argument.
+2. **Standardized Environment Template**:
+   - Updated [`.env.example`](file:///C:/Users/Asus/Desktop/Open Agent/.env.example) to standardize `ZETARIS_BASE_URL=http://localhost:3000` (matching `smoke_test.py` and `README.md`) and added `USE_ZETARIS=false`.
+3. **Engineered Comprehensive Automated Test Suite**:
+   - Created [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_data_store.py) with 5 test functions:
+     - `test_data_store_offline_csv_reads`: Verifies all offline reads across facilities, medicines, batches, ledgers, and suppliers.
+     - `test_data_store_graceful_fallback_when_zetaris_unreachable`: Verifies that an unreachable Zetaris endpoint falls back cleanly to CSV without raising `ConnectionError`.
+     - `test_data_store_zetaris_mocked_query_success`: Verifies JWT authentication token caching, proxy request headers (`Authorization`, `X-Org-ID`, `X-Request-ID`), and JSON row-to-header mapping.
+     - `test_data_store_sql_query_construction`: Validates parameterized `WHERE` clauses and `ORDER BY date DESC LIMIT 1` SQL generation.
+     - `test_data_store_env_toggle`: Validates `USE_ZETARIS` environment variable initialization.
+4. **Marked Item 2 Done in Backlog**:
+   - Updated [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open Agent/OVERNIGHT_BACKLOG.md) to record Item 2 as completed and verified.
+5. **Verified Full Test Suite**:
+   - Executed `python -m pytest tests -q` — 19 passed in 27.42s (up from 14).
+
+#### What Is Next
+- **Item 3 (Next Highest Priority)**: Activate multi-agent adversarial debate (recalibrate Skeptic challenge criteria to trigger Round 2 revisions).
+- **Item 4**: Fix date-synchronized reconciliation for ghost stock (Sample 1 & 2 0.0-unit bug).
