@@ -4,10 +4,10 @@
   "total_actual_stockouts": 25,
   "metrics": {
     "early_warning_lead_time_days": {
-      "naive_lmis": 49.32,
-      "heuristic_rule_based": 63.6,
-      "medtrace": 71.16,
-      "lead_time_advantage_days": 21.84
+      "naive_lmis": 61.48,
+      "heuristic_rule_based": 69.0,
+      "medtrace": 75.36,
+      "lead_time_advantage_days": 13.88
     },
     "stockout_recall_pct": {
       "naive_lmis": 100.0,
@@ -25,7 +25,7 @@
     "capital_lockup_false_reorders": {
       "naive_lmis": 0,
       "heuristic_rule_based": 0,
-      "medtrace": 1
+      "medtrace": 0
     }
   }
 }
