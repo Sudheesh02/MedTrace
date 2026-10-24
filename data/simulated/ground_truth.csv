@@ -1,0 +1,6 @@
+anomaly_id,type,facility_id,medicine_id,day_index,description,magnitude,source
+ANOM-01,GHOST_STOCK,FAC-DH-01,MED-007,160,Ledger phantom stock: ledger shows 120 units over true physical count,50,SIMULATED
+ANOM-02,EXPIRING_BATCH_UNUSABLE,FAC-PHC-01,MED-004,175,Batch expires in 5 days; cannot cover full lead time,180,SIMULATED
+ANOM-03,QUARANTINED_BATCH,FAC-CHC-01,MED-001,170,Quality assurance hold; batch quarantined but included in ledger usable total,400,SIMULATED
+ANOM-04,PO_DISPATCHED_NOT_RECEIVED,FAC-CHC-02,MED-002,172,PO promised 10 days ago still marked dispatched with no delivery receipt,500,SIMULATED
+ANOM-07,UOM_MISMATCH,FAC-PHC-03,MED-008,174,10x quantity discrepancy on delivery receipt vs PO (tablet count vs strip count),900,SIMULATED

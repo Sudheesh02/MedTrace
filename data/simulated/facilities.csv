@@ -1,0 +1,13 @@
+facility_id,name,level,catchment_scale,source
+FAC-DH-01,District Civil Hospital,District Hospital,1.0,SIMULATED
+FAC-CHC-01,North Sub-District CHC,CHC,0.35,SIMULATED
+FAC-CHC-02,East Sub-District CHC,CHC,0.35,SIMULATED
+FAC-CHC-03,West Sub-District CHC,CHC,0.35,SIMULATED
+FAC-PHC-01,Rural PHC Block A,PHC,0.12,SIMULATED
+FAC-PHC-02,Rural PHC Block B,PHC,0.12,SIMULATED
+FAC-PHC-03,Rural PHC Block C,PHC,0.12,SIMULATED
+FAC-PHC-04,Rural PHC Block D,PHC,0.12,SIMULATED
+FAC-PHC-05,Rural PHC Block E,PHC,0.12,SIMULATED
+FAC-PHC-06,Rural PHC Block F,PHC,0.12,SIMULATED
+FAC-WH-01,District Drug Warehouse,District Warehouse,2.5,SIMULATED
+FAC-WH-02,Regional Medical Depot,Regional Warehouse,5.0,SIMULATED

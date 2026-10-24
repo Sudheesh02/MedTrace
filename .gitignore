@@ -1,0 +1,51 @@
+# ==========================================
+# MedTrace Git Ignore
+# ==========================================
+
+# 1. Credentials, Keys & Secrets (STRICT - NEVER COMMIT)
+.env
+.env.local
+.env.*
+!.env.example
+*.key
+*.pem
+*.der
+*.p12
+*.pfx
+
+# 2. Python runtime & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.venv/
+venv/
+ENV/
+
+# 3. Third-party cloned repos & external packages
+zetaris-getting-started/
+meterless-repo/
+
+# 4. Large Raw Datasets & Temporary Zips
+data/real/raw/
+drug-shortages-0001-of-0001.json/
+*.zip
+*.tar.gz
+data/simulated_seed_*/
+
+# 5. Logs & Audit Traces
+logs/
+*.log
+*.jsonl
+
+# 6. IDE, OS & System Metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

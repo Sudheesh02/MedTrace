@@ -1,0 +1,71 @@
+{
+  "run_id": "run-ef258952",
+  "status": "success",
+  "facility_id": "FAC-CHC-01",
+  "medicine_id": "MED-001",
+  "days_of_cover_trust": 0.0,
+  "days_of_cover_naive": 17.94,
+  "understated_gap_percent": 100.0,
+  "winning_hypothesis": {
+    "hypothesis_id": "H1-PHANTOM-DRIFT",
+    "title": "Phantom Stock Drift in Warehouse Ledger",
+    "cause": "Physical audits indicate 138.0 phantom units recorded on ledger.",
+    "likelihood": 0.85,
+    "supporting_evidence": [
+      "Physical count found 0.0 usable units vs 505.0 on ledger."
+    ],
+    "refuting_evidence": [
+      "Stock counts match if reconciliation occurred within the last 48 hours."
+    ],
+    "confirming_query": "SELECT counted_stock FROM physical_audit WHERE facility_id = ? AND medicine_id = ? ORDER BY date DESC LIMIT 1"
+  },
+  "recommendations": [
+    {
+      "action_id": "ACT-TRF-FAC-CHC-01-MED-001",
+      "action_type": "PEER_TRANSFER",
+      "facility_id": "FAC-CHC-01",
+      "medicine_id": "MED-001",
+      "recommended_units": 253.29,
+      "source_facility_id": "FAC-WH-01",
+      "supplier_id": null,
+      "feasibility_score": 0.9,
+      "justification": "Transfer 253.29 units from District Central Store (lead time 24h) to cover 9.0-day gap.",
+      "number_provenance": {
+        "shortfall_units": 253.29,
+        "gap_days": 9.0
+      }
+    },
+    {
+      "action_id": "ACT-EXP-FAC-CHC-01-MED-001",
+      "action_type": "EXPEDITE_PO",
+      "facility_id": "FAC-CHC-01",
+      "medicine_id": "MED-001",
+      "recommended_units": 253.29,
+      "source_facility_id": null,
+      "supplier_id": "SUP-001",
+      "feasibility_score": 0.75,
+      "justification": "Issue urgent dispatch escalation to contracted supplier to compress historical delivery slip.",
+      "number_provenance": {
+        "shortfall_units": 253.29,
+        "gap_days": 9.0
+      }
+    },
+    {
+      "action_id": "ACT-EMERG-FAC-CHC-01-MED-001",
+      "action_type": "EMERGENCY_PURCHASE",
+      "facility_id": "FAC-CHC-01",
+      "medicine_id": "MED-001",
+      "recommended_units": 253.29,
+      "source_facility_id": null,
+      "supplier_id": null,
+      "feasibility_score": 0.6,
+      "justification": "Authorise district emergency local procurement quota if transfer cannot be dispatched within 48h.",
+      "number_provenance": {
+        "shortfall_units": 253.29,
+        "gap_days": 9.0
+      }
+    }
+  ],
+  "skeptic_rounds": 1,
+  "trace_file": "logs\\trace_run-ef258952.jsonl"
+}

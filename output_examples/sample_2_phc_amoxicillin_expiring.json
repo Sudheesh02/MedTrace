@@ -1,0 +1,71 @@
+{
+  "run_id": "run-d6647a20",
+  "status": "success",
+  "facility_id": "FAC-PHC-01",
+  "medicine_id": "MED-004",
+  "days_of_cover_trust": 42.0,
+  "days_of_cover_naive": 42.0,
+  "understated_gap_percent": 0.0,
+  "winning_hypothesis": {
+    "hypothesis_id": "H2-SUPPLIER-SLIP",
+    "title": "Upstream Supplier Delivery Slippage",
+    "cause": "Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window.",
+    "likelihood": 0.75,
+    "supporting_evidence": [
+      "Promised delivery expected at Day 6, but historical slip adds +3 days, leaving a 0.0-day unserved gap."
+    ],
+    "refuting_evidence": [
+      "Supplier confirms expedited dispatch with verified logistics tracking."
+    ],
+    "confirming_query": "SELECT delivered_date, scheduled_date FROM usaid_deliveries WHERE vendor = ? LIMIT 10"
+  },
+  "recommendations": [
+    {
+      "action_id": "ACT-TRF-FAC-PHC-01-MED-004",
+      "action_type": "PEER_TRANSFER",
+      "facility_id": "FAC-PHC-01",
+      "medicine_id": "MED-004",
+      "recommended_units": 0.0,
+      "source_facility_id": "FAC-WH-01",
+      "supplier_id": null,
+      "feasibility_score": 0.9,
+      "justification": "Transfer 0.0 units from District Central Store (lead time 24h) to cover 0.0-day gap.",
+      "number_provenance": {
+        "shortfall_units": 0.0,
+        "gap_days": 0.0
+      }
+    },
+    {
+      "action_id": "ACT-EXP-FAC-PHC-01-MED-004",
+      "action_type": "EXPEDITE_PO",
+      "facility_id": "FAC-PHC-01",
+      "medicine_id": "MED-004",
+      "recommended_units": 0.0,
+      "source_facility_id": null,
+      "supplier_id": "SUP-001",
+      "feasibility_score": 0.75,
+      "justification": "Issue urgent dispatch escalation to contracted supplier to compress historical delivery slip.",
+      "number_provenance": {
+        "shortfall_units": 0.0,
+        "gap_days": 0.0
+      }
+    },
+    {
+      "action_id": "ACT-EMERG-FAC-PHC-01-MED-004",
+      "action_type": "EMERGENCY_PURCHASE",
+      "facility_id": "FAC-PHC-01",
+      "medicine_id": "MED-004",
+      "recommended_units": 0.0,
+      "source_facility_id": null,
+      "supplier_id": null,
+      "feasibility_score": 0.6,
+      "justification": "Authorise district emergency local procurement quota if transfer cannot be dispatched within 48h.",
+      "number_provenance": {
+        "shortfall_units": 0.0,
+        "gap_days": 0.0
+      }
+    }
+  ],
+  "skeptic_rounds": 1,
+  "trace_file": "logs\\trace_run-d6647a20.jsonl"
+}

@@ -1,0 +1,31 @@
+{
+  "seed": 1,
+  "evaluation_period_days": 180,
+  "total_actual_stockouts": 30,
+  "metrics": {
+    "early_warning_lead_time_days": {
+      "naive_lmis": 37.27,
+      "heuristic_rule_based": 49.7,
+      "medtrace": 55.6,
+      "lead_time_advantage_days": 18.33
+    },
+    "stockout_recall_pct": {
+      "naive_lmis": 100.0,
+      "heuristic_rule_based": 100.0,
+      "medtrace": 100.0
+    },
+    "anomaly_detection": {
+      "ground_truth_anomalies_count": 5,
+      "detected_anomalies_count": 141,
+      "true_positives": 3,
+      "precision_pct": 2.1,
+      "recall_pct": 60.0,
+      "f1_score_pct": 4.1
+    },
+    "capital_lockup_false_reorders": {
+      "naive_lmis": 0,
+      "heuristic_rule_based": 0,
+      "medtrace": 0
+    }
+  }
+}

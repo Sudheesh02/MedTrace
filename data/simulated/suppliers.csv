@@ -1,0 +1,5 @@
+supplier_id,supplier_name,real_vendor_ref,shipment_mode,historical_mean_slip,historical_p90_slip,source
+SUP-001,Supplier 1 (SCMS from RDC),SCMS from RDC,Air,-2.15,8,SIMULATED
+SUP-002,Supplier 2 (SCMS from RDC),SCMS from RDC,Truck,-5.01,14,SIMULATED
+SUP-003,"Supplier 3 (Orgenics, Ltd)","Orgenics, Ltd",Air,1.03,3,SIMULATED
+SUP-004,Supplier 4 (SCMS from RDC),SCMS from RDC,Air Charter,-12.57,5,SIMULATED
