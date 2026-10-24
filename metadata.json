@@ -1,0 +1,60 @@
+{
+  "project_name": "MedTrace",
+  "track": "Track 2: The Agent That Can Explain Why",
+  "description": "An autonomous multi-agent clinical supply chain resilience system that prevents catastrophic medicine stockouts through federated data auditing, deterministic zero-hallucination arithmetic, and competing hypothesis loops.",
+  "authors": [
+    {
+      "name": "Sudheesh02",
+      "role": "Lead Architect & Engineer"
+    }
+  ],
+  "repository": "https://github.com/Sudheesh02/MedTrace",
+  "sponsor_technology": {
+    "zetaris": {
+      "role": "Federated Data Layer",
+      "implementation": "app/adapters/data_store.py connects to Zetaris Lightning SQL REST API to query distributed facility ledgers, batches, deliveries, and external openFDA shortages in place.",
+      "container_ready": true,
+      "verified_query": "SELECT 1 AS num"
+    },
+    "meterless": {
+      "role": "Headless Shared State & Memory Engines",
+      "engines_implemented": [
+        {
+          "engine": "Meterless World Model",
+          "file": "app/engines/world_model.py",
+          "purpose": "Headless shared canonical entity state across agents using content-derived stable IDs (ent_inv_*) and relational graph edges (HOLDS_INVENTORY, FOR_MEDICINE)."
+        },
+        {
+          "engine": "Meterless H-MEM",
+          "file": "app/engines/hmem.py",
+          "purpose": "Hierarchical cross-session episodic memory tracking officer approvals, rejections, and penalties to dynamically tune action recommendations."
+        }
+      ],
+      "runtime": "Meterless Nightshift AI Hotspot fallback in app/adapters/llm_client.py with required headers (meterless-app, meterless-scope)"
+    },
+    "nvidia": {
+      "role": "Primary LLM Power Layer",
+      "model": "nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA NIM API in app/adapters/llm_client.py"
+    },
+    "cursor": {
+      "role": "Development Environment",
+      "editor": "Cursor with Space XAI"
+    }
+  },
+  "evaluation": {
+    "offline_judging_supported": true,
+    "offline_flag": "SAMPLE_MODE=true",
+    "cached_datasets": [
+      "data/real/medicine_master.csv",
+      "data/real/supplier_slip.csv",
+      "data/real/openfda_shortages.json",
+      "data/real/openfda_enforcement_recalls.json",
+      "data/real/who_disease_surveillance.json",
+      "data/real/dailymed_packaging.json",
+      "data/real/rxnorm_standards.json",
+      "data/real/cross_border_shortages.json",
+      "data/simulated/"
+    ],
+    "verification_command": "python run.py --cli --sample-mode --facility FAC-CHC-01 --medicine MED-001"
+  }
+}

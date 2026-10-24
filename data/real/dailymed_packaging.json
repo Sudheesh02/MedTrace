@@ -1,0 +1,158 @@
+{
+  "MED-001": {
+    "generic_name": "paracetamol",
+    "daily_med_records_found": 1,
+    "sample_commercial_products": [
+      "PARACETAMOL"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-002": {
+    "generic_name": "ibuprofen",
+    "daily_med_records_found": 100,
+    "sample_commercial_products": [
+      "365 WHOLE FOODS MARKET IBUPROFEN",
+      "AACETAMINOPHEN AND IBUPROFEN",
+      "ACETAMINOPHEN 250 MG AND IBUPROFEN 125 MG",
+      "ACETAMINOPHEN 250 MG AND IBUPROFEN 125 MG",
+      "ACETAMINOPHEN 250 MG AND IBUPROFEN 125 MG TABLETS"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-003": {
+    "generic_name": "diclofenac",
+    "daily_med_records_found": 68,
+    "sample_commercial_products": [
+      "3% DICLOFENAC SPRAY",
+      "CALCIPOTRIENE 0.005% / DICLOFENAC SODIUM 3% / HYALURONIC ACID SODIUM SALT 2% / NIACINAMIDE 2%",
+      "CALCIPOTRIENE 0.005% / DICLOFENAC SODIUM 3% / HYALURONIC ACID SODIUM SALT 2% / NIACINAMIDE 2%",
+      "CRCLE DICLOFENAC SODIUM TOPICAL GEL 1%",
+      "DICLOFENAC"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-004": {
+    "generic_name": "amoxicillin",
+    "daily_med_records_found": 28,
+    "sample_commercial_products": [
+      "AMOXICILLIN",
+      "AMOXICILLIN",
+      "AMOXICILLIN 500 MG",
+      "AMOXICILLIN AND CLAVULANATE POTASSIUM",
+      "AMOXICILLIN AND CLAVULANATE POTASSIUM"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "capsule"
+  },
+  "MED-005": {
+    "generic_name": "cetirizine",
+    "daily_med_records_found": 80,
+    "sample_commercial_products": [
+      "ALLEXPERT 24HR ANTIHISTAMINE CETIRIZINE HYDROCHLORIDE",
+      "ALLEXPERT 24HR ANTIHISTAMINE CETIRIZINE HYDROCHLORIDE ORAL SOLUTION",
+      "BEST CHOICE CHILDRENS CETIRIZINE",
+      "CABINET ALLERGY RELIEF REFILL CETIRIZINE HCI",
+      "CETIRIZINE"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-006": {
+    "generic_name": "salbutamol",
+    "daily_med_records_found": 1,
+    "sample_commercial_products": [
+      "SALBUTAMOL SULFATE"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-007": {
+    "generic_name": "metformin",
+    "daily_med_records_found": 60,
+    "sample_commercial_products": [
+      "ALOGLIPTIN AND METFORMIN HYDROCHLORIDE",
+      "ALOGLIPTIN AND METFORMIN HYDROCHLORIDE",
+      "CANAGLIFLOZIN AND METFORMIN HYDROCHLORIDE",
+      "DAPAGLIFLOZIN AND METFORMIN HYDROCHLORIDE",
+      "DAPAGLIFLOZIN AND METFORMIN HYDROCHLORIDE"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-008": {
+    "generic_name": "amlodipine",
+    "daily_med_records_found": 48,
+    "sample_commercial_products": [
+      "AAMLODIPINE AND OLMESARTAN MEDOXOMIL",
+      "AMLODIPINE",
+      "AMLODIPINE",
+      "AMLODIPINE AND ATORVASTATIN",
+      "AMLODIPINE AND ATORVASTATIN"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-009": {
+    "generic_name": "artemether + lumefantrine",
+    "daily_med_records_found": 1,
+    "sample_commercial_products": [
+      "ARTEMETHER AND LUMEFANTRINE"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-010": {
+    "generic_name": "efavirenz",
+    "daily_med_records_found": 7,
+    "sample_commercial_products": [
+      "EFAVIRENZ",
+      "EFAVIRENZ",
+      "EFAVIRENZ, EMTRICITABINE AND TENOFOVIR DISOPROXIL FUMARATE",
+      "EFAVIRENZ, EMTRICITABINE AND TENOFOVIR DISOPROXIL FUMARATE",
+      "EFAVIRENZ, EMTRICITABINE, AND TENOFOVIR DISOPROXIL FUMARATE"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-011": {
+    "generic_name": "lamivudine + zidovudine",
+    "daily_med_records_found": 20,
+    "sample_commercial_products": [
+      "ABACAVIR , LAMIVUDINE AND ZIDOVUDINE",
+      "ABACAVIR AND LAMIVUDINE",
+      "ABACAVIR AND LAMIVUDINE",
+      "ABACAVIR SULFATE AND LAMIVUDINE",
+      "ABACAVIR SULFATE, DOLUTEGRAVIR SODIUM, LAMIVUDINE"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  },
+  "MED-012": {
+    "generic_name": "levonorgestrel + ethinylestradiol",
+    "daily_med_records_found": 24,
+    "sample_commercial_products": [
+      "AMAZON BASIC CARE LEVONORGESTREL",
+      "ESTRADIOL AND LEVONORGESTREL",
+      "ETHINYL ESTRADIOL, LEVONORGESTREL",
+      "LEADER EMERGENCY CONTRACEPTIVE LEVONORGESTREL",
+      "LEVONORGESTREL"
+    ],
+    "storage_condition": "15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture)",
+    "standard_packaging": "Box of 10x10 Blister Strips (100 tablets/capsules per box)",
+    "dispensing_unit": "tablet"
+  }
+}

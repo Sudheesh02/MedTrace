@@ -1,13 +1,13 @@
-medicine_id,generic_name,strength,form,atc_code,level_min,shelf_life_months,demand_group,supply_group,source_url
-MED-001,paracetamol,500mg,tablet,N02BE01,PHC,36,N02BE,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
-MED-002,ibuprofen,400mg,tablet,M01AE01,PHC,36,M01AE,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
-MED-003,diclofenac,50mg,tablet,M01AB05,CHC,36,M01AB,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
-MED-004,amoxicillin,500mg,capsule,J01CA04,PHC,24,TEMPLATE_ANTIBIOTIC,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
-MED-005,cetirizine,10mg,tablet,R06AE07,PHC,36,R06,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
-MED-006,salbutamol,4mg,tablet,R03CC02,PHC,24,R03,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
-MED-007,metformin,500mg,tablet,A10BA02,PHC,36,TEMPLATE_CHRONIC,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
-MED-008,amlodipine,5mg,tablet,C08CA01,PHC,36,TEMPLATE_CHRONIC,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
-MED-009,artemether + lumefantrine,20mg + 120mg,tablet,P01BF01,PHC,24,TEMPLATE_SEASONAL,PROGRAMME_MALARIA,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
-MED-010,efavirenz,600mg,tablet,J05AG03,District Hospital,36,TEMPLATE_PROGRAMME,PROGRAMME_HIV,https://data.usaid.gov
-MED-011,lamivudine + zidovudine,150mg + 300mg,tablet,J05AR01,CHC,36,TEMPLATE_PROGRAMME,PROGRAMME_HIV,https://data.usaid.gov
-MED-012,levonorgestrel + ethinylestradiol,0.15mg + 0.03mg,tablet,G03AA07,PHC,36,TEMPLATE_PROGRAMME,PROGRAMME_FAMILY_PLANNING,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
+medicine_id,generic_name,rxcui,strength,form,atc_code,level_min,shelf_life_months,demand_group,supply_group,source_url
+MED-001,paracetamol,161,500mg,tablet,N02BE01,PHC,36,N02BE,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
+MED-002,ibuprofen,5640,400mg,tablet,M01AE01,PHC,36,M01AE,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
+MED-003,diclofenac,3355,50mg,tablet,M01AB05,CHC,36,M01AB,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
+MED-004,amoxicillin,723,500mg,capsule,J01CA04,PHC,24,TEMPLATE_ANTIBIOTIC,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
+MED-005,cetirizine,20610,10mg,tablet,R06AE07,PHC,36,R06,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
+MED-006,salbutamol,435,4mg,tablet,R03CC02,PHC,24,R03,OPD_STAPLE,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
+MED-007,metformin,6809,500mg,tablet,A10BA02,PHC,36,TEMPLATE_CHRONIC,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
+MED-008,amlodipine,17767,5mg,tablet,C08CA01,PHC,36,TEMPLATE_CHRONIC,OPD_STAPLE,https://cdsco.gov.in/opencms/opencms/en/Drugs/NLEM/
+MED-009,artemether + lumefantrine,18343,20mg + 120mg,tablet,P01BF01,PHC,24,TEMPLATE_SEASONAL,PROGRAMME_MALARIA,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02
+MED-010,efavirenz,195085,600mg,tablet,J05AG03,District Hospital,36,TEMPLATE_PROGRAMME,PROGRAMME_HIV,https://data.usaid.gov
+MED-011,lamivudine + zidovudine,68244,150mg + 300mg,tablet,J05AR01,CHC,36,TEMPLATE_PROGRAMME,PROGRAMME_HIV,https://data.usaid.gov
+MED-012,levonorgestrel + ethinylestradiol,6373,0.15mg + 0.03mg,tablet,G03AA07,PHC,36,TEMPLATE_PROGRAMME,PROGRAMME_FAMILY_PLANNING,https://www.who.int/publications/i/item/WHO-MHP-HPS-EML-2023.02

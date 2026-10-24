@@ -85,12 +85,13 @@ class MedTraceOrchestrator:
         skeptic_review = None
         rounds = 0
         max_rounds = 3
+        last_critique = None
 
         while rounds < max_rounds:
             rounds += 1
-            log_step("InvestigatorAgent", f"ROUND_{rounds}_START", {"round": rounds})
+            log_step("InvestigatorAgent", f"ROUND_{rounds}_START", {"round": rounds, "previous_critique": last_critique})
             
-            hypotheses = self.investigator.investigate(recon, world_context)
+            hypotheses = self.investigator.investigate(recon, world_context, skeptic_feedback=last_critique)
             log_step("InvestigatorAgent", "HYPOTHESES_GENERATED", {
                 "hypotheses_count": len(hypotheses),
                 "titles": [h.title for h in hypotheses]
@@ -99,7 +100,8 @@ class MedTraceOrchestrator:
             # Skeptic & Number Auditor
             top_hyp, review = self.skeptic.review_and_audit(
                 hypotheses=hypotheses,
-                deterministic_recon=recon["deterministic_reconciliation"]
+                deterministic_recon=recon["deterministic_reconciliation"],
+                round_number=rounds
             )
             log_step("SkepticAgent", f"ROUND_{rounds}_EVALUATION", {
                 "accepted": review.accepted,
@@ -112,9 +114,12 @@ class MedTraceOrchestrator:
                 winning_hyp = top_hyp
                 skeptic_review = review
                 break
+            else:
+                last_critique = review.critique_notes
 
         if not winning_hyp:
             winning_hyp = hypotheses[0]
+            skeptic_review = review
 
         # 4. Action Planner
         recommendations = self.action_planner.plan_actions(

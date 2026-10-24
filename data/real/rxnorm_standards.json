@@ -1,0 +1,110 @@
+{
+  "MED-001": {
+    "medicine_id": "MED-001",
+    "generic_name": "paracetamol",
+    "rxcui": "161",
+    "rxnorm_name": "acetaminophen",
+    "standard_form": "tablet",
+    "strength": "500mg",
+    "atc_code": "N02BE01"
+  },
+  "MED-002": {
+    "medicine_id": "MED-002",
+    "generic_name": "ibuprofen",
+    "rxcui": "5640",
+    "rxnorm_name": "ibuprofen",
+    "standard_form": "tablet",
+    "strength": "400mg",
+    "atc_code": "M01AE01"
+  },
+  "MED-003": {
+    "medicine_id": "MED-003",
+    "generic_name": "diclofenac",
+    "rxcui": "3355",
+    "rxnorm_name": "diclofenac",
+    "standard_form": "tablet",
+    "strength": "50mg",
+    "atc_code": "M01AB05"
+  },
+  "MED-004": {
+    "medicine_id": "MED-004",
+    "generic_name": "amoxicillin",
+    "rxcui": "723",
+    "rxnorm_name": "amoxicillin",
+    "standard_form": "capsule",
+    "strength": "500mg",
+    "atc_code": "J01CA04"
+  },
+  "MED-005": {
+    "medicine_id": "MED-005",
+    "generic_name": "cetirizine",
+    "rxcui": "20610",
+    "rxnorm_name": "cetirizine",
+    "standard_form": "tablet",
+    "strength": "10mg",
+    "atc_code": "R06AE07"
+  },
+  "MED-006": {
+    "medicine_id": "MED-006",
+    "generic_name": "salbutamol",
+    "rxcui": "435",
+    "rxnorm_name": "albuterol",
+    "standard_form": "tablet",
+    "strength": "4mg",
+    "atc_code": "R03CC02"
+  },
+  "MED-007": {
+    "medicine_id": "MED-007",
+    "generic_name": "metformin",
+    "rxcui": "6809",
+    "rxnorm_name": "metformin",
+    "standard_form": "tablet",
+    "strength": "500mg",
+    "atc_code": "A10BA02"
+  },
+  "MED-008": {
+    "medicine_id": "MED-008",
+    "generic_name": "amlodipine",
+    "rxcui": "17767",
+    "rxnorm_name": "amlodipine",
+    "standard_form": "tablet",
+    "strength": "5mg",
+    "atc_code": "C08CA01"
+  },
+  "MED-009": {
+    "medicine_id": "MED-009",
+    "generic_name": "artemether + lumefantrine",
+    "rxcui": "18343",
+    "rxnorm_name": "artemether",
+    "standard_form": "tablet",
+    "strength": "20mg + 120mg",
+    "atc_code": "P01BF01"
+  },
+  "MED-010": {
+    "medicine_id": "MED-010",
+    "generic_name": "efavirenz",
+    "rxcui": "195085",
+    "rxnorm_name": "efavirenz",
+    "standard_form": "tablet",
+    "strength": "600mg",
+    "atc_code": "J05AG03"
+  },
+  "MED-011": {
+    "medicine_id": "MED-011",
+    "generic_name": "lamivudine + zidovudine",
+    "rxcui": "68244",
+    "rxnorm_name": "lamivudine",
+    "standard_form": "tablet",
+    "strength": "150mg + 300mg",
+    "atc_code": "J05AR01"
+  },
+  "MED-012": {
+    "medicine_id": "MED-012",
+    "generic_name": "levonorgestrel + ethinylestradiol",
+    "rxcui": "6373",
+    "rxnorm_name": "levonorgestrel",
+    "standard_form": "tablet",
+    "strength": "0.15mg + 0.03mg",
+    "atc_code": "G03AA07"
+  }
+}

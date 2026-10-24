@@ -17,11 +17,18 @@ class ReconcilerAgent:
 
     def reconcile_item(self, facility_id: str, medicine_id: str) -> Dict[str, Any]:
         # 1. Fetch data
+        med_records = [m for m in self.data_store.get_medicines() if m["medicine_id"] == medicine_id]
+        generic_name = med_records[0]["generic_name"] if med_records else "paracetamol"
+
         ledger = self.data_store.get_latest_ledger(facility_id, medicine_id)
         audit = self.data_store.get_latest_physical_audit(facility_id, medicine_id)
         batches = self.data_store.get_batches(facility_id, medicine_id)
         recent_cons = self.data_store.get_recent_consumption(facility_id, medicine_id)
         pos = self.data_store.get_purchase_orders(facility_id, medicine_id)
+        deliveries = self.data_store.get_deliveries(facility_id, medicine_id)
+        surveillance_data = self.data_store.get_disease_surveillance(medicine_id)
+        packaging = self.data_store.get_packaging_standard(medicine_id)
+        shortage_signal = self.data_store.get_cross_border_shortages(medicine_id=medicine_id, generic_name=generic_name)
 
         ledger_stock = ledger["ledger_stock"] if ledger else 0.0
         counted_stock = audit["counted_stock"] if audit else None
@@ -36,8 +43,27 @@ class ReconcilerAgent:
         promised_days = 6.0
         if pos:
             latest_po = pos[-1]
-            # assume default 6 days if not parsed
             promised_days = 6.0
+
+        # Check UOM mismatch between deliveries and POs
+        uom_info = None
+        uom_mismatch_po = None
+        for deliv in deliveries:
+            p_id = deliv.get("po_id")
+            matching_po = next((p for p in pos if p.get("po_id") == p_id), None)
+            if matching_po:
+                po_qty = float(matching_po.get("quantity", 0))
+                rec_qty = float(deliv.get("received_qty", 0))
+                if po_qty > 0 and (rec_qty >= po_qty * 8.0 or po_qty >= rec_qty * 8.0):
+                    multiplier = round(rec_qty / po_qty, 1) if rec_qty > po_qty else round(po_qty / rec_qty, 1)
+                    uom_info = DeterministicEngine.normalize_uom_quantity(
+                        reported_quantity=rec_qty,
+                        reported_unit="box" if rec_qty < po_qty else "tablet",
+                        dispensing_unit="tablet",
+                        pack_size_units=int(multiplier) if multiplier > 1 else 10
+                    )
+                    uom_mismatch_po = (p_id, po_qty, rec_qty)
+                    break
 
         # 4. Deterministic reconciliation
         recon_result = DeterministicEngine.audit_reconcile_item(
@@ -46,7 +72,10 @@ class ReconcilerAgent:
             batches=batches,
             daily_rate=daily_rate,
             promised_delivery_days=promised_days,
-            historical_slip_days=3.0
+            historical_slip_days=3.0,
+            surveillance_data=surveillance_data,
+            shortage_signal=shortage_signal,
+            uom_info=uom_info
         )
 
         # 5. Extract discrepancies
@@ -67,14 +96,24 @@ class ReconcilerAgent:
 
         if anoms["quarantined_batches"]:
             q_qty = recon_result["stock_evaluation"]["quarantined_stock"]
+            recalls = self.data_store.get_openfda_recalls(medicine_id=medicine_id, generic_name=generic_name)
+            recall_note = ""
+            conflicts = ["batches", "ledger_daily"]
+            if recalls:
+                top_r = recalls[0]
+                recall_note = f" Cross-referenced FDA {top_r.get('classification', 'Recall')} ({top_r.get('recalling_firm', 'Manufacturer')}): {top_r.get('reason_for_recall', '')[:90]}."
+                conflicts.append("openfda_enforcement_recalls.json")
+            if packaging and packaging.get("storage_condition"):
+                recall_note += f" Storage requirement: {packaging['storage_condition']}."
+                conflicts.append("dailymed_packaging.json")
             discrepancies.append(Discrepancy(
                 discrepancy_id=f"DISC-QUAR-{facility_id}-{medicine_id}",
                 anomaly_type=AnomalyType.QUARANTINED_BATCH,
                 facility_id=facility_id,
                 medicine_id=medicine_id,
-                description=f"{q_qty} units under quarantine hold counted as usable in ledger.",
+                description=f"{q_qty} units under quarantine hold counted as usable in ledger.{recall_note}",
                 impact_units=q_qty,
-                sources_in_conflict=["batches", "ledger_daily"]
+                sources_in_conflict=conflicts
             ))
 
         if anoms["expiring_batches"]:
@@ -89,19 +128,64 @@ class ReconcilerAgent:
                 sources_in_conflict=["batches", "purchase_orders"]
             ))
 
-        # Check openFDA shortages
-        med_records = [m for m in self.data_store.get_medicines() if m["medicine_id"] == medicine_id]
-        generic_name = med_records[0]["generic_name"] if med_records else "paracetamol"
+        # Check UOM mismatch discrepancy
+        if anoms.get("uom_mismatch") and uom_mismatch_po:
+            po_id_ref, p_qty, r_qty = uom_mismatch_po
+            discrepancies.append(Discrepancy(
+                discrepancy_id=f"DISC-UOM-{facility_id}-{medicine_id}",
+                anomaly_type=AnomalyType.UOM_MISMATCH,
+                facility_id=facility_id,
+                medicine_id=medicine_id,
+                description=f"Unit of measure mismatch on {po_id_ref}: PO ordered {p_qty} units, but delivery logged {r_qty} ({uom_info.get('reported_unit')} vs {uom_info.get('dispensing_unit')}).",
+                impact_units=abs(r_qty - p_qty),
+                sources_in_conflict=["purchase_orders", "deliveries", "dailymed_packaging.json"]
+            ))
+
+        # Check epidemiological demand spike discrepancy
+        if anoms.get("demand_spike") or (surveillance_data and surveillance_data.get("epidemiological_risk_tier") == "ELEVATED"):
+            tier = surveillance_data.get("epidemiological_risk_tier", "ELEVATED") if surveillance_data else "ELEVATED"
+            disease = surveillance_data.get("matched_indicator", "WHO GHO surveillance") if surveillance_data else "Seasonal surge"
+            ratio = recon_result["demand_evaluation"].get("who_surveillance_multiplier", 1.35)
+            discrepancies.append(Discrepancy(
+                discrepancy_id=f"DISC-DEMAND-{facility_id}-{medicine_id}",
+                anomaly_type=AnomalyType.DEMAND_SPIKE,
+                facility_id=facility_id,
+                medicine_id=medicine_id,
+                description=f"Epidemiological demand spike: WHO surveillance indicates {disease} {tier} risk (+{int((ratio - 1.0) * 100)}% surge).",
+                impact_units=round((recon_result["demand_evaluation"]["adjusted_daily_demand"] - daily_rate) * 14.0, 1),
+                sources_in_conflict=["who_disease_surveillance.json", "consumption_daily"]
+            ))
+
+        # Check PO dispatched but never received
+        for po in pos:
+            if str(po.get("status", "")).upper() == "DISPATCHED":
+                p_id = po.get("po_id")
+                po_qty = float(po.get("quantity", 0))
+                matching_deliv = next((d for d in deliveries if d.get("po_id") == p_id), None)
+                if not matching_deliv:
+                    discrepancies.append(Discrepancy(
+                        discrepancy_id=f"DISC-PO-DISP-{p_id}",
+                        anomaly_type=AnomalyType.PO_DISPATCHED_NOT_RECEIVED,
+                        facility_id=facility_id,
+                        medicine_id=medicine_id,
+                        description=f"Purchase order {p_id} ({po_qty} units) marked DISPATCHED on {po.get('order_date')} but no delivery receipt logged.",
+                        impact_units=po_qty,
+                        sources_in_conflict=["purchase_orders", "deliveries"]
+                    ))
+
+        # Check openFDA shortages & cross-border shortages
         fda_shortages = self.data_store.get_openfda_shortages(generic_name)
-        if fda_shortages:
+        if fda_shortages or shortage_signal:
+            shortage_cause = shortage_signal.get("root_cause_classification", "Active manufacturing disruption") if shortage_signal else "Active FDA manufacturing shortage"
+            rec_count = len(fda_shortages) if fda_shortages else 1
             discrepancies.append(Discrepancy(
                 discrepancy_id=f"DISC-FDA-{medicine_id}",
                 anomaly_type=AnomalyType.GLOBAL_SHORTAGE,
                 facility_id=facility_id,
                 medicine_id=medicine_id,
-                description=f"Active FDA manufacturing shortage reported on {generic_name} ({len(fda_shortages)} records).",
+                description=f"Global/upstream drug shortage: {generic_name} subject to {shortage_cause} ({rec_count} records).",
                 impact_units=0.0,
-                sources_in_conflict=["openfda_shortages.json"]
+                sources_in_conflict=["openfda_shortages.json", "cross_border_shortages.json"]
             ))
 
         # 6. Ingest into World Model

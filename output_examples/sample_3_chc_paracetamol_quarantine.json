@@ -1,5 +1,5 @@
 {
-  "run_id": "run-ef258952",
+  "run_id": "run-9dc66bdd",
   "status": "success",
   "facility_id": "FAC-CHC-01",
   "medicine_id": "MED-001",
@@ -67,5 +67,5 @@
     }
   ],
   "skeptic_rounds": 1,
-  "trace_file": "logs\\trace_run-ef258952.jsonl"
+  "trace_file": "logs\\trace_run-9dc66bdd.jsonl"
 }

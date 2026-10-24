@@ -1,5 +1,5 @@
 {
-  "run_id": "run-d6647a20",
+  "run_id": "run-9b4afc33",
   "status": "success",
   "facility_id": "FAC-PHC-01",
   "medicine_id": "MED-004",
@@ -67,5 +67,5 @@
     }
   ],
   "skeptic_rounds": 1,
-  "trace_file": "logs\\trace_run-d6647a20.jsonl"
+  "trace_file": "logs\\trace_run-9b4afc33.jsonl"
 }

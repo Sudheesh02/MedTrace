@@ -1,0 +1,116 @@
+{
+  "MED-001": {
+    "generic_name": "paracetamol",
+    "primary_search_term": "paracetamol",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-002": {
+    "generic_name": "ibuprofen",
+    "primary_search_term": "ibuprofen",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-003": {
+    "generic_name": "diclofenac",
+    "primary_search_term": "diclofenac",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 6,
+    "reported_reasons": [
+      "Supply chain disruption"
+    ],
+    "multi_country_impact": "Multi-Region Global Risk"
+  },
+  "MED-004": {
+    "generic_name": "amoxicillin",
+    "primary_search_term": "amoxicillin",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-005": {
+    "generic_name": "cetirizine",
+    "primary_search_term": "cetirizine",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-006": {
+    "generic_name": "salbutamol",
+    "primary_search_term": "salbutamol",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-007": {
+    "generic_name": "metformin",
+    "primary_search_term": "metformin",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 2,
+    "reported_reasons": [
+      "Supply chain disruption"
+    ],
+    "multi_country_impact": "Multi-Region Global Risk"
+  },
+  "MED-008": {
+    "generic_name": "amlodipine",
+    "primary_search_term": "amlodipine",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-009": {
+    "generic_name": "artemether + lumefantrine",
+    "primary_search_term": "artemether",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-010": {
+    "generic_name": "efavirenz",
+    "primary_search_term": "efavirenz",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  },
+  "MED-011": {
+    "generic_name": "lamivudine + zidovudine",
+    "primary_search_term": "lamivudine",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 2,
+    "reported_reasons": [
+      "Supply chain disruption"
+    ],
+    "multi_country_impact": "Multi-Region Global Risk"
+  },
+  "MED-012": {
+    "generic_name": "levonorgestrel + ethinylestradiol",
+    "primary_search_term": "levonorgestrel",
+    "active_shortage_flag": false,
+    "root_cause_classification": "NORMAL_MARKET",
+    "regulatory_records_found": 0,
+    "reported_reasons": [],
+    "multi_country_impact": "Adequate Global Buffer"
+  }
+}

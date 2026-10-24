@@ -110,13 +110,89 @@ class DeterministicEngine:
         }
 
     @staticmethod
+    def normalize_uom_quantity(
+        reported_quantity: float,
+        reported_unit: str = "strip",
+        dispensing_unit: str = "tablet",
+        packaging_spec: Optional[str] = None,
+        pack_size_units: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        Normalizes unit-of-measure quantities using DailyMed and RxNorm standards.
+        Detects UOM_MISMATCH when pack counts (e.g. 10x strips) conflict with single units.
+        """
+        u_rep = (reported_unit or "").lower().strip()
+        u_disp = (dispensing_unit or "tablet").lower().strip()
+        multiplier = 1.0
+        mismatch_flag = False
+
+        if pack_size_units and pack_size_units > 1:
+            multiplier = float(pack_size_units)
+            mismatch_flag = True
+        elif u_rep in ["strip", "blister", "strip of 10"] and u_disp in ["tablet", "capsule"]:
+            multiplier = 10.0
+            mismatch_flag = True
+        elif u_rep in ["box", "pack", "box of 100", "carton"] and u_disp in ["tablet", "capsule"]:
+            multiplier = 100.0
+            mismatch_flag = True
+        elif u_rep in ["vial_box", "box of 10 vials"] and u_disp in ["vial", "ampoule"]:
+            multiplier = 10.0
+            mismatch_flag = True
+
+        normalized_qty = reported_quantity * multiplier
+        return {
+            "reported_quantity": reported_quantity,
+            "reported_unit": reported_unit,
+            "dispensing_unit": dispensing_unit,
+            "pack_multiplier": multiplier,
+            "normalized_quantity": normalized_qty,
+            "uom_mismatch_detected": mismatch_flag
+        }
+
+    @staticmethod
+    def compute_epidemiological_demand_multiplier(
+        base_rate: float,
+        atc_seasonal_multiplier: float = 1.0,
+        surveillance_data: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Calibrates consumption demand using WHO GHO epidemiological disease trends
+        fused with Pharma Sales ATC seasonality patterns.
+        """
+        epi_multiplier = 1.0
+        risk_tier = "STANDARD"
+        if surveillance_data:
+            risk_tier = surveillance_data.get("epidemiological_risk_tier", "STANDARD")
+            if risk_tier == "ELEVATED":
+                epi_multiplier = 1.35
+            elif risk_tier == "MODERATE":
+                epi_multiplier = 1.15
+
+        combined_multiplier = round(atc_seasonal_multiplier * epi_multiplier, 3)
+        adjusted_demand = round(base_rate * combined_multiplier, 2)
+        demand_spike = combined_multiplier >= 1.40
+
+        return {
+            "base_daily_rate": base_rate,
+            "atc_seasonal_multiplier": atc_seasonal_multiplier,
+            "who_surveillance_multiplier": epi_multiplier,
+            "epidemiological_risk_tier": risk_tier,
+            "combined_multiplier": combined_multiplier,
+            "adjusted_daily_demand": adjusted_demand,
+            "demand_spike_detected": demand_spike
+        }
+
+    @staticmethod
     def audit_reconcile_item(
         ledger_stock: float,
         last_counted_audit: Optional[float],
         batches: List[Dict[str, Any]],
         daily_rate: float,
         promised_delivery_days: float,
-        historical_slip_days: float = 0.0
+        historical_slip_days: float = 0.0,
+        surveillance_data: Optional[Dict[str, Any]] = None,
+        shortage_signal: Optional[Dict[str, Any]] = None,
+        uom_info: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Full deterministic audit of an inventory item against multiple records.
@@ -144,16 +220,23 @@ class DeterministicEngine:
             expiring_stock=expiring_qty
         )
 
+        # 4. Epidemiological demand forecast adjustment
+        demand_eval = DeterministicEngine.compute_epidemiological_demand_multiplier(
+            base_rate=daily_rate,
+            surveillance_data=surveillance_data
+        )
+        effective_daily_rate = demand_eval["adjusted_daily_demand"] if demand_eval["adjusted_daily_demand"] > 0 else daily_rate
+
         usable_stock = stock_eval["usable_stock"]
         naive_cover = DeterministicEngine.compute_days_of_cover(ledger_stock, daily_rate)
-        trust_cover = DeterministicEngine.compute_days_of_cover(usable_stock, daily_rate)
+        trust_cover = DeterministicEngine.compute_days_of_cover(usable_stock, effective_daily_rate)
 
-        # 4. Naive vs Trust-adjusted shortfalls
+        # 5. Naive vs Trust-adjusted shortfalls
         naive_shortfall = DeterministicEngine.compute_shortfall(
             naive_cover, promised_delivery_days, daily_rate
         )
         trust_shortfall = DeterministicEngine.compute_shortfall(
-            trust_cover, promised_delivery_days + historical_slip_days, daily_rate
+            trust_cover, promised_delivery_days + historical_slip_days, effective_daily_rate
         )
 
         understated_gap_percent = 0.0
@@ -161,8 +244,18 @@ class DeterministicEngine:
             diff = trust_shortfall["gap_days"] - naive_shortfall["gap_days"]
             understated_gap_percent = round((diff / trust_shortfall["gap_days"]) * 100, 1)
 
+        # 6. Global shortage & UOM mismatch flags
+        global_shortage_flag = False
+        if shortage_signal and shortage_signal.get("active_shortage_flag"):
+            global_shortage_flag = True
+
+        uom_mismatch_flag = False
+        if uom_info and uom_info.get("uom_mismatch_detected"):
+            uom_mismatch_flag = True
+
         return {
             "stock_evaluation": stock_eval,
+            "demand_evaluation": demand_eval,
             "naive_cover_days": naive_cover,
             "trust_cover_days": trust_cover,
             "naive_shortfall": naive_shortfall,
@@ -172,6 +265,9 @@ class DeterministicEngine:
                 "ghost_stock": audit_drift > 0,
                 "quarantined_batches": quarantined_qty > 0,
                 "expiring_batches": expiring_qty > 0,
-                "supplier_delay_risk": historical_slip_days > 0
+                "supplier_delay_risk": historical_slip_days > 0,
+                "demand_spike": demand_eval["demand_spike_detected"],
+                "global_shortage": global_shortage_flag,
+                "uom_mismatch": uom_mismatch_flag
             }
         }

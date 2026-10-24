@@ -1,0 +1,107 @@
+{
+  "MED-009": {
+    "indicator_code": "MALARIA_EST_INCIDENCE",
+    "indicator_name": "Estimated malaria incidence per 1000 population",
+    "records_analyzed": 100,
+    "sample_recent_records": [
+      {
+        "country": "VUT",
+        "year": 2024,
+        "value": 12.24613075
+      },
+      {
+        "country": "COL",
+        "year": 2024,
+        "value": 15.19151195
+      },
+      {
+        "country": "IND",
+        "year": 2024,
+        "value": 1.480563143
+      },
+      {
+        "country": "BOL",
+        "year": 2023,
+        "value": 2.509538135
+      },
+      {
+        "country": "PNG",
+        "year": 2023,
+        "value": 147.2018026
+      }
+    ],
+    "average_metric": 66.634,
+    "epidemiological_risk_tier": "ELEVATED",
+    "demand_multiplier_impact": "High seasonal sensitivity (Monsoon surge)"
+  },
+  "MED-004": {
+    "indicator_code": "MENING_2",
+    "indicator_name": "Suspected bacterial meningitis cases reported",
+    "records_analyzed": 97,
+    "sample_recent_records": [
+      {
+        "country": "NER",
+        "year": 2014,
+        "value": 327.0
+      },
+      {
+        "country": "BEN",
+        "year": 2014,
+        "value": 711.0
+      },
+      {
+        "country": "NGA",
+        "year": 2014,
+        "value": 1175.0
+      },
+      {
+        "country": "SEN",
+        "year": 2014,
+        "value": 102.0
+      },
+      {
+        "country": "GIN",
+        "year": 2014,
+        "value": 582.0
+      }
+    ],
+    "average_metric": 1095.0,
+    "epidemiological_risk_tier": "ELEVATED",
+    "demand_multiplier_impact": "Acute epidemic antibiotic demand"
+  },
+  "MED-011": {
+    "indicator_code": "HIV_0000000001",
+    "indicator_name": "Estimated people living with HIV requiring continuous therapy",
+    "records_analyzed": 100,
+    "sample_recent_records": [
+      {
+        "country": "GLOBAL",
+        "year": 2000,
+        "value": 28100000.0
+      },
+      {
+        "country": "AFG",
+        "year": 2000,
+        "value": 2100.0
+      },
+      {
+        "country": "AUS",
+        "year": 2000,
+        "value": 12000.0
+      },
+      {
+        "country": "BGD",
+        "year": 2000,
+        "value": 900.0
+      },
+      {
+        "country": "BTN",
+        "year": 2000,
+        "value": 500.0
+      }
+    ],
+    "average_metric": 1425609.5,
+    "epidemiological_risk_tier": "ELEVATED",
+    "demand_multiplier_impact": "Chronic baseline demand, zero-tolerance stockout"
+  }
+}
