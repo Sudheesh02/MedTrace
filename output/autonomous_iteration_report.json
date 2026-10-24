@@ -1,0 +1,119 @@
+{
+  "latest_run": {
+    "iteration": 1,
+    "timestamp": "2026-10-24T20:16:37.500930+00:00",
+    "phases": {
+      "phase_1_data_audit": {
+        "status": "PASSED",
+        "duration_seconds": 0.008,
+        "medicines_count": 12,
+        "facilities_count": 12,
+        "suppliers_count": 4,
+        "deliveries_count": 1208,
+        "batches_count": 291
+      },
+      "phase_2_math_stress": {
+        "status": "PASSED",
+        "duration_seconds": 0.001,
+        "tests_passed": 4
+      },
+      "phase_3_multi_agent_grid": {
+        "status": "PASSED",
+        "duration_seconds": 2.603,
+        "items_tested": 20,
+        "anomalies_identified": 20,
+        "errors": 0
+      },
+      "phase_4_backtest": {
+        "status": "PASSED",
+        "duration_seconds": 2.603,
+        "lead_time_advantage_days": 18.33,
+        "stockout_recall_pct": 100.0,
+        "anomaly_precision_pct": 100.0,
+        "anomaly_recall_pct": 90.0,
+        "anomaly_f1_pct": 94.7,
+        "false_emergency_reorders": 1
+      }
+    },
+    "total_duration_seconds": 5.21
+  },
+  "total_iterations_completed": 2,
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "timestamp": "2026-10-24T20:16:09.179740+00:00",
+      "phases": {
+        "phase_1_data_audit": {
+          "status": "PASSED",
+          "duration_seconds": 0.007,
+          "medicines_count": 12,
+          "facilities_count": 12,
+          "suppliers_count": 4,
+          "deliveries_count": 1208,
+          "batches_count": 291
+        },
+        "phase_2_math_stress": {
+          "status": "PASSED",
+          "duration_seconds": 0.001,
+          "tests_passed": 4
+        },
+        "phase_3_multi_agent_grid": {
+          "status": "PASSED",
+          "duration_seconds": 3.256,
+          "items_tested": 20,
+          "anomalies_identified": 20,
+          "errors": 0
+        },
+        "phase_4_backtest": {
+          "status": "PASSED",
+          "duration_seconds": 2.65,
+          "lead_time_advantage_days": 18.33,
+          "stockout_recall_pct": 100.0,
+          "anomaly_precision_pct": 100.0,
+          "anomaly_recall_pct": 90.0,
+          "anomaly_f1_pct": 94.7,
+          "false_emergency_reorders": 1
+        }
+      },
+      "total_duration_seconds": 5.91
+    },
+    {
+      "iteration": 1,
+      "timestamp": "2026-10-24T20:16:37.500930+00:00",
+      "phases": {
+        "phase_1_data_audit": {
+          "status": "PASSED",
+          "duration_seconds": 0.008,
+          "medicines_count": 12,
+          "facilities_count": 12,
+          "suppliers_count": 4,
+          "deliveries_count": 1208,
+          "batches_count": 291
+        },
+        "phase_2_math_stress": {
+          "status": "PASSED",
+          "duration_seconds": 0.001,
+          "tests_passed": 4
+        },
+        "phase_3_multi_agent_grid": {
+          "status": "PASSED",
+          "duration_seconds": 2.603,
+          "items_tested": 20,
+          "anomalies_identified": 20,
+          "errors": 0
+        },
+        "phase_4_backtest": {
+          "status": "PASSED",
+          "duration_seconds": 2.603,
+          "lead_time_advantage_days": 18.33,
+          "stockout_recall_pct": 100.0,
+          "anomaly_precision_pct": 100.0,
+          "anomaly_recall_pct": 90.0,
+          "anomaly_f1_pct": 94.7,
+          "false_emergency_reorders": 1
+        }
+      },
+      "total_duration_seconds": 5.21
+    }
+  ]
+}
