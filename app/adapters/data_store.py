@@ -17,7 +17,7 @@ class DataStore:
         self.zetaris_key = os.environ.get("ZETARIS_API_KEY", "")
         self.zetaris_org = os.environ.get("ZETARIS_ORG_ID", "1")
         self.username = os.environ.get("ZETARIS_USERNAME", "admin@zetaris.com")
-        self.password = os.environ.get("ZETARIS_PASSWORD", "Zetaris1@")
+        self.password = os.environ.get("ZETARIS_PASSWORD", "<REDACTED>")
         self._cached_token = None
         self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

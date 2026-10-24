@@ -30,7 +30,7 @@ def zetaris_sql():
     
     if not token or token == "your-zetaris-api-key":
         username = os.environ.get("ZETARIS_USERNAME", "admin@zetaris.com")
-        password = os.environ.get("ZETARIS_PASSWORD", "Zetaris1@")
+        password = os.environ.get("ZETARIS_PASSWORD", "<REDACTED>")
         login_res = requests.post(
             f"{base_url}/api/auth/login",
             json={"username": username, "password": password},
