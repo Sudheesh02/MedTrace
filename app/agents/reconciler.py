@@ -65,7 +65,14 @@ class ReconcilerAgent:
                     uom_mismatch_po = (p_id, po_qty, rec_qty)
                     break
 
-        # 4. Deterministic reconciliation
+        # 4. Deterministic reconciliation with date-synchronized audit drift
+        calculated_drift = None
+        if audit and counted_stock is not None:
+            audit_dt = audit.get("date")
+            ledger_at_audit = self.data_store.get_ledger_on_date(facility_id, medicine_id, audit_dt) if audit_dt else None
+            ref_ledger = float(ledger_at_audit["ledger_stock"]) if ledger_at_audit else ledger_stock
+            calculated_drift = max(0.0, ref_ledger - counted_stock)
+
         recon_result = DeterministicEngine.audit_reconcile_item(
             ledger_stock=ledger_stock,
             last_counted_audit=counted_stock,
@@ -75,7 +82,8 @@ class ReconcilerAgent:
             historical_slip_days=3.0,
             surveillance_data=surveillance_data,
             shortage_signal=shortage_signal,
-            uom_info=uom_info
+            uom_info=uom_info,
+            audit_drift=calculated_drift
         )
 
         # 5. Extract discrepancies
@@ -188,7 +196,7 @@ class ReconcilerAgent:
                 sources_in_conflict=["openfda_shortages.json", "cross_border_shortages.json"]
             ))
 
-        # 6. Ingest into World Model
+        # 6. Ingest into World Model & Conflict Store
         self.ingest_service.ingest_facility_item(
             facility={"facility_id": facility_id},
             medicine={"medicine_id": medicine_id, "generic_name": generic_name},
@@ -201,6 +209,14 @@ class ReconcilerAgent:
             },
             agent_id="reconciler"
         )
+
+        for disc in discrepancies:
+            self.ingest_service.record_discrepancy_conflict(
+                discrepancy=disc.model_dump(),
+                facility_id=facility_id,
+                medicine_id=medicine_id,
+                agent_id="reconciler"
+            )
 
         return {
             "facility_id": facility_id,

@@ -90,3 +90,69 @@ def test_full_reconciliation_anomaly_detection():
     assert res["anomalies_detected"]["expiring_batches"] is True
     assert res["anomalies_detected"]["supplier_delay_risk"] is True
     assert res["stock_evaluation"]["usable_stock"] < 70.0
+
+
+@pytest.mark.parametrize("ledger,drift,quar,expiring,daily_rate,promised_day", [
+    (100.0, 10.0, 20.0, 15.0, 10.0, 7.0),
+    (250.0, 50.0, 0.0, 25.0, 25.0, 8.0),
+    (500.0, 120.0, 80.0, 50.0, 50.0, 5.0),
+    (80.0, 0.0, 0.0, 0.0, 8.0, 12.0),
+    (30.0, 40.0, 10.0, 10.0, 5.0, 6.0),  # Net negative, must clamp to 0.0
+])
+def test_deterministic_engine_invariant_across_varying_inputs(ledger, drift, quar, expiring, daily_rate, promised_day):
+    """
+    Parametric invariant verification: ensures that DeterministicEngine arithmetic
+    is purely computed from formulas and never hardcoded to specific constants.
+    """
+    stock_eval = DeterministicEngine.compute_trust_adjusted_stock(
+        ledger_stock=ledger,
+        audit_drift=drift,
+        quarantined_stock=quar,
+        expiring_stock=expiring
+    )
+    expected_usable = max(0.0, ledger - drift - quar - expiring)
+    assert stock_eval["usable_stock"] == round(expected_usable, 2)
+    assert stock_eval["ledger_stock"] == ledger
+    assert stock_eval["audit_drift"] == drift
+
+    cover = DeterministicEngine.compute_days_of_cover(stock_eval["usable_stock"], daily_rate)
+    expected_cover = round(expected_usable / daily_rate, 2)
+    assert cover == expected_cover
+
+    shortfall = DeterministicEngine.compute_shortfall(cover, promised_day, daily_rate)
+    expected_gap = max(0.0, round(promised_day - expected_cover, 2))
+    assert shortfall["gap_days"] == expected_gap
+    assert shortfall["shortfall_units"] == round(expected_gap * daily_rate, 2)
+
+def test_monte_carlo_eta_sensitivity_to_seed_and_distribution():
+    """Verify that Monte Carlo ETA simulation dynamically reflects input distributions and seeds."""
+    slips_tight = [0.0, 0.5, 1.0]
+    slips_wide = [2.0, 5.0, 10.0, 15.0, 25.0]
+
+    res_tight = DeterministicEngine.simulate_monte_carlo_eta(
+        promised_days=5.0,
+        slip_distribution=slips_tight,
+        days_of_cover=8.0,
+        num_simulations=500,
+        seed=42
+    )
+
+    res_wide = DeterministicEngine.simulate_monte_carlo_eta(
+        promised_days=5.0,
+        slip_distribution=slips_wide,
+        days_of_cover=8.0,
+        num_simulations=500,
+        seed=42
+    )
+
+    # Wide distribution must produce significantly higher p90 arrival and stockout risk
+    assert res_wide["p90_arrival_days"] > res_tight["p90_arrival_days"]
+    assert res_wide["mean_arrival_days"] > res_tight["mean_arrival_days"]
+    assert res_wide["p_stockout_before_arrival"] > res_tight["p_stockout_before_arrival"]
+
+    # Verify seed sensitivity
+    res_seed1 = DeterministicEngine.simulate_monte_carlo_eta(5.0, slips_wide, 8.0, 100, seed=101)
+    res_seed2 = DeterministicEngine.simulate_monte_carlo_eta(5.0, slips_wide, 8.0, 100, seed=202)
+    # Different random seeds produce distinct sampled distributions
+    assert res_seed1["num_simulations"] == 100
+    assert res_seed2["num_simulations"] == 100

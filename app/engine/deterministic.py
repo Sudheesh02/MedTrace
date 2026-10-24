@@ -192,15 +192,17 @@ class DeterministicEngine:
         historical_slip_days: float = 0.0,
         surveillance_data: Optional[Dict[str, Any]] = None,
         shortage_signal: Optional[Dict[str, Any]] = None,
-        uom_info: Optional[Dict[str, Any]] = None
+        uom_info: Optional[Dict[str, Any]] = None,
+        audit_drift: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Full deterministic audit of an inventory item against multiple records.
         """
         # 1. Audit drift (ghost stock)
-        audit_drift = 0.0
-        if last_counted_audit is not None and ledger_stock > last_counted_audit:
-            audit_drift = ledger_stock - last_counted_audit
+        if audit_drift is None:
+            audit_drift = 0.0
+            if last_counted_audit is not None and ledger_stock > last_counted_audit:
+                audit_drift = ledger_stock - last_counted_audit
 
         # 2. Batch scrutiny: quarantined and near-expiry
         quarantined_qty = 0.0
