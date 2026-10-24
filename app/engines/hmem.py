@@ -58,11 +58,20 @@ class HMemEngine:
         }
         self.episodic_memory.append(episode)
         
-        # Distill into long-term memory
+        # Distill into long-term memory with deterministic contradiction resolution
         pref_key = f"{facility_id}_{action_type}"
         prefs = self.long_term_beliefs["officer_action_preferences"].get(pref_key, {"approved": 0, "rejected": 0})
         if decision == "APPROVED":
             prefs["approved"] += 1
+            # Contradiction Resolution: Overturn prior rejection penalties for this action
+            if prefs.get("rejected", 0) > 0:
+                prefs["rejected"] = max(0, prefs["rejected"] - 1)
+            # Remove matching rejection patterns from active memory
+            pat_prefix = f"{action_type} on {medicine_id}"
+            self.long_term_beliefs["rejected_patterns"] = [
+                p for p in self.long_term_beliefs["rejected_patterns"]
+                if not p.startswith(pat_prefix)
+            ]
         else:
             prefs["rejected"] += 1
             self.long_term_beliefs["rejected_patterns"].append(f"{action_type} on {medicine_id}: {reason}")

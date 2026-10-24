@@ -15,6 +15,7 @@ class WorldStoreService:
         self.contexts: Dict[str, Dict[str, Any]] = {}
         self.edges: List[Dict[str, Any]] = []
         self.snapshots: List[Dict[str, Any]] = []
+        self.conflicts: List[Dict[str, Any]] = []
 
     @staticmethod
     def derive_stable_id(prefix: str, content: str) -> str:
@@ -53,6 +54,30 @@ class WorldStoreService:
             if (e["from"] == entity_id or e["to"] == entity_id) and (relation is None or e["relation"] == relation)
         ]
 
+    def record_conflict(
+        self,
+        conflict_id: str,
+        conflict_type: str,
+        entity_ids: List[str],
+        details: Dict[str, Any],
+        agent_id: str = "reconciler"
+    ) -> Dict[str, Any]:
+        conflict_record = {
+            "conflict_id": conflict_id,
+            "type": conflict_type,
+            "entity_ids": entity_ids,
+            "details": details,
+            "recorded_by": agent_id,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        self.conflicts.append(conflict_record)
+        return conflict_record
+
+    def get_conflicts(self, entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        if not entity_id:
+            return self.conflicts
+        return [c for c in self.conflicts if entity_id in c.get("entity_ids", [])]
+
 class IngestPipelineService:
     def __init__(self, store: WorldStoreService):
         self.store = store
@@ -89,6 +114,23 @@ class IngestPipelineService:
         self.store.write_edge(fac_id, inv_id, "HOLDS_INVENTORY", agent_id=agent_id)
         self.store.write_edge(inv_id, med_id, "FOR_MEDICINE", agent_id=agent_id)
         return inv_id
+
+    def record_discrepancy_conflict(
+        self,
+        discrepancy: Dict[str, Any],
+        facility_id: str,
+        medicine_id: str,
+        agent_id: str = "reconciler"
+    ) -> Dict[str, Any]:
+        disc_id = discrepancy.get("discrepancy_id", f"DISC_{facility_id}_{medicine_id}")
+        disc_type = str(discrepancy.get("anomaly_type", "UNKNOWN_DISCREPANCY"))
+        return self.store.record_conflict(
+            conflict_id=disc_id,
+            conflict_type=disc_type,
+            entity_ids=[facility_id, medicine_id],
+            details=discrepancy,
+            agent_id=agent_id
+        )
 
 class ContextBuilderService:
     def __init__(self, store: WorldStoreService):
