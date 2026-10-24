@@ -1,11 +1,13 @@
 """
 Generate 3 input examples and execute them through MedTrace to produce 3 output examples.
 Fulfills Technical Execution Requirement: Section 1 (Examples).
+Synchronized with FastAPI POST /run response contract.
 """
 
 import os
 import sys
 import json
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.orchestrator import MedTraceOrchestrator
 
@@ -53,22 +55,26 @@ def main():
         print(f"[+] Wrote {in_path}")
 
         # Execute investigation
+        start_time = time.time()
         pack = orchestrator.run_investigation(
             facility_id=inp["facility_id"],
             medicine_id=inp["medicine_id"]
         )
+        duration = round(time.time() - start_time, 2)
 
         out_data = {
             "run_id": pack.run_id,
             "status": "success",
-            "facility_id": pack.facility_id,
-            "medicine_id": pack.medicine_id,
-            "days_of_cover_trust": pack.days_of_cover_trust,
-            "days_of_cover_naive": pack.days_of_cover_naive,
-            "understated_gap_percent": pack.understated_gap_percent,
-            "winning_hypothesis": pack.winning_hypothesis.model_dump(),
-            "recommendations": [r.model_dump() for r in pack.recommendations],
-            "skeptic_rounds": pack.skeptic_rounds,
+            "execution_time_seconds": duration,
+            "output": pack.model_dump(),
+            "agents": [
+                {"name": "Reconciler", "role": "Audits ledger vs physical audit vs batch expiry"},
+                {"name": "WorldModel", "role": "Maintains shared canonical grounded entities & relations"},
+                {"name": "Investigator", "role": "Generates >= 3 competing hypotheses with evidence queries"},
+                {"name": "Skeptic & Number Auditor", "role": "Challenging assertions & verifying deterministic arithmetic"},
+                {"name": "ActionPlanner", "role": "Ranks transfers, PO expedites, and emergency orders"},
+                {"name": "HMEM", "role": "Cross-session memory of officer approvals/overrides"}
+            ],
             "trace_file": pack.trace_file
         }
 

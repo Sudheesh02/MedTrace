@@ -1,71 +1,110 @@
 {
-  "run_id": "run-a03f66cb",
+  "run_id": "run-42f77ca5",
   "status": "success",
-  "facility_id": "FAC-DH-01",
-  "medicine_id": "MED-007",
-  "days_of_cover_trust": 104.75,
-  "days_of_cover_naive": 104.75,
-  "understated_gap_percent": 0.0,
-  "winning_hypothesis": {
-    "hypothesis_id": "H2-SUPPLIER-SLIP",
-    "title": "Upstream Supplier Delivery Slippage",
-    "cause": "Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window.",
-    "likelihood": 0.75,
-    "supporting_evidence": [
-      "Promised delivery expected at Day 6, but historical slip adds +3 days, leaving a 0.0-day unserved gap."
+  "execution_time_seconds": 0.75,
+  "output": {
+    "run_id": "run-42f77ca5",
+    "facility_id": "FAC-DH-01",
+    "medicine_id": "MED-007",
+    "stockout_prevented": false,
+    "days_of_cover_trust": 103.94,
+    "days_of_cover_naive": 104.75,
+    "understated_gap_percent": 0.0,
+    "investigation_summary": "Skeptic approved revised hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 2). Differential elimination confirmed against 'Upstream Supplier Lead Time Slippage' (separation Delta=0.45). Audited numbers verified: Usable Stock = 6362.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 4 items checked.",
+    "winning_hypothesis": {
+      "hypothesis_id": "H1-INTERNAL-AUDIT",
+      "title": "Phantom Stock Drift in Warehouse Ledger",
+      "cause": "Physical audit confirms ledger overstates true physical stock by 50.0 units.",
+      "likelihood": 0.95,
+      "supporting_evidence": [
+        "Audit count confirms 6362.0 physical units vs 6412.0 on ledger.",
+        "Ledger drift variance of 50.0 units recorded.",
+        "Differential confirmation: Physical inventory audit and batch quality records isolate variance directly to facility ledger, refuting external transit delay.",
+        "Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine."
+      ],
+      "refuting_evidence": [
+        "Unlogged receipt from another facility arrived post-audit."
+      ],
+      "confirming_query": "SELECT counted_stock, date FROM zetaris.lightning.physical_audit WHERE facility_id = 'FAC-DH-01' AND medicine_id = 'MED-007' ORDER BY date DESC LIMIT 1"
+    },
+    "recommendations": [
+      {
+        "action_id": "ACT-TRF-FAC-DH-01-MED-007",
+        "action_type": "PEER_TRANSFER",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "source_facility_id": "FAC-WH-01",
+        "supplier_id": null,
+        "feasibility_score": 0.9,
+        "justification": "Transfer 0.0 units from peer warehouse FAC-WH-01 (usable surplus 17066 units, lead time 24h) to cover 0.0-day gap.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "peer_surplus": 17066.0
+        }
+      },
+      {
+        "action_id": "ACT-EXP-FAC-DH-01-MED-007",
+        "action_type": "EXPEDITE_PO",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "source_facility_id": null,
+        "supplier_id": "SUP-003",
+        "feasibility_score": 0.75,
+        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-003 to compress delivery slip and cover 0.0-day gap.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-EMERG-FAC-DH-01-MED-007",
+        "action_type": "EMERGENCY_PURCHASE",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.6,
+        "justification": "Authorise district emergency local procurement quota of 0.0 units if transfer or supplier dispatch cannot arrive within 48h.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0
+        }
+      }
     ],
-    "refuting_evidence": [
-      "Supplier confirms expedited dispatch with verified logistics tracking."
-    ],
-    "confirming_query": "SELECT delivered_date, scheduled_date FROM usaid_deliveries WHERE vendor = ? LIMIT 10"
+    "skeptic_rounds": 2,
+    "trace_file": "logs\\trace_run-42f77ca5.jsonl",
+    "escalated_to_human": false,
+    "escalation_reason": null
   },
-  "recommendations": [
+  "agents": [
     {
-      "action_id": "ACT-TRF-FAC-DH-01-MED-007",
-      "action_type": "PEER_TRANSFER",
-      "facility_id": "FAC-DH-01",
-      "medicine_id": "MED-007",
-      "recommended_units": 0.0,
-      "source_facility_id": "FAC-WH-01",
-      "supplier_id": null,
-      "feasibility_score": 0.9,
-      "justification": "Transfer 0.0 units from District Central Store (lead time 24h) to cover 0.0-day gap.",
-      "number_provenance": {
-        "shortfall_units": 0.0,
-        "gap_days": 0.0
-      }
+      "name": "Reconciler",
+      "role": "Audits ledger vs physical audit vs batch expiry"
     },
     {
-      "action_id": "ACT-EXP-FAC-DH-01-MED-007",
-      "action_type": "EXPEDITE_PO",
-      "facility_id": "FAC-DH-01",
-      "medicine_id": "MED-007",
-      "recommended_units": 0.0,
-      "source_facility_id": null,
-      "supplier_id": "SUP-001",
-      "feasibility_score": 0.75,
-      "justification": "Issue urgent dispatch escalation to contracted supplier to compress historical delivery slip.",
-      "number_provenance": {
-        "shortfall_units": 0.0,
-        "gap_days": 0.0
-      }
+      "name": "WorldModel",
+      "role": "Maintains shared canonical grounded entities & relations"
     },
     {
-      "action_id": "ACT-EMERG-FAC-DH-01-MED-007",
-      "action_type": "EMERGENCY_PURCHASE",
-      "facility_id": "FAC-DH-01",
-      "medicine_id": "MED-007",
-      "recommended_units": 0.0,
-      "source_facility_id": null,
-      "supplier_id": null,
-      "feasibility_score": 0.6,
-      "justification": "Authorise district emergency local procurement quota if transfer cannot be dispatched within 48h.",
-      "number_provenance": {
-        "shortfall_units": 0.0,
-        "gap_days": 0.0
-      }
+      "name": "Investigator",
+      "role": "Generates >= 3 competing hypotheses with evidence queries"
+    },
+    {
+      "name": "Skeptic & Number Auditor",
+      "role": "Challenging assertions & verifying deterministic arithmetic"
+    },
+    {
+      "name": "ActionPlanner",
+      "role": "Ranks transfers, PO expedites, and emergency orders"
+    },
+    {
+      "name": "HMEM",
+      "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "skeptic_rounds": 1,
-  "trace_file": "logs\\trace_run-a03f66cb.jsonl"
+  "trace_file": "logs\\trace_run-42f77ca5.jsonl"
 }

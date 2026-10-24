@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+logs/*.jsonl
+.env
+.env.*
+!.env.example
+data/real/raw/*.zip
+data/real/raw/*.tar.gz

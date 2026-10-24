@@ -55,7 +55,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 2: Test & Finalize World Model Conflict Tracking & Ingest (Test W2)
 - **Priority**: P0 (Sponsor Tech 10 pts & Execution Plan Phase 4.3)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`app/engines/world_model.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/engines/world_model.py), [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_world_model.py)
 - **Problem**: Execution Plan Phase 4 explicitly specifies Test W2: "all planted conflicts of types 1, 4, 7, 8 are recorded as conflicts." Although `record_conflict` and `get_conflicts` methods were added to `WorldStoreService`, automated test coverage in `tests/test_world_model.py` is missing, leaving Meterless World Model conflict ingestion unverified.
 - **Action**:
@@ -68,7 +68,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 3: Test & Finalize H-MEM Deterministic Contradiction Resolution (Test H2)
 - **Priority**: P0 (Sponsor Tech 10 pts & Execution Plan Phase 4.6)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`app/engines/hmem.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/engines/hmem.py), [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_world_model.py)
 - **Problem**: Execution Plan Phase 4 specifies Test H2: "a later contradicting decision resolves the conflict deterministically." Contradiction resolution logic in `HMemEngine.record_officer_decision` lacks an automated unit test.
 - **Action**:
@@ -80,7 +80,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 4: Input Entity Validation & Structured Error Responses in API / CLI
 - **Priority**: P1 (Production Quality & API Robustness)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/orchestrator.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open Agent/run.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/)
 - **Problem**: Passing `facility_id="INVALID"` and `medicine_id="INVALID"` silently creates an investigation, defaults missing ledger/consumption to 10.0 units/day, invents a 90-unit shortfall, and returns `stockout_prevented=True` with recommended transfers to non-existent facilities.
 - **Action**:
@@ -93,7 +93,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 5: Real Surplus & Expiry Validation for Peer Transfers in Action Planner
 - **Priority**: P1 (Operational Credibility & Execution Plan Section 2.2 / 4.2)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/action_planner.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_agents.py)
 - **Problem**: `ActionPlannerAgent` always hardcodes `source_facility_id="FAC-WH-01"` without checking: (a) whether the target facility IS `FAC-WH-01`, (b) whether `FAC-WH-01` actually holds usable stock of that medicine, or (c) whether batches at `FAC-WH-01` expire before arrival.
 - **Action**:
@@ -107,7 +107,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 6: Low-Confidence Human Escalation Path (Execution Plan Phase 3.6 / 4.2)
 - **Priority**: P1 (Responsible AI & Hackathon Rubric)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/orchestrator.py), [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/models/schemas.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open Agent/run.py)
 - **Problem**: Execution Plan Section 4.2 specifies `Skeptic -> "low confidence" -> Escalate to human`. Currently, if Skeptic confidence remains below threshold after 3 rounds, `Orchestrator` still assigns `winning_hyp = hypotheses[0]` and outputs `stockout_prevented=True` without flagging human escalation.
 - **Action**:
@@ -120,7 +120,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 7: Eliminate Remaining Entity & Supplier String Literals in `BacktestEngine`
 - **Priority**: P1 (Methodological Rigor & Technical Integrity)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/backtest/engine.py), [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_backtest.py)
 - **Problem**: In `app/backtest/engine.py`: line 361 hardcodes `if med == "MED-009" and len(open_pos) >= 2 and fac_meta.get("level") == "CHC":`, line 316 checks `opo.get("supplier_id") == "SUP-004"`, and line 324 checks `opo.get("supplier_id") == "SUP-001"`.
 - **Action**:
@@ -132,7 +132,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 8: Synchronize README Evaluation Table with Measured Backtest Output
 - **Priority**: P1 (Documentation Integrity & Zero-Fluff Rule)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`README.md`](file:///C:/Users/Asus/Desktop/Open Agent/README.md)
 - **Problem**: `README.md` lines 62-69 claim `Early Warning Lead Time: +14.4 days`, `Recall: 99.1%`, `Precision: 100.0%`, and `False Reorders: 4`. However, `scripts/run_backtest.py` across seeds 1–4 actually measures: `Early Warning Lead Time: +13.1 days (64.1d vs 51.0d)`, `Stockout Recall: 100.0%`, `Anomaly Precision: 97.7%`, `Anomaly Recall: 92.5%`, `Anomaly F1 Score: 94.8%`, and `False Emergency Orders: 0`.
 - **Action**:
@@ -144,7 +144,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 9: Synchronize `output_examples/` with API Response Schema
 - **Priority**: P2 (Documentation & Contract Integrity)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`output_examples/*.json`](file:///C:/Users/Asus/Desktop/Open Agent/output_examples/), [`scripts/generate_examples.py`](file:///C:/Users/Asus/Desktop/Open Agent/scripts/generate_examples.py)
 - **Problem**: `scripts/generate_examples.py` constructs a flattened dictionary for `output_examples/*.json`, omitting `execution_time_seconds` and `agents` metadata, while `run.py`'s `POST /run` wraps the pack inside `{"run_id": ..., "status": "success", "execution_time_seconds": ..., "output": pack.model_dump(), "agents": [...]}`. Furthermore, Sample 1 and 2 output examples currently contain stale `0.0` values.
 - **Action**:
@@ -156,7 +156,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 10: Build Automated FastAPI & CLI Test Suite (`tests/test_api.py`)
 - **Priority**: P2 (Test Coverage & CI/CD)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/), [`requirements.txt`](file:///C:/Users/Asus/Desktop/Open Agent/requirements.txt)
 - **Problem**: There are zero tests for `run.py`, FastAPI endpoints (`GET /health`, `POST /run`), CLI argument parsing, or HTTP error responses. Additionally, `httpx` is needed by `starlette.testclient` / `fastapi.testclient` but is omitted from `requirements.txt`.
 - **Action**:
@@ -172,7 +172,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 11: Production Dockerfile Hardening & Container Networking
 - **Priority**: P2 (Packaging & Judge Portability)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`Dockerfile`](file:///C:/Users/Asus/Desktop/Open Agent/Dockerfile), [`.dockerignore`](file:///C:/Users/Asus/Desktop/Open Agent/.dockerignore), [`README.md`](file:///C:/Users/Asus/Desktop/Open Agent/README.md)
 - **Problem**: `Dockerfile` lacks a `HEALTHCHECK` directive. There is no `.dockerignore` file, meaning `.git`, `.pytest_cache`, `tests/`, and large files (`drug-shortages-0001-of-0001.json.zip`) are copied into the Docker build context. Furthermore, instructions for container-to-host networking (`--add-host=host.docker.internal:host-gateway`) are undocumented.
 - **Action**:
@@ -185,7 +185,7 @@ A rigorous audit of [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.
 
 ### Item 12: Publish Zetaris Source Registration & LMIS Export Contract Docs
 - **Priority**: P2 (Sponsor Tech Deliverables & Hackathon Polish)
-- **Status**: Ready for Implementation
+- **Status**: [x] COMPLETED & VERIFIED
 - **Files**: [`scripts/register_zetaris_sources.md`](file:///C:/Users/Asus/Desktop/Open Agent/scripts/), [`data/lmis_export_contract.md`](file:///C:/Users/Asus/Desktop/Open Agent/data/), [`README.md`](file:///C:/Users/Asus/Desktop/Open Agent/README.md)
 - **Problem**: Execution Plan Section 8 (DC-8.7 & DC-11.1) requires `scripts/register_zetaris_sources.md` (exact SQL/REST commands for registering Postgres, CSV/Parquet, and openFDA in Zetaris) and `lmis_export_contract.md` (CSV schema contract for real district drug store LMIS export plug-in). Neither file exists.
 - **Action**:
@@ -201,4 +201,4 @@ To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
-Current Status: **19 passed in 19.90s**.
+Current Status: **37 passed in 25.95s** (100% of 12 prioritized overnight items completed and verified).
