@@ -28,11 +28,21 @@ class RunRequest(BaseModel):
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "app": "MedTrace", "sample_mode": orchestrator.llm_client.sample_mode}
+    return {
+        "status": "ok",
+        "app": "MedTrace",
+        "sample_mode": orchestrator.llm_client.sample_mode,
+        "zetaris_enabled": orchestrator.data_store.use_zetaris
+    }
 
 @app.post("/run")
 def api_run(req: RunRequest):
     start_time = time.time()
+    if req.options and req.options.get("sample_mode") is not None:
+        force_sample = bool(req.options.get("sample_mode"))
+        orchestrator.llm_client.sample_mode = force_sample
+        if force_sample:
+            orchestrator.data_store.use_zetaris = False
     try:
         pack = orchestrator.run_investigation(
             facility_id=req.facility_id or "FAC-DH-01",
@@ -75,6 +85,8 @@ def main():
 
     if args.sample_mode:
         os.environ["SAMPLE_MODE"] = "true"
+        orchestrator.llm_client.sample_mode = True
+        orchestrator.data_store.use_zetaris = False
 
     if args.cli:
         print(f"[*] Starting MedTrace CLI Investigation: Facility={args.facility}, Medicine={args.medicine}...")

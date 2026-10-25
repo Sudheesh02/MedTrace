@@ -13,8 +13,12 @@ from datetime import datetime
 
 class DataStore:
     def __init__(self, use_zetaris: Optional[bool] = None):
+        sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
         if use_zetaris is None:
-            self.use_zetaris = os.getenv("USE_ZETARIS", "false").lower() in ("true", "1")
+            if sample_mode:
+                self.use_zetaris = False
+            else:
+                self.use_zetaris = os.getenv("USE_ZETARIS", "false").lower() in ("true", "1")
         else:
             self.use_zetaris = use_zetaris
         self.base_url = os.environ.get("ZETARIS_BASE_URL", "http://localhost:3000").rstrip("/")

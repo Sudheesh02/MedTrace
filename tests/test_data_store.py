@@ -171,3 +171,15 @@ def test_data_store_env_toggle(monkeypatch):
     assert s3.use_zetaris is True
     s4 = DataStore(use_zetaris=False)
     assert s4.use_zetaris is False
+
+def test_data_store_sample_mode_disables_zetaris_by_default(monkeypatch):
+    """Verify that SAMPLE_MODE=true forces use_zetaris to False unless explicitly overridden."""
+    monkeypatch.setenv("SAMPLE_MODE", "true")
+    monkeypatch.setenv("USE_ZETARIS", "true")
+    store = DataStore()
+    assert store.use_zetaris is False
+
+    # Explicit override still respected if requested
+    store_override = DataStore(use_zetaris=True)
+    assert store_override.use_zetaris is True
+

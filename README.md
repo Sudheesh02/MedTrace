@@ -74,12 +74,25 @@ Evaluated across a **180-day facility simulation replay** across seeds 1–3 and
 
 ## 🛠 Technology Stack & Sponsor Integrations
 
+> 🏆 **Detailed Sponsor Technical Guide**: For exhaustive architecture diagrams, Zetaris REST SQL queries, Meterless World Model & H-MEM state machines, and conformance test mappings, read [SPONSOR_TECH.md](SPONSOR_TECH.md).
+
 | Layer | Technology | Role & Integration |
 | :--- | :--- | :--- |
 | **Headline Data Sponsor** | **Zetaris** | Multi-container data federation (Postgres metastore + Spark driver + REST SQL proxy) querying simulated warehouse ledgers and live openFDA REST data. See [Zetaris Registration Guide](scripts/register_zetaris_sources.md) and [Hospital LMIS Export Contract](data/lmis_export_contract.md). |
 | **Headline Power Sponsor** | **NVIDIA Nemotron** / **Meterless** | High-speed LLM reasoning via `nvidia/nemotron-3.5-lightning-30b-a3b` and Meterless Nightshift runtime. |
-| **Headless Cognition** | **Meterless World Model & H-MEM** | Shared canonical entity states (`ent_inv_*`) and cross-session episodic memory recording officer rejections and approvals. |
+| **Headless Cognition** | **Meterless World Model & H-MEM** | Shared canonical entity states (`ent_inv_*`) and cross-session episodic memory recording officer rejections and approvals. Verified by Phase 4 Tests W1, W2, H1, H2. |
 | **API & Backend** | **FastAPI & Pydantic v2** | High-performance async service with CLI `--cli` mode and OpenAPI endpoints. |
+
+---
+
+## 📋 Hackathon Submission Deliverables & Compliance
+
+In strict accordance with the **Open Agent Hackathon 2026** submission guidelines:
+- **03 GitHub Repository**: Clean codebase, full test suite, and reproducible run instructions.
+- **04 Sponsor Tech Explanation**: Complete breakdown of Zetaris, Meterless, NVIDIA, and Cursor in [SPONSOR_TECH.md](SPONSOR_TECH.md).
+- **05 Pre-Existing Components Declaration**: Detailed declaration of open-source libraries vs new hackathon-built architecture in [PRE_EXISTING_COMPONENTS.md](PRE_EXISTING_COMPONENTS.md).
+- **Offline / Sample Mode Conformance**: Fully supports offline evaluation without active credentials via `SAMPLE_MODE=true` or `python run.py --cli --sample-mode`.
+- **Data Provenance & Download Scripts**: All raw datasets are lightweight public open data, with automated download scripts documented in [data/README.md](data/README.md) and executable via `python scripts/download_real_data.py`.
 
 ---
 
@@ -117,9 +130,13 @@ python smoke_test.py
 *Verifies both Zetaris REST SQL API and NVIDIA Nemotron connectivity.*
 
 ### 4. Run CLI Investigation
-Audit a specific facility and medicine:
+Audit a specific facility and medicine (live or offline sample mode):
 ```bash
+# Standard live run (connects to configured Zetaris / Nemotron endpoints)
 python run.py --cli --facility FAC-CHC-01 --medicine MED-001
+
+# Offline / Judge Sample Mode (runs 100% locally with zero external network dependencies)
+python run.py --cli --facility FAC-CHC-01 --medicine MED-001 --sample-mode
 ```
 
 ### 5. Launch FastAPI Service

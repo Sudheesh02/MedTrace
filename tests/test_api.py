@@ -21,6 +21,23 @@ def test_api_health_endpoint(client):
     data = response.json()
     assert data["status"] == "ok"
     assert data["app"] == "MedTrace"
+    assert "sample_mode" in data
+    assert "zetaris_enabled" in data
+
+def test_api_run_with_sample_mode_option(client):
+    payload = {
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "options": {"sample_mode": True}
+    }
+    response = client.post("/run", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    pack = data["output"]
+    assert pack["facility_id"] == "FAC-DH-01"
+    assert pack["medicine_id"] == "MED-007"
+
 
 def test_api_run_valid_investigation(client):
     payload = {
