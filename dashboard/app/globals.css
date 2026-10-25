@@ -322,3 +322,34 @@ button.icon { padding: 4px 6px; } button.icon.on { color: var(--accent); backgro
   .brand { order: 1; } .top-right { order: 2; margin-left: auto; width: auto; } .nav { order: 3; width: 100%; } .nav button { flex: 1; justify-content: center; }
 }
 @media (max-width: 520px) { .kpi-s { display: none; } .kpi-v { font-size: 22px; } .top-right { width: auto; } }
+/* iteration 3 */
+.b-live { background: linear-gradient(90deg, rgba(63,209,143,.16), rgba(90,167,255,.16)); color: #bfeedd; border-color: rgba(63,209,143,.45); }
+.b-live .ic { color: var(--ok); }
+.chiprow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.eval-card { border: 1px solid var(--line); border-radius: 12px; background: var(--surface2); padding: 14px; min-width: 0; }
+.eval-card h3 { display: flex; align-items: center; gap: 7px; margin: 0 0 10px; }
+.eval-card h3 .ic { width: 15px; height: 15px; color: var(--accent); }
+.two.eq { align-items: stretch; }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 9px; font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
+.steps li::marker { color: var(--accent); font-weight: 700; }
+.steps b { color: var(--ink); }
+td.neg { color: var(--warn); font-weight: 600; }
+.telem { margin: 10px 14px 0; border: 1px solid rgba(63,209,143,.28); border-radius: 10px; background: linear-gradient(180deg, rgba(63,209,143,.07), transparent); padding: 10px 12px; }
+.telem-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 650; font-size: 12.5px; margin-bottom: 8px; }
+.telem-h .ic { width: 14px; height: 14px; color: var(--ok); margin-right: 6px; vertical-align: -2px; }
+.telem-g { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.telem-g > div { background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+.telem-g b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+.telem-g span { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.telem-t { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.telem-t .badge { font-weight: 500; }
+.livehero { display: flex; gap: 10px; align-items: flex-start; border: 1px solid rgba(63,209,143,.35); background: linear-gradient(90deg, rgba(63,209,143,.10), rgba(90,167,255,.08)); border-radius: 10px; padding: 9px 12px; margin-bottom: 12px; font-size: 12.5px; color: var(--ink2); }
+.livehero .ic { width: 16px; height: 16px; color: var(--ok); margin-top: 1px; flex: none; }
+.livehero b { color: var(--ink); }
+.ctxnote { font-size: 12px; color: var(--ink2); margin-top: 10px; }
+/* iteration 3: tables on narrow screens scroll sideways instead of squeezing every cell into 2-3 lines */
+@media (max-width: 640px) {
+  .tablewrap table { min-width: 520px; }
+  .tablewrap th, .tablewrap td { white-space: nowrap; }
+  .card h3 { flex-wrap: wrap; row-gap: 4px; }
+}

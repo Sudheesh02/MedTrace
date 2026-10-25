@@ -4,6 +4,11 @@
 //   node scripts/smoke.mjs --isolated  -> copies the built app + data-bundle to a temp dir OUTSIDE the repo
 //                                         (no parent files, no DATA_SOURCE hint) so auto-detect must serve the
 //                                         bundle. This simulates a Vercel-style deployment without the repo.
+//   node scripts/smoke.mjs --e2e       -> repo mode PLUS a combined end-to-end test: starts the backend (python run.py,
+//                                         SAMPLE_MODE=true, Zetaris off) on :8000, checks "Backend online" + alerts from
+//                                         backend /triage, runs an analysis through POST /api/run, checks the new pack in
+//                                         /api/detail, stops the backend and checks graceful offline mode. Files the test
+//                                         created in logs/, output/ and output_examples/ are removed again.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -14,6 +19,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const repo = path.resolve(root, '..');
 const ISOLATED = process.argv.includes('--isolated') || process.env.SMOKE_MODE === 'isolated';
+const E2E = process.argv.includes('--e2e');
 const PORT = Number(process.env.SMOKE_PORT || (ISOLATED ? 3198 : 3199));
 const base = `http://localhost:${PORT}`;
 const nextBin = path.join(root, 'node_modules', 'next', 'dist', 'bin', 'next');
@@ -54,7 +60,15 @@ const server = spawn(process.execPath, [nextBin, 'start', '-p', String(PORT)], {
 let serverLog = '';
 server.stdout.on('data', (d) => (serverLog += d));
 server.stderr.on('data', (d) => (serverLog += d));
+let backend = null;
+const stopBackend = () => {
+  if (!backend) return;
+  if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(backend.pid), '/T', '/F'], { stdio: 'ignore' });
+  else backend.kill('SIGTERM');
+  backend = null;
+};
 const stop = () => {
+  stopBackend();
   if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore' });
   else server.kill('SIGTERM');
 };
@@ -107,6 +121,18 @@ try {
     check('isolated: stored-run counts match the bundle index', items.every((x) => (x.stored_runs || 0) === (idx.countByPair[`${x.facility_id}/${x.medicine_id}`] || 0)));
   }
 
+  // Live (real LLM + Zetaris) packs committed in output_examples/live_*.json
+  const liveFiles = fs.existsSync(path.join(ISOLATED ? path.join(appDir, 'data-bundle') : repo, 'output_examples'))
+    ? fs.readdirSync(path.join(ISOLATED ? path.join(appDir, 'data-bundle') : repo, 'output_examples')).filter((n) => /^live_.+\.json$/.test(n))
+    : [];
+  const livePairs = items.filter((x) => x.pack_live);
+  check('live packs are recognised (one live pair per live_*.json)', livePairs.length === liveFiles.length && liveFiles.length > 0, `${livePairs.length} live pairs, ${liveFiles.length} files`);
+  const dflt = items.find((x) => x.facility_id === 'FAC-WH-02' && x.medicine_id === 'MED-007');
+  if (dflt) {
+    const dd = await getJson('/api/detail?facility=FAC-WH-02&medicine=MED-007');
+    check('default pair FAC-WH-02/MED-007 is live: real LLM, no fallback, Zetaris telemetry', dflt.pack_live && dd.body?.run?.live === true && dd.body.run.fallback_steps === 0 && dd.body.run.data_source?.queries_ok > 0, `${dd.body?.run?.file}, ${dd.body?.run?.data_source?.queries_ok}/${dd.body?.run?.data_source?.queries_attempted} queries`);
+  }
+
   const withRun = defaultPick[0] || items.find((x) => x.stored_runs > 0);
   if (withRun) {
     const d = await getJson(`/api/detail?facility=${withRun.facility_id}&medicine=${withRun.medicine_id}`);
@@ -123,11 +149,77 @@ try {
   const dataRoot = ISOLATED ? path.join(appDir, 'data-bundle') : repo;
   const mem = await getJson('/api/memory');
   const memFiles = ['trace_without_memory.jsonl', 'trace_with_memory.jsonl'].every((f) => fs.existsSync(path.join(dataRoot, 'logs', f)));
-  check('/api/memory matches presence of trace files', memFiles ? mem.status === 200 && !!mem.body?.verdict : mem.status === 404, `verdict=${mem.body?.verdict}`);
+  const abDir = path.join(dataRoot, 'output_examples', 'live_runs', 'memory_ab');
+  const hasAb = fs.existsSync(abDir) && fs.readdirSync(abDir).some((n) => /^before_.+\.json$/.test(n));
+  check('/api/memory matches presence of trace files', memFiles || hasAb ? mem.status === 200 && !!mem.body?.verdict : mem.status === 404, `kind=${mem.body?.kind} verdict=${mem.body?.verdict}`);
+  if (hasAb) {
+    check('memory flip: live before/after pair is primary and same-input claim is computed from the data', mem.body?.kind === 'live' && typeof mem.body?.inputs_identical === 'boolean' && (mem.body.verdict !== 'flip' || mem.body.inputs_identical === true), `inputs_identical=${mem.body?.inputs_identical}, secondary=${mem.body?.secondary?.kind || 'none'}`);
+  }
 
   const ev = await getJson('/api/eval');
   const seedFiles = fs.existsSync(path.join(dataRoot, 'output')) ? fs.readdirSync(path.join(dataRoot, 'output')).filter((n) => /^backtest_seed_\d+\.json$/.test(n)) : [];
   check('/api/eval matches output/backtest_seed_*.json', ev.body?.seeds?.length === seedFiles.length && (seedFiles.length === 0 || ev.status === 200), `${ev.body?.seeds?.length} seeds`);
+
+  if (E2E && !ISOLATED) {
+    const walk = (d, acc = []) => {
+      if (!fs.existsSync(d)) return acc;
+      for (const n of fs.readdirSync(d)) {
+        const f = path.join(d, n);
+        if (fs.statSync(f).isDirectory()) walk(f, acc); else acc.push(path.relative(repo, f));
+      }
+      return acc;
+    };
+    const scan = () => ['logs', 'output', 'output_examples'].flatMap((d) => walk(path.join(repo, d)));
+    const before = new Set(scan());
+    const cacheCreated = [];
+    const up8000 = async () => { try { return (await fetch('http://localhost:8000/health')).ok; } catch { return false; } };
+    try {
+      check('e2e: nothing is listening on :8000 before the test', !(await up8000()));
+      const py = process.env.MEDTRACE_PYTHON || 'python';
+      backend = spawn(py, ['run.py'], { cwd: repo, stdio: 'ignore', windowsHide: true, env: { ...process.env, SAMPLE_MODE: 'true', USE_ZETARIS: 'false', PYTHONIOENCODING: 'utf-8' } });
+      let on = false;
+      for (let i = 0; i < 60 && !on; i++) { on = await up8000(); if (!on) await new Promise((r) => setTimeout(r, 1000)); }
+      check('e2e: backend (python run.py, sample mode) comes up', on);
+      if (!on) throw new Error('backend did not start');
+      const be2 = await getJson('/api/backend');
+      check('e2e: dashboard reports Backend online (sample mode)', be2.body?.reachable === true && be2.body?.sample_mode === true, JSON.stringify({ reachable: be2.body?.reachable, sample: be2.body?.sample_mode }));
+      const al2 = await getJson('/api/alerts?refresh=1');
+      const it2 = al2.body?.items || [];
+      check('e2e: alerts now come from backend /triage', al2.body?.source === 'backend' && it2.length === items.length && it2.length > 0, `${al2.body?.source}, ${it2.length} items`);
+      check('e2e: live chips survive the backend source', it2.filter((x) => x.pack_live).length === livePairs.length);
+      const target = it2.find((x) => x.urgency_tier === 'CRITICAL' && !x.has_pack) || it2.find((x) => !x.has_pack && !x.pack_live) || it2.find((x) => !x.pack_live);
+      check('e2e: found a pair to analyse', !!target, target ? `${target.facility_id}/${target.medicine_id}` : '');
+      const runRes = await fetch(base + '/api/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ facility_id: target.facility_id, medicine_id: target.medicine_id, sample_mode: true }) });
+      const rb2 = await runRes.json().catch(() => ({}));
+      check('e2e: POST /api/run through the dashboard succeeds', runRes.status === 200 && rb2.ok === true && !!rb2.run_id, `run_id=${rb2.run_id}, ${rb2.execution_time_seconds}s`);
+      if (rb2.run_id) cacheCreated.push(path.join(root, '.cache', 'runs', `${String(rb2.run_id).replace(/[^A-Za-z0-9_-]/g, '')}.json`));
+      const d2 = await getJson(`/api/detail?facility=${target.facility_id}&medicine=${target.medicine_id}`);
+      check('e2e: the new pack appears in the detail view', d2.body?.pack?.run_id === rb2.run_id && d2.body?.run?.run_id === rb2.run_id && Array.isArray(d2.body?.pack?.recommendations), `pack ${d2.body?.pack?._source}`);
+      const al3 = await getJson('/api/alerts');
+      check('e2e: the alert row now shows a stored plan without a manual refresh', !!(al3.body?.items || []).find((x) => x.facility_id === target.facility_id && x.medicine_id === target.medicine_id)?.has_pack);
+
+      stopBackend();
+      let down = false;
+      for (let i = 0; i < 20 && !down; i++) { down = !(await up8000()); if (!down) await new Promise((r) => setTimeout(r, 500)); }
+      check('e2e: backend stopped', down);
+      const be3 = await getJson('/api/backend');
+      check('e2e: dashboard reports the backend offline', be3.body?.reachable === false, be3.body?.error);
+      const al4 = await getJson('/api/alerts?refresh=1');
+      check('e2e: offline mode still serves all alerts from the local engine', al4.status === 200 && al4.body?.source !== 'backend' && (al4.body?.items || []).length === items.length, `${al4.body?.source_label}`);
+      const d4 = await getJson(`/api/detail?facility=${target.facility_id}&medicine=${target.medicine_id}`);
+      check('e2e: offline mode still shows the stored run and pack', d4.status === 200 && !!d4.body?.pack && !!d4.body?.run);
+      const run4 = await fetch(base + '/api/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ facility_id: target.facility_id, medicine_id: target.medicine_id }) });
+      const rb4 = await run4.json().catch(() => ({}));
+      check('e2e: Run analysis declines gracefully when offline (503 with a hint)', run4.status === 503 && /python run\.py/i.test(rb4.error || ''), rb4.error);
+    } finally {
+      stopBackend();
+      await new Promise((r) => setTimeout(r, 800));
+      let removed = 0;
+      for (const rel of scan()) if (!before.has(rel)) { try { fs.rmSync(path.join(repo, rel), { force: true }); removed += 1; } catch { /* ignore */ } }
+      for (const f of cacheCreated) { try { fs.rmSync(f, { force: true }); } catch { /* ignore */ } }
+      console.log(`e2e cleanup: removed ${removed} file(s) the test created in logs/, output/, output_examples/ and ${cacheCreated.length} dashboard cache pack(s).`);
+    }
+  }
 } catch (e) {
   failures += 1;
   console.error(String(e?.message || e));

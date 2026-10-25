@@ -39,6 +39,7 @@ function Kpis({ api, tier, setTier }) {
       shortfall: actionable.reduce((a, i) => a + (Number(i.shortfall_units) || 0), 0),
       withRuns: items.filter((i) => i.stored_runs > 0).length,
       withPack: items.filter((i) => i.has_pack).length,
+      live: items.filter((i) => i.pack_live).length,
       warnLow: warn.filter((i) => Number(i.trust_cover_days) < wc).length,
       supplierAll: items.filter((i) => (i.discrepancies_detected || []).includes(SUPPLIER)).length,
     };
@@ -84,16 +85,20 @@ function Kpis({ api, tier, setTier }) {
       <div className="kpi info">
         <div className="kpi-l"><History className="ic" />Investigated</div>
         <div className="kpi-v">{v(k.withRuns)}</div>
-        <div className="kpi-s">pairs with a stored run, {ready ? k.withPack : '-'} with a full action plan</div>
+        <div className="kpi-s">pairs with a stored run, {ready ? k.withPack : '-'} with a full action plan{ready && k.live ? `, ${k.live} live (real LLM + Zetaris)` : ''}</div>
       </div>
     </div>
   );
 }
 
 /** Pick the most useful first selection: a critical pair that has a stored full action pack. */
+const PREFERRED_DEFAULT = 'FAC-WH-02/MED-007'; // critical metformin: live real-LLM + Zetaris run with a full pack (a UI preference only)
 export function pickDefault(items) {
   const crit = orderedItems(items.filter((i) => i.urgency_tier === 'CRITICAL'));
-  const rank = (i) => (i.has_pack ? 2 : 0) + (i.latest_run?.llm_used ? 1 : 0) + (i.latest_run ? 0.5 : 0);
+  const liveCrit = crit.filter((i) => i.pack_live && i.pack_real_llm);
+  const pref = liveCrit.find((i) => `${i.facility_id}/${i.medicine_id}` === PREFERRED_DEFAULT);
+  if (pref) return pref;
+  const rank = (i) => (i.pack_live ? 4 : 0) + (i.has_pack ? 2 : 0) + (i.latest_run?.llm_used ? 1 : 0) + (i.latest_run ? 0.5 : 0);
   const best = [...crit].sort((a, b) => rank(b) - rank(a))[0];
   if (best && rank(best) > 0) return best;
   return crit[0] || orderedItems(items.filter((i) => i.has_pack))[0] || orderedItems(items)[0] || null;

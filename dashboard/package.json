@@ -9,6 +9,7 @@
     "start": "next start -p 3001",
     "smoke": "node scripts/smoke.mjs",
     "smoke:bundle": "node scripts/smoke.mjs --isolated",
+    "smoke:e2e": "node scripts/smoke.mjs --e2e",
     "bundle-data": "node scripts/bundle-data.mjs"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, CircleDashed, Database, Info, Search, Sparkles } from 'lucide-react';
+import { ChevronDown, CircleDashed, Database, Info, Radio, Search, Sparkles } from 'lucide-react';
 import { ErrorBox, ListSkeleton, TIER_CLASS, TierBadge, ago, num, pretty } from './ui.js';
 
 const SUPPLIER = 'supplier_delay_risk';
@@ -27,6 +27,7 @@ export function makeBands(rules) {
 }
 
 export function runChip(i) {
+  if (i.pack_live) return { cls: 'b-live', text: 'Live run', title: `Real LLM${i.pack_model ? ` (${i.pack_model})` : ''} + Zetaris live run. Stored action pack with ${i.pack_actions ?? 'several'} recommendation(s)${i.pack_no_action ? ', all with 0 units (no action needed)' : ''}.` };
   if (i.has_pack) return { cls: 'b-ok', text: 'Full plan', title: `Stored action pack with ${i.pack_actions ?? 'several'} recommendation(s)` };
   if (i.latest_run) {
     const lr = i.latest_run;
@@ -169,7 +170,7 @@ export default function Alerts({ api, tier, setTier, selected, onSelect, source 
                       <div className="t1">{b.id === 'CRITICAL' ? <span className="rank">#{n + 1}</span> : null}{i.generic_name} <span className="mono muted" style={{ fontWeight: 400 }}>{i.medicine_id}</span></div>
                       <div className="t2">{i.facility_name} <span className="mono">{i.facility_id}</span></div>
                       <div className="chips">
-                        {chip ? <span className={`badge ${chip.cls}`} title={chip.title}>{chip.text === 'Full plan' ? <Sparkles className="ic" /> : null}{chip.text}</span> : null}
+                        {chip ? <span className={`badge ${chip.cls}`} title={chip.title}>{chip.text === 'Full plan' ? <Sparkles className="ic" /> : chip.text === 'Live run' ? <Radio className="ic" /> : null}{chip.text}</span> : null}
                         {flagged.length ? flagged.slice(0, 2).map((d) => <span key={d} className={`tag ${d === SUPPLIER ? 'dim' : ''}`} title={d === SUPPLIER ? 'Flagged on nearly every pair by the engine' : undefined}>{pretty(d)}</span>) : <span className="tag" style={{ opacity: .6 }}>none flagged</span>}
                         {flagged.length > 2 ? <span className="tag">+{flagged.length - 2}</span> : null}
                       </div>

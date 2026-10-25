@@ -51,15 +51,20 @@ The UI is a dark, Linear/Datadog-style triage layout: KPI strip (counts by sever
 
 ## Triage tiers (and why Secure is 0)
 
-Tiers come unchanged from `app/agents/triage_planner.py`; the UI reads the thresholds from that file at runtime (and stores them in the bundle) so the legend cannot drift: **Critical** if trust-adjusted cover < 7 days or shortfall > 0; **Warning** if cover < 14 days or any anomaly is detected; otherwise **Secure**. The engine flags `supplier_delay_risk` on every pair, so with the "any anomaly means Warning" rule nothing can be Secure. The UI says so (info button in the list header) and only splits Warning into sub-bands for readability: low cover, other anomaly, supplier-delay flag only. The Warning band is collapsed by default; Critical is ranked by the engine's urgency score. The first load selects the top critical pair that has a stored full action pack. Keyboard: up/down (or j/k) moves through the list; on mobile the list drills into the detail with a back button.
+Tiers come unchanged from `app/agents/triage_planner.py`; the UI reads the thresholds from that file at runtime (and stores them in the bundle) so the legend cannot drift: **Critical** if trust-adjusted cover < 7 days or shortfall > 0; **Warning** if cover < 14 days or any anomaly is detected; otherwise **Secure**. The engine flags `supplier_delay_risk` on every pair, so with the "any anomaly means Warning" rule nothing can be Secure. The UI says so (info button in the list header) and only splits Warning into sub-bands for readability: low cover, other anomaly, supplier-delay flag only. The Warning band is collapsed by default; Critical is ranked by the engine's urgency score. The first load selects FAC-WH-02 / MED-007 (the live real-LLM run) when it exists, otherwise the top critical pair with a stored full action pack. Keyboard: up/down (or j/k) moves through the list; on mobile the list drills into the detail with a back button.
 
 ## Deploying without the parent repo (Vercel)
 
 ```powershell
-npm run bundle-data   # needs the parent repo + python; writes dashboard/data-bundle/ (about 340 KiB)
+npm run bundle-data   # needs the parent repo + python; writes dashboard/data-bundle/ (about 500 KiB)
 npm run build
 npm run smoke         # live repo mode
+npm run smoke:e2e     # repo mode + combined e2e: starts the backend (python run.py, sample mode, Zetaris off) on :8000, checks Backend online + alerts from /triage, runs an analysis through POST /api/run, checks the new pack, stops the backend, checks offline mode, then removes the files it created
 npm run smoke:bundle  # copies the build + bundle to a temp dir with NO parent files and checks bundle mode
 ```
 
 `bundle-data` copies real files only: the triage snapshot (run through the project's own engine), the latest stored trace per pair plus the traces behind stored action packs and the memory A/B traces, `output_examples/` and run-cache packs, `backtest_seed_*.json`, `curated_evaluation.md` and memos. It never copies `.env`, aborts if its secret scan (API-key, bearer, JWT, DB-URL patterns) matches anything, and `dashboard/.gitignore` un-ignores the bundle's `*.jsonl`. The app uses the bundle when `DATA_SOURCE=bundle`, or automatically when the parent repo's engine is not next to `dashboard/`. In that mode the UI says **Stored demo runs (snapshot)**, "Run analysis" is hidden and `POST /api/run` answers 503. Stored-run counts come from the real log folder at bundle time (`index.json`); only the latest trace per pair ships.
+
+## Live runs (real LLM + Zetaris)
+
+A trace counts as **live** only if the trace itself shows it: an LLM step ran, no step has `fallback: true`, and its `DATA_SOURCE_SUMMARY` event has `use_zetaris: true` with `queries_ok > 0`. Packs written to `output_examples/live_*.json` with `llm_used: true` and `fallback: false` get the **Live run** chip; the Why panel shows the Zetaris query telemetry from that event. Traces are read from `logs/live_trace_<run_id>.jsonl` (falling back to `trace_<run_id>.jsonl`). The Memory view's primary example is the live before/after pair under `output_examples/live_runs/memory_ab/`; "same inputs" is only claimed when the full Reconciler record is identical in both traces (the app compares it). The older sample-mode pair stays as secondary evidence with its caveat. Run analysis resets the alert/pack/trace caches so the new pack shows up immediately.

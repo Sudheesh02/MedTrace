@@ -44,8 +44,15 @@ export function indexTraces() {
   } catch {
     /* logs/ missing */
   }
+  const nameSet = new Set(names);
+  let dupes = 0;
   for (const name of names) {
     if (MEMORY_FILES.has(name)) continue;
+    // A committed live_trace_<id>.jsonl and a local trace_<id>.jsonl are the same run: count it once.
+    if (name.startsWith('trace_') && nameSet.has(`live_${name}`)) {
+      dupes += 1;
+      continue;
+    }
     const full = path.join(logs, name);
     try {
       const first = JSON.parse(readFirstLine(full));
@@ -69,8 +76,17 @@ export function indexTraces() {
     countByPair[k] = (countByPair[k] || 0) + 1;
     if (!latestByPair[k] || Date.parse(e.ts) > Date.parse(latestByPair[k].ts)) latestByPair[k] = e;
   }
-  indexCache = { at: Date.now(), value: { entries, latestByPair, countByPair, total: names.length } };
+  indexCache = { at: Date.now(), value: { entries, latestByPair, countByPair, total: names.length - dupes } };
   return indexCache.value;
+}
+
+/** Trace file for a run id. Normal runs are trace_<id>.jsonl; the committed live runs are live_trace_<id>.jsonl. */
+export function traceFileForRun(runId) {
+  if (!runId || !/^[A-Za-z0-9_-]{1,40}$/.test(String(runId))) return null;
+  for (const n of [`live_trace_${runId}.jsonl`, `trace_${runId}.jsonl`]) {
+    if (fs.existsSync(dir('logs', n))) return n;
+  }
+  return null;
 }
 
 export function readTraceEvents(name) {
@@ -126,6 +142,10 @@ function summarize(ev) {
       return 'Escalated to human officer';
     case 'RUN_COMPLETE':
       return `Run ${d.status || 'complete'}`;
+    case 'DATA_SOURCE_SUMMARY':
+      return d.use_zetaris
+        ? `Data layer: Zetaris (${d.source || 'sql'}, database ${d.database || '?'}): ${d.queries_ok ?? '?'}/${d.queries_attempted ?? '?'} queries succeeded, ${d.queries_fallback_to_csv ?? 0} fell back to CSV`
+        : `Data layer: local files (Zetaris not used)${d.source ? ` [${d.source}]` : ''}`;
     default:
       return ev.action;
   }
@@ -147,6 +167,8 @@ export function parseRun(events, file) {
   let audit = null;
   let complete = false;
   let leak = false;
+  let dataSource = null;
+  let context = null;
 
   const steps = events.map((ev, i) => {
     const d = ev.details || {};
@@ -159,6 +181,7 @@ export function parseRun(events, file) {
     const roundMatch = /^ROUND_(\d)_(START|EVALUATION)$/.exec(ev.action || '');
     if (roundMatch) currentRound = Number(roundMatch[1]);
     if (ev.action === 'RECONCILE_COMPLETE') reconcile = d;
+    if (ev.action === 'CONTEXT_BUILT') context = d;
     if (ev.action === 'CONTEXT_BUILT' && d.hmem_beliefs) hmemBeliefs = d.hmem_beliefs;
     if (ev.action && /^ROUND_\d_START$/.test(ev.action)) getRound(currentRound).previous_critique = d.previous_critique ? cleanText(d.previous_critique) : null;
     if (ev.action === 'HYPOTHESES_GENERATED') getRound(currentRound).hypotheses = ids(d.likelihoods, d.titles);
@@ -176,6 +199,17 @@ export function parseRun(events, file) {
     if (ev.action === 'ACTIONS_RECOMMENDED') action = { count: d.recommendations_count, top: d.top_action, reasoning: text };
     if (ev.action === 'ACTION_PLAN_AUDITED') audit = { passed: !!d.passed, verified: d.verified_count, flagged: (d.flagged_inconsistencies || []).map(cleanText) };
     if (ev.action === 'RUN_COMPLETE') complete = true;
+    if (ev.action === 'DATA_SOURCE_SUMMARY') {
+      dataSource = {
+        use_zetaris: !!d.use_zetaris,
+        database: d.database ?? null,
+        source: d.source ?? null,
+        queries_attempted: d.queries_attempted ?? null,
+        queries_ok: d.queries_ok ?? null,
+        queries_fallback_to_csv: d.queries_fallback_to_csv ?? null,
+        tables: d.tables && typeof d.tables === 'object' ? d.tables : null,
+      };
+    }
     const critique = d.critique ? cleanText(d.critique) : '';
     return {
       i: i + 1,
@@ -216,6 +250,12 @@ export function parseRun(events, file) {
     audit,
     steps,
     models: [...new Set(steps.map((s) => s.model).filter(Boolean))],
+    data_source: dataSource,
+    context,
+    llm_steps: steps.filter((s) => s.llm_used === true).length,
+    fallback_steps: steps.filter((s) => s.fallback === true).length,
+    // "Live" = a real LLM answered, no step fell back, and the trace itself records Zetaris serving the queries.
+    live: steps.some((s) => s.llm_used === true) && !steps.some((s) => s.fallback === true) && !!(dataSource?.use_zetaris && (dataSource.queries_ok ?? 0) > 0),
   };
 }
 
@@ -223,6 +263,11 @@ export function loadRun(file) {
   return parseRun(readTraceEvents(file), file);
 }
 const summaryCache = new Map();
+/** Drop cached trace index/summaries (after the dashboard created a new run). */
+export function resetTraceCaches() {
+  indexCache = { at: 0, value: null };
+  summaryCache.clear();
+}
 /** Compact facts about one stored trace (for list badges): models, whether an LLM answered, Skeptic outcome. */
 export function summarizeTrace(file) {
   if (summaryCache.has(file)) return summaryCache.get(file);
@@ -237,6 +282,9 @@ export function summarizeTrace(file) {
       rounds: run.rounds.length,
       escalated: !!run.escalation,
       complete: !!run.complete,
+      live: run.live,
+      data_source: run.data_source,
+      fallback_steps: run.fallback_steps,
     };
   } catch {
     s = null;

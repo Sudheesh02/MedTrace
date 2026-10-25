@@ -1,7 +1,21 @@
 'use client';
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, CircleCheck, CircleX, Gavel, MousePointerClick, Play, Search, UserRoundCheck, Swords } from 'lucide-react';
-import { DetailSkeleton, ErrorBox, TierBadge, num, pretty, when } from './ui.js';
+import { DetailSkeleton, ErrorBox, RunModeChip, TierBadge, num, pretty, when } from './ui.js';
+
+/** The tiles come from the triage preview; the stored run's Reconciler may report different figures. Show both, never hide the gap. */
+function ReconcileNote({ item, run }) {
+  const r = run?.reconcile;
+  if (!r) return null;
+  const pairs = [['usable stock', item.usable_stock, r.usable_stock, 0], ['shortfall', item.shortfall_units, r.shortfall, 1], ['cover (days)', item.trust_cover_days, r.days_of_cover_trust, 2]];
+  const differs = pairs.filter(([, a, b]) => Number.isFinite(Number(a)) && Number.isFinite(Number(b)) && Math.abs(Number(a) - Number(b)) > Math.max(0.5, 0.02 * Math.max(Math.abs(Number(a)), Math.abs(Number(b)))));
+  if (!differs.length) return null;
+  return (
+    <div className="note small warn" style={{ marginBottom: 0 }}>
+      <b>Stored run vs triage preview.</b> The tiles above come from the quick triage preview. The stored run (<span className="mono">{run.run_id}</span>) reconciled {pairs.map(([l, , b, d]) => `${l} ${num(b, d)}`).join(', ')}; the action plan below is computed from the run's figures. Differences: {differs.map(([l, a, b, d]) => `${l} ${num(a, d)} vs ${num(b, d)}`).join('; ')}.
+    </div>
+  );
+}
 
 function Metrics({ item }) {
   const cells = [
@@ -117,6 +131,7 @@ function ActionPlan({ pack, run, item, memo }) {
       {pack ? (
         <>
           <div className="small muted">Pack {pack.run_id}, from {pack._source}. Quantities are computed by the deterministic engine, not by an LLM.</div>
+          {pack.recommendations.length && pack.recommendations.every((r) => !Number(r.recommended_units)) ? <div className="note small" style={{ marginBottom: 0 }}><b>Control case: no action needed.</b> Every recommendation in this pack has 0 units, so the pipeline did not invent an order for a pair with ample verified stock.</div> : null}
           <div className="tablewrap" style={{ marginTop: 8 }}>
             <table>
               <thead><tr><th>Action</th><th className="num">Units</th><th className="num">Est. cost (USD)</th><th>Source / supplier</th><th className="num">Feasibility</th></tr></thead>
@@ -194,6 +209,7 @@ export default function Detail({ item, api, backend, snapshot, onRan, onBack }) 
             <button className="ghost backbtn" onClick={onBack}><ArrowLeft className="ic" />All alerts</button>
             <h2>{item.generic_name} <TierBadge tier={item.urgency_tier} /></h2>
             <div className="sub" style={{ marginTop: 3 }}>{item.facility_name} <span className="mono">{item.facility_id} / {item.medicine_id}</span></div>
+            {run_ ? <div className="chiprow"><RunModeChip run={run_} />{run_.data_source?.use_zetaris ? <span className="badge b-mute mono" title="Queries recorded by the Zetaris data layer in this run's trace">{run_.data_source.queries_ok}/{run_.data_source.queries_attempted} Zetaris queries ok, {run_.data_source.queries_fallback_to_csv ?? 0} CSV fallback</span> : null}</div> : null}
           </div>
           <div className="row">
             {snapshot ? (
@@ -211,7 +227,8 @@ export default function Detail({ item, api, backend, snapshot, onRan, onBack }) 
         <div className="sec">
           {msg ? <div className={`note small ${msg.err ? 'err' : ''}`} style={{ marginTop: 0 }}>{msg.text}</div> : null}
           <Metrics item={item} />
-          <div className="small muted" style={{ marginTop: 8 }}>Deterministic engine over the local data files (simulated).</div>
+          <div className="small muted" style={{ margin: '8px 0' }}>Deterministic triage engine over the local data files (simulated).</div>
+          <ReconcileNote item={item} run={run_} />
         </div>
       </section>
 

@@ -32,6 +32,9 @@ export function getEval() {
         false_negatives: a.false_negatives ?? null,
         stockout_recall_pct: j.metrics?.stockout_recall_pct ?? null,
         lead_time: j.metrics?.early_warning_lead_time_days ?? null,
+        total_transactions: j.performance_benchmarks?.total_transactions_evaluated ?? null,
+        replay_seconds: j.performance_benchmarks?.replay_duration_seconds ?? null,
+        timing: a.timing_evaluation ?? null,
       });
     } catch {
       /* skip malformed */
@@ -43,7 +46,22 @@ export function getEval() {
     const head = fs.readFileSync(curatedPath, 'utf8');
     const gen = /\*\*Generated\*\*:\s*(\S+)/.exec(head);
     const count = /\*\*Total Hand-Crafted Clinical Scenarios\*\*:\s*(\d+)/.exec(head);
-    curated = { file: 'output/curated_evaluation.md', generated: gen?.[1] ?? null, scenarios: count ? Number(count[1]) : null };
+    const decl = /\*\*Rule-Coverage & Regression Benchmark Declaration\*\*:\s*([^\n]*?)(?=\s*\*\*What is the|\n)/.exec(head);
+    const held = /held-out seeds ([\d-]+)/.exec(head);
+    const strip = (s) => s.replace(/\*\*/g, '').replace(/\\\\/g, '').trim();
+    const rows = [];
+    for (const line of head.split('\n')) {
+      const m = /^\|\s*\*\*(Anomaly Detection Precision|Anomaly Detection Recall|Anomaly F1 Score|Correct Abstention Rate[^*]*)\*\*\s*\|([^|]+)\|([^|]+)\|([^|]+)\|/.exec(line);
+      if (m) rows.push({ metric: strip(m[1]), baseline: strip(m[2]), medtrace: strip(m[3]), delta: strip(m[4]) });
+    }
+    curated = {
+      file: 'output/curated_evaluation.md',
+      generated: gen?.[1] ?? null,
+      scenarios: count ? Number(count[1]) : null,
+      declaration: decl ? strip(decl[1]).replace(/\s*\*\*What is.*$/, '') : null,
+      held_out_claim: held ? held[1] : null,
+      rows,
+    };
   } catch {
     /* none */
   }

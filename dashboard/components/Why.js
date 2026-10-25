@@ -1,6 +1,6 @@
 'use client';
-import { Bot, Calculator, Cpu, GitBranch, Gavel, Route, Search, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
-import { ErrorBox, Loading, pretty, when } from './ui.js';
+import { Bot, Calculator, Cpu, Database, GitBranch, Gavel, Route, Search, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
+import { ErrorBox, Loading, RunModeChip, num, pretty, when } from './ui.js';
 
 const PALETTE = ['#5aa7ff', '#b99cff', '#3fd18f', '#f7b035', '#ff8fb1', '#4fd1d9', '#ff9a62'];
 const colorFor = (name) => {
@@ -14,6 +14,7 @@ const iconFor = (name) => {
   if (n.includes('skeptic')) return Gavel;
   if (n.includes('audit') || n.includes('number')) return Calculator;
   if (n.includes('reconcil')) return GitBranch;
+  if (n.includes('zetaris') || n.includes('datalayer')) return Database;
   if (n.includes('plan') || n.includes('action')) return Route;
   if (n.includes('memory') || n.includes('hmem')) return Sparkles;
   if (n.includes('orchestr') || n.includes('supervis')) return Workflow;
@@ -46,12 +47,24 @@ export default function Why({ item, api, backend }) {
         <>
           <div className="legend">
             <span>Models: {run.models.length ? run.models.join(', ') : 'n/a'}</span>
-            <span>Data layer: {backend?.reachable ? (backend.zetaris_enabled ? 'Zetaris enabled on backend' : 'Zetaris disabled on backend (local files)') : 'traces do not record which data layer served each query'}</span>
+            <span>Data layer: {run.data_source ? `this trace records ${run.data_source.use_zetaris ? 'Zetaris' : 'local files'} (see telemetry)` : `not recorded in this trace${backend?.reachable ? ` (backend now: Zetaris ${backend.zetaris_enabled ? 'on' : 'off'})` : ''}`}</span>
             {run.reasoning_tag_leak_stripped ? <span>Leaked reasoning tags were stripped from displayed text.</span> : null}
             <span className="row" style={{ gap: 10 }}>
               {agents.map((a) => <span key={a} className="row" style={{ gap: 4 }}><span className="dot" style={{ background: colorFor(a) }} />{a}</span>)}
             </span>
           </div>
+          {run.data_source ? (
+            <div className="telem" aria-label="Data source telemetry">
+              <div className="telem-h"><span><Database className="ic" />Data source telemetry</span><RunModeChip run={run} /></div>
+              <div className="telem-g">
+                <div><b>{num(run.data_source.queries_attempted, 0)}</b><span>queries</span></div>
+                <div><b>{num(run.data_source.queries_ok, 0)}</b><span>succeeded</span></div>
+                <div><b>{num(run.data_source.queries_fallback_to_csv, 0)}</b><span>CSV fallback</span></div>
+              </div>
+              <div className="small muted" style={{ marginTop: 6 }}>{run.data_source.use_zetaris ? 'Zetaris' : 'Local'} data layer{run.data_source.source ? `: ${run.data_source.source}` : ''}{run.data_source.database ? `, database ${run.data_source.database}` : ''}. From the trace's DATA_SOURCE_SUMMARY event.</div>
+              {run.data_source.tables ? <div className="telem-t">{Object.entries(run.data_source.tables).map(([t, n]) => <span key={t} className="badge b-mute mono" title="queries per table">{t} x{n}</span>)}</div> : null}
+            </div>
+          ) : null}
           <div className="tl">
             {run.steps.map((s, idx) => {
               const Icon = iconFor(s.agent);

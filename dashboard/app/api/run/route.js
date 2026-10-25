@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { backendHealth, backendJson } from '../../../lib/backend.js';
 import { DATA_MODE, RUN_CACHE_DIR } from '../../../lib/paths.js';
+import { resetAlertsCache } from '../../../lib/triage.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,7 @@ export async function POST(request) {
     fs.mkdirSync(RUN_CACHE_DIR, { recursive: true });
     const id = String(res.run_id || Date.now()).replace(/[^A-Za-z0-9_-]/g, '');
     fs.writeFileSync(path.join(RUN_CACHE_DIR, `${id}.json`), JSON.stringify(res, null, 2));
+    resetAlertsCache();
     return Response.json({ ok: true, run_id: res.run_id, execution_time_seconds: res.execution_time_seconds, trace_file: res.trace_file });
   } catch (e) {
     return Response.json({ ok: false, error: String(e?.message || e) }, { status: 502 });

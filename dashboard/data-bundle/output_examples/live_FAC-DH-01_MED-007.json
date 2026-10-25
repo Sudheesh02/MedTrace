@@ -1,0 +1,176 @@
+{
+  "run_id": "run-33b6e84d",
+  "status": "success",
+  "execution_time_seconds": 43.38,
+  "output": {
+    "run_id": "run-33b6e84d",
+    "facility_id": "FAC-DH-01",
+    "medicine_id": "MED-007",
+    "stockout_prevented": false,
+    "days_of_cover_trust": 87.85,
+    "days_of_cover_naive": 88.68,
+    "understated_gap_percent": 0.0,
+    "p_stockout_risk": 0.0,
+    "investigation_summary": "Skeptic verified top hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 1). All 3 competing hypotheses evaluated. Audited numbers verified: Usable Stock = 5271.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 4 items checked.",
+    "winning_hypothesis": {
+      "hypothesis_id": "H1-INTERNAL-AUDIT",
+      "title": "Phantom Stock Drift in Warehouse Ledger",
+      "cause": "Physical audit confirms ledger overstates true physical stock by 50.0 units.",
+      "likelihood": 0.92,
+      "supporting_evidence": [
+        "Audit count confirms 5271.0 physical units vs 5321.0 on ledger.",
+        "Ledger drift variance of 50.0 units recorded.",
+        "World Model entity ent_inv_a1ad9831b61b (canon hash facfdece) corroborates usable inventory.",
+        "Investigator qualitative synthesis: The physical audit provides direct, ground-truth evidence that the ledger overstates usable stock by exactly 50 units (5321 ledger vs 5271 physical). This is a confirmed internal record-keeping discrepancy with no ambiguity. In contrast, H2 and H3 rely on generic market signals (NORMAL_MARKET status, 2 shortage records) and empirical priors rather than facility-specific evidence. The healthy trust cover of ~88 days and zero shortfall units indicate no active supply disruption impacting this facility. The 2 active world-model conflicts likely relate to the ledger-physical mismatch and the generic shortage flag, but only the former is quantified and verified at this site. Therefore, phantom stock drift (H1) is the only hypothesis directly substantiated by the observed data."
+      ],
+      "refuting_evidence": [
+        "Unlogged receipt from another facility arrived post-audit."
+      ],
+      "confirming_query": "SELECT counted_stock, date FROM MEDTRACE_LH.physical_audit WHERE facility_id = 'FAC-DH-01' AND medicine_id = 'MED-007' ORDER BY date DESC LIMIT 1"
+    },
+    "recommendations": [
+      {
+        "action_id": "ACT-ADJ-FAC-DH-01-MED-007",
+        "action_type": "INVENTORY_AUDIT_ADJUSTMENT",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 50.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.95,
+        "justification": "Reconcile LMIS inventory ledger: Post debit adjustment of 50 units to match verified physical shelf count (5271 units), eliminating phantom ledger drift.",
+        "number_provenance": {
+          "audit_drift": 50.0,
+          "ledger_stock": 5321.0,
+          "usable_stock": 5271.0,
+          "unit_price_usd": 0.06,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-MON-FAC-DH-01-MED-007",
+        "action_type": "MONITOR_BUFFER",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.92,
+        "justification": "Following 50-unit ledger debit adjustment, verified usable stock covers 87.8 days. Routine buffer monitoring active; emergency quotas remain on standby.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "trust_cover_days": 87.85,
+          "unit_price_usd": 0.06,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-TRF-FAC-DH-01-MED-007",
+        "action_type": "PEER_TRANSFER",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.2,
+        "justification": "No emergency stock transfer required: Facility holds 87.8 days of verified usable cover, exceeding safety threshold. Inter-facility transfer queue on standby.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "peer_surplus": 14740.0,
+          "unit_price_usd": 0.06,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-EXP-FAC-DH-01-MED-007",
+        "action_type": "EXPEDITE_PO",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": "SUP-003",
+        "feasibility_score": 0.15,
+        "justification": "Standard procurement cycle: No expedited dispatch required; existing inventory covers 87.8 days.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "unit_price_usd": 0.06,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-EMERG-FAC-DH-01-MED-007",
+        "action_type": "EMERGENCY_PURCHASE",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.1,
+        "justification": "Zero emergency procurement required: Local stock is adequate (87.8 days of cover); emergency quota preserved.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "unit_price_usd": 0.06,
+          "estimated_cost_usd": 0.0
+        }
+      }
+    ],
+    "skeptic_rounds": 1,
+    "trace_file": "logs\\trace_run-33b6e84d.jsonl",
+    "action_plan_audit": {
+      "audited": true,
+      "passed": true,
+      "verified_recommendations_count": 5,
+      "flagged_inconsistencies": []
+    },
+    "escalated_to_human": false,
+    "escalation_reason": null,
+    "model_used": "nvidia/nemotron-3-ultra-550b-a55b",
+    "llm_used": true,
+    "fallback": false,
+    "ledger_stock": 5321.0,
+    "usable_stock": 5271.0,
+    "quarantined_stock": 0.0,
+    "audit_drift": 50.0,
+    "expiring_stock": 0.0
+  },
+  "agents": [
+    {
+      "name": "TriagePlanner",
+      "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"
+    },
+    {
+      "name": "Reconciler",
+      "role": "Audits ledger vs physical audit vs batch expiry"
+    },
+    {
+      "name": "WorldModel",
+      "role": "Maintains shared canonical grounded entities & relations"
+    },
+    {
+      "name": "Investigator",
+      "role": "Generates >= 3 competing hypotheses with evidence queries"
+    },
+    {
+      "name": "Skeptic & Number Auditor",
+      "role": "Challenging assertions & verifying deterministic arithmetic"
+    },
+    {
+      "name": "ActionPlanner",
+      "role": "Ranks transfers, PO expedites, and emergency orders"
+    },
+    {
+      "name": "HMEM",
+      "role": "Cross-session memory of officer approvals/overrides"
+    }
+  ],
+  "trace_file": "logs\\trace_run-33b6e84d.jsonl"
+}

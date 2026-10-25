@@ -1,0 +1,158 @@
+{
+  "run_id": "run-b52e1fcb",
+  "status": "success",
+  "execution_time_seconds": 268.41,
+  "output": {
+    "run_id": "run-b52e1fcb",
+    "facility_id": "FAC-WH-01",
+    "medicine_id": "MED-011",
+    "stockout_prevented": true,
+    "days_of_cover_trust": 3.66,
+    "days_of_cover_naive": 9.89,
+    "understated_gap_percent": 100.0,
+    "p_stockout_risk": 1.0,
+    "investigation_summary": "Skeptic approved revised hypothesis 'Batch Quality Assurance Quarantine & Regulatory Recall' (Round 2). Differential elimination confirmed against 'Upstream Supplier Lead Time Slippage' (separation Delta=0.34). Audited numbers verified: Usable Stock = 300.0 units, Shortfall = 764.67 units across 9.34 gap days. Corroborating evidence: 5 items checked.",
+    "winning_hypothesis": {
+      "hypothesis_id": "H1-INTERNAL-AUDIT",
+      "title": "Batch Quality Assurance Quarantine & Regulatory Recall",
+      "cause": "Warehouse ledger includes 300.0 quarantined units subject to regulatory hold.",
+      "likelihood": 0.95,
+      "supporting_evidence": [
+        "300.0 units marked quarantined = true in batch registry.",
+        "300.0 units under quarantine hold counted as usable in ledger. Cross-referenced FDA Class II (GlaxoSmithKline Inc): Adulterated Presence of Foreign Tablets: Trizivir 300/150/300 mg tables, Lot 0ZP5128 may i. Storage requirement: 15°C to 30°C (Controlled Room Temperature, Protect from Moisture).",
+        "Differential confirmation: Physical inventory audit and batch quality records isolate variance directly to facility ledger, refuting external transit delay.",
+        "Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine.",
+        "World Model entity ent_inv_9f3d1ca4598f (canon hash 551c1669) corroborates usable inventory."
+      ],
+      "refuting_evidence": [
+        "Quarantine released following lab certificate of analysis (CoA) re-test."
+      ],
+      "confirming_query": "SELECT batch_id, quantity, expiry_date, quarantined FROM MEDTRACE_LH.batches WHERE facility_id = 'FAC-WH-01' AND medicine_id = 'MED-011' AND quarantined = true"
+    },
+    "recommendations": [
+      {
+        "action_id": "ACT-TRF-FAC-WH-01-MED-011",
+        "action_type": "PEER_TRANSFER",
+        "facility_id": "FAC-WH-01",
+        "medicine_id": "MED-011",
+        "recommended_units": 764.67,
+        "estimated_cost_usd": 103.23,
+        "source_facility_id": "FAC-WH-02",
+        "supplier_id": null,
+        "feasibility_score": 0.9,
+        "justification": "Transfer 764.67 units from peer warehouse FAC-WH-02 (usable surplus 4766 units, lead time 24h, est transit fee $103.23) to cover 9.34-day gap.",
+        "number_provenance": {
+          "shortfall_units": 764.67,
+          "gap_days": 9.34,
+          "peer_surplus": 4766.0,
+          "unit_price_usd": 0.9,
+          "estimated_cost_usd": 103.23
+        }
+      },
+      {
+        "action_id": "ACT-REL-FAC-WH-01-MED-011",
+        "action_type": "BATCH_RELEASE",
+        "facility_id": "FAC-WH-01",
+        "medicine_id": "MED-011",
+        "recommended_units": 300.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.88,
+        "justification": "Fast-track lab Certificate of Analysis (CoA) review for 300 quarantined units to restore usable balance.",
+        "number_provenance": {
+          "shortfall_units": 764.67,
+          "gap_days": 9.34,
+          "quarantined_units": 300.0,
+          "unit_price_usd": 0.9,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-EXP-FAC-WH-01-MED-011",
+        "action_type": "EXPEDITE_PO",
+        "facility_id": "FAC-WH-01",
+        "medicine_id": "MED-011",
+        "recommended_units": 764.67,
+        "estimated_cost_usd": 757.02,
+        "source_facility_id": null,
+        "supplier_id": "SUP-004",
+        "feasibility_score": 0.75,
+        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-004 (est order cost $757.02) to compress delivery slip and cover 9.34-day gap.",
+        "number_provenance": {
+          "shortfall_units": 764.67,
+          "gap_days": 9.34,
+          "unit_price_usd": 0.9,
+          "estimated_cost_usd": 757.02
+        }
+      },
+      {
+        "action_id": "ACT-EMERG-FAC-WH-01-MED-011",
+        "action_type": "EMERGENCY_PURCHASE",
+        "facility_id": "FAC-WH-01",
+        "medicine_id": "MED-011",
+        "recommended_units": 764.67,
+        "estimated_cost_usd": 1720.51,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.6,
+        "justification": "Authorise district emergency local procurement quota of 764.67 units (est spot cost $1720.51 at emergency premium) if transfer or supplier dispatch cannot arrive within 48h.",
+        "number_provenance": {
+          "shortfall_units": 764.67,
+          "gap_days": 9.34,
+          "unit_price_usd": 0.9,
+          "estimated_cost_usd": 1720.51
+        }
+      }
+    ],
+    "skeptic_rounds": 2,
+    "trace_file": "logs\\trace_run-b52e1fcb.jsonl",
+    "action_plan_audit": {
+      "audited": true,
+      "passed": true,
+      "verified_recommendations_count": 4,
+      "flagged_inconsistencies": []
+    },
+    "escalated_to_human": false,
+    "escalation_reason": null,
+    "model_used": "nvidia/nemotron-3-ultra-550b-a55b",
+    "llm_used": true,
+    "fallback": false,
+    "ledger_stock": 600.0,
+    "usable_stock": 300.0,
+    "quarantined_stock": 300.0,
+    "audit_drift": 0.0,
+    "expiring_stock": 0.0
+  },
+  "agents": [
+    {
+      "name": "TriagePlanner",
+      "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"
+    },
+    {
+      "name": "Reconciler",
+      "role": "Audits ledger vs physical audit vs batch expiry"
+    },
+    {
+      "name": "WorldModel",
+      "role": "Maintains shared canonical grounded entities & relations"
+    },
+    {
+      "name": "Investigator",
+      "role": "Generates >= 3 competing hypotheses with evidence queries"
+    },
+    {
+      "name": "Skeptic & Number Auditor",
+      "role": "Challenging assertions & verifying deterministic arithmetic"
+    },
+    {
+      "name": "ActionPlanner",
+      "role": "Ranks transfers, PO expedites, and emergency orders"
+    },
+    {
+      "name": "HMEM",
+      "role": "Cross-session memory of officer approvals/overrides"
+    }
+  ],
+  "trace_file": "logs\\trace_run-b52e1fcb.jsonl"
+}

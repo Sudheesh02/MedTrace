@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { dir } from '../../../lib/paths.js';
-import { indexTraces, loadRun } from '../../../lib/traces.js';
+import { indexTraces, loadRun, traceFileForRun } from '../../../lib/traces.js';
 import { findPack, findMemo } from '../../../lib/packs.js';
 import { cleanText } from '../../../lib/text.js';
 
@@ -27,8 +27,9 @@ export async function GET(request) {
     const idx = indexTraces();
     let traceFile = null;
     let traceNote = null;
-    if (found?.run_id && fs.existsSync(dir('logs', `trace_${found.run_id}.jsonl`))) {
-      traceFile = `trace_${found.run_id}.jsonl`;
+    const packTrace = found?.run_id ? traceFileForRun(found.run_id) : null;
+    if (packTrace) {
+      traceFile = packTrace;
       traceNote = 'Trace of the same run as the action pack shown.';
     } else {
       const latest = idx.latestByPair[`${facility}/${medicine}`];
@@ -47,7 +48,7 @@ export async function GET(request) {
       stored_runs: idx.countByPair[`${facility}/${medicine}`] || 0,
       trace_note: traceNote,
       run,
-      pack: found ? { ...deepClean(found.pack), _source: found.source, _execution_time_seconds: found.execution_time_seconds } : null,
+      pack: found ? { ...deepClean(found.pack), _source: found.source, _execution_time_seconds: found.execution_time_seconds, _live: found.live } : null,
       memo: findMemo(facility, medicine),
     });
   } catch (e) {

@@ -3,10 +3,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DATA_MODE, REPO_ROOT, dir } from './paths.js';
 import { backendHealth, backendJson } from './backend.js';
-import { indexTraces, loadRun, summarizeTrace } from './traces.js';
-import { packPairs } from './packs.js';
+import { indexTraces, loadRun, summarizeTrace, resetTraceCaches } from './traces.js';
+import { packPairs, resetPackCache } from './packs.js';
 
 let cache = { at: 0, value: null };
+
+/** Called after a new run is saved so chips and counts reflect it immediately. */
+export function resetAlertsCache() {
+  cache = { at: 0, value: null };
+  resetTraceCaches();
+  resetPackCache();
+}
 
 function viaPython() {
   const script = path.join(process.cwd(), 'scripts', 'triage_snapshot.py');
@@ -92,6 +99,10 @@ function decorate(items) {
       latest_run: sum ? { models: sum.models, llm_used: sum.llm_used, accepted: sum.accepted, confidence: sum.confidence, rounds: sum.rounds, escalated: sum.escalated } : null,
       has_pack: !!packs[k],
       pack_actions: packs[k]?.actions ?? null,
+      pack_live: !!packs[k]?.live,
+      pack_real_llm: !!packs[k]?.real_llm,
+      pack_no_action: !!packs[k]?.no_action,
+      pack_model: packs[k]?.model ?? null,
     };
   });
 }

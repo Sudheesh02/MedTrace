@@ -59,9 +59,8 @@ if (!snap) {
   process.exit(1);
 }
 const { readRules } = await import(pathToFileURL(path.join(root, 'lib', 'triage.js')).href);
-const { indexTraces } = await import(pathToFileURL(path.join(root, 'lib', 'traces.js')).href);
-const { packPairs } = await import(pathToFileURL(path.join(root, 'lib', 'packs.js')).href);
-const { dir, RUN_CACHE_DIR } = await import(pathToFileURL(path.join(root, 'lib', 'paths.js')).href);
+const { indexTraces, traceFileForRun } = await import(pathToFileURL(path.join(root, 'lib', 'traces.js')).href);
+const { dir } = await import(pathToFileURL(path.join(root, 'lib', 'paths.js')).href);
 put('triage.json', JSON.stringify({ generated_at: new Date().toISOString(), sim_dir: 'data/simulated (synthetic)', facilities: snap.facilities, medicines: snap.medicines, rules: readRules(), items: snap.items }));
 
 // 2. Traces: latest per pair + the trace of every stored action pack's run + memory A/B traces
@@ -78,12 +77,23 @@ const addPacks = (folder, prefix) => {
       if (!o?.facility_id || !Array.isArray(o?.recommendations)) continue;
       packs.push({ from: path.join(folder, n), rel: `output_examples/${prefix}${n}` });
       const rid = body.run_id || o.run_id;
-      if (rid && fs.existsSync(dir('logs', `trace_${rid}.jsonl`))) want.add(`trace_${rid}.jsonl`);
+      const tf = traceFileForRun(rid); // trace_<id>.jsonl or live_trace_<id>.jsonl
+      if (tf) want.add(tf);
     } catch { /* skip */ }
   }
 };
 addPacks(dir('output_examples'), '');
-addPacks(RUN_CACHE_DIR, 'runcache_');
+// The dashboard's own saved runs (.cache/runs) are local scratch and are deliberately not bundled.
+// Committed memory A/B: the "before" pack lives in output_examples/live_runs/memory_ab/ (the "after" pack is the live_ pack of the same pair).
+const abDir = dir('output_examples', 'live_runs', 'memory_ab');
+let abFiles = [];
+try { abFiles = fs.readdirSync(abDir).filter((n) => n.endsWith('.json')); } catch { /* none */ }
+for (const n of abFiles) {
+  const body = JSON.parse(fs.readFileSync(path.join(abDir, n), 'utf8'));
+  const tf = traceFileForRun(body.run_id || body.output?.run_id);
+  if (tf) want.add(tf);
+  packs.push({ from: path.join(abDir, n), rel: `output_examples/live_runs/memory_ab/${n}` });
+}
 for (const m of ['trace_without_memory.jsonl', 'trace_with_memory.jsonl']) if (fs.existsSync(dir('logs', m))) want.add(m);
 for (const f of want) copy(dir('logs', f), `logs/${f}`);
 for (const p of packs) copy(p.from, p.rel);
@@ -101,7 +111,7 @@ put('index.json', JSON.stringify({
   total_traces: idx.total,
   latestByPair: idx.latestByPair,
   countByPair: idx.countByPair,
-  packs: Object.keys(packPairs()),
+  packs: packs.map((p) => p.rel),
 }));
 
 let bytes = 0;
