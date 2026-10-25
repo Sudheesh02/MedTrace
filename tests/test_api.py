@@ -948,3 +948,47 @@ def test_verdict_flip_card_dynamic_computation_not_hardcoded():
     assert "SUP-001" not in memory_facts_c[0]
     assert "Monsoon bridge washout" not in memory_facts_c[0]
 
+
+
+def test_pytest_collection_time_environment_isolation_and_offline_safety(client, monkeypatch):
+    """
+    Verify Item 1: Pytest Collection-Time Environment Isolation and LLMClient Offline Safety.
+    1. Tests conftest module-level isolation sets SAMPLE_MODE=true and USE_ZETARIS=false.
+    2. Dynamic runtime check in LLMClient.generate() honors os.environ['SAMPLE_MODE'].
+    3. POST /run without explicit options.sample_mode executes cleanly offline in sample mode.
+    4. Orchestrator state and trace metadata reflect sample mode without network calls or hangs.
+    """
+    from run import orchestrator
+    from app.adapters.llm_client import LLMClient
+
+    # 1. Verify conftest enforced sample mode and offline zetaris
+    assert os.environ.get("SAMPLE_MODE") == "true"
+    assert os.environ.get("USE_ZETARIS") == "false"
+    assert orchestrator.llm_client.sample_mode is True
+
+    # 2. Dynamic runtime sample mode check in LLMClient.generate()
+    fresh_client = LLMClient()
+    assert fresh_client.sample_mode is True
+    res = fresh_client.generate(prompt="Investigate phantom stock discrepancy")
+    assert res["fallback"] is True
+    assert res["llm_used"] is False
+    assert res["model"] == "rule-based-sample-mode"
+
+    # Even if fresh_client.sample_mode was manually set to False, if os.environ has SAMPLE_MODE=true, it protects offline execution
+    fresh_client.sample_mode = False
+    res2 = fresh_client.generate(prompt="Investigate supplier delay")
+    assert res2["fallback"] is True
+    assert res2["llm_used"] is False
+
+    # 3. POST /run without options executes cleanly offline in sample mode
+    response = client.post("/run", json={
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    pack = data["output"]
+    assert pack["model_used"] == "rule-based-sample-mode"
+    assert pack["llm_used"] is False
+    assert pack["fallback"] is True

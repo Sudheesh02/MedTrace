@@ -17,6 +17,11 @@ from dotenv import load_dotenv
 # Load environment variables prior to package initialization
 load_dotenv()
 
+# If no LLM credentials are configured and SAMPLE_MODE is not explicitly set, default to sample mode
+if not (os.environ.get("MODEL_API_KEY") or os.environ.get("METERLESS_RUNTIME_TOKEN")):
+    if "SAMPLE_MODE" not in os.environ:
+        os.environ["SAMPLE_MODE"] = "true"
+
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -114,13 +119,18 @@ def api_triage(facility_id: Optional[str] = None, top_n: int = 10):
 @app.post("/run")
 def api_run(req: RunRequest):
     start_time = time.time()
+    orig_env_sample = os.environ.get("SAMPLE_MODE")
     orig_sample_mode = orchestrator.llm_client.sample_mode
     orig_use_zetaris = orchestrator.data_store.use_zetaris
     if req.options and req.options.get("sample_mode") is not None:
         force_sample = bool(req.options.get("sample_mode"))
         orchestrator.llm_client.sample_mode = force_sample
+        os.environ["SAMPLE_MODE"] = "true" if force_sample else "false"
         if force_sample:
             orchestrator.data_store.use_zetaris = False
+    elif not (os.environ.get("MODEL_API_KEY") or os.environ.get("METERLESS_RUNTIME_TOKEN")):
+        orchestrator.llm_client.sample_mode = True
+        orchestrator.data_store.use_zetaris = False
     try:
         pack = orchestrator.run_investigation(
             facility_id=req.facility_id or "FAC-DH-01",
@@ -148,9 +158,13 @@ def api_run(req: RunRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
+        orchestrator.llm_client.sample_mode = orig_sample_mode
+        orchestrator.data_store.use_zetaris = orig_use_zetaris
         if req.options and req.options.get("sample_mode") is not None:
-            orchestrator.llm_client.sample_mode = orig_sample_mode
-            orchestrator.data_store.use_zetaris = orig_use_zetaris
+            if orig_env_sample is not None:
+                os.environ["SAMPLE_MODE"] = orig_env_sample
+            else:
+                os.environ.pop("SAMPLE_MODE", None)
 
 @app.get("/memo/{facility_id}/{medicine_id}", response_class=PlainTextResponse)
 def api_get_memo(facility_id: str, medicine_id: str):
@@ -238,6 +252,10 @@ def main():
     parser.add_argument("--export-memo", action="store_true", help="Export printable Markdown procurement memorandum to output/")
     parser.add_argument("--save-golden", action="store_true", help="Explicitly update the committed canonical golden trace file")
     args = parser.parse_args()
+
+    if not (os.environ.get("MODEL_API_KEY") or os.environ.get("METERLESS_RUNTIME_TOKEN")):
+        if "SAMPLE_MODE" not in os.environ or os.environ.get("SAMPLE_MODE", "false").lower() == "true":
+            args.sample_mode = True
 
     if args.sample_mode:
         os.environ["SAMPLE_MODE"] = "true"
@@ -333,6 +351,11 @@ def main():
         if top_act.estimated_cost_usd is not None:
             print(f"- Estimated Financial Cost: ${top_act.estimated_cost_usd:.2f} USD")
         print(f"- Justification: {top_act.justification}")
+        if len(pack.recommendations) > 1:
+            print("\nAlternative Actions:")
+            for alt_act in pack.recommendations[1:]:
+                alt_type_str = alt_act.action_type.value if hasattr(alt_act.action_type, 'value') else str(alt_act.action_type)
+                print(f"- [{alt_type_str}] {alt_act.recommended_units} units: {alt_act.justification}")
         print(f"\nTrace log written to: {pack.trace_file}")
         if getattr(args, "case", None) == "golden" and (getattr(args, "save_golden", False) or os.environ.get("MEDTRACE_SAVE_GOLDEN") == "1"):
             import shutil

@@ -8,6 +8,28 @@ import os
 import json
 from typing import Dict, List, Optional, Any
 from openai import OpenAI
+import re
+
+_THINK_BLOCK_RE = re.compile(r"<think(?:ing)?>.*?</think(?:ing)?>", re.DOTALL | re.IGNORECASE)
+_THINK_TAG_RE = re.compile(r"</?think(?:ing)?>", re.IGNORECASE)
+
+
+def strip_think_tags(text: str) -> str:
+    """Remove reasoning-model chain-of-thought markers from LLM output.
+
+    Handles (1) full <think>...</think> blocks, (2) a lone closing </think> where the
+    model emitted its reasoning without an opening tag (keep only the text after the
+    last closing tag, unless nothing follows), and (3) stray opening/closing tags.
+    """
+    if not text:
+        return text or ""
+    cleaned = _THINK_BLOCK_RE.sub("", text)
+    if re.search(r"</think(?:ing)?>", cleaned, re.IGNORECASE):
+        tail = re.split(r"</think(?:ing)?>", cleaned, flags=re.IGNORECASE)[-1]
+        if tail.strip():
+            cleaned = tail
+    cleaned = _THINK_TAG_RE.sub("", cleaned)
+    return cleaned.strip()
 
 class LLMClient:
     def __init__(self):
@@ -60,7 +82,9 @@ class LLMClient:
         Executes a prompt. If sample mode is active, returns deterministic structured fallback.
         Outside sample mode, fails loudly if unconfigured or if API call fails.
         """
-        if self.sample_mode:
+        env_sample = os.environ.get("SAMPLE_MODE", "false").lower() == "true"
+        effective_sample_mode = self.sample_mode or env_sample
+        if effective_sample_mode:
             return self._sample_fallback(prompt, system_prompt)
 
         if not self.client:
@@ -84,6 +108,7 @@ class LLMClient:
             )
             choice = res.choices[0].message
             content = choice.content or getattr(choice, "reasoning_content", None) or ""
+            content = strip_think_tags(content)
             actual_model = getattr(res, "model", None) or self.model
             self.last_model_used = actual_model
             self.last_llm_used = True

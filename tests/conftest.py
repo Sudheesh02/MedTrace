@@ -7,6 +7,16 @@ import os
 import tempfile
 import pytest
 
+# Collection-time isolation: ensure SAMPLE_MODE=true and USE_ZETARIS=false
+# before any test module (e.g. tests/test_api.py importing run.py) is imported.
+os.environ.setdefault("SAMPLE_MODE", "true")
+os.environ.setdefault("USE_ZETARIS", "false")
+
+def pytest_configure(config):
+    """Enforce offline sample mode during test collection and configuration."""
+    os.environ.setdefault("SAMPLE_MODE", "true")
+    os.environ.setdefault("USE_ZETARIS", "false")
+
 @pytest.fixture(autouse=True, scope="session")
 def default_test_environment():
     """Forces SAMPLE_MODE=true and USE_ZETARIS=false across test sessions for complete isolation."""
