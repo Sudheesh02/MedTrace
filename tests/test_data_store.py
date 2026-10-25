@@ -183,3 +183,29 @@ def test_data_store_sample_mode_disables_zetaris_by_default(monkeypatch):
     store_override = DataStore(use_zetaris=True)
     assert store_override.use_zetaris is True
 
+def test_data_store_configurable_simulation_dir(tmp_path, monkeypatch):
+    """
+    Verify that DataStore accepts a custom simulation directory via constructor
+    or SIM_DIR environment variable, enabling dynamic multi-seed evaluations.
+    """
+    # Create custom dummy simulation directory
+    custom_sim = tmp_path / "custom_sim"
+    custom_sim.mkdir()
+    fac_csv = custom_sim / "facilities.csv"
+    fac_csv.write_text("facility_id,name,level,catchment_scale\nFAC-CUSTOM-01,Custom Clinic,PHC,1.5\n", encoding="utf-8")
+
+    # 1. Via constructor parameter
+    store = DataStore(use_zetaris=False, sim_dir=str(custom_sim))
+    assert store.sim_dir == str(custom_sim)
+    facs = store.get_facilities()
+    assert len(facs) == 1
+    assert facs[0]["facility_id"] == "FAC-CUSTOM-01"
+
+    # 2. Via SIM_DIR environment variable
+    monkeypatch.setenv("SIM_DIR", str(custom_sim))
+    store_env = DataStore(use_zetaris=False)
+    assert store_env.sim_dir == str(custom_sim)
+    facs_env = store_env.get_facilities()
+    assert len(facs_env) == 1
+    assert facs_env[0]["facility_id"] == "FAC-CUSTOM-01"
+

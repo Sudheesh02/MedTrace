@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 class DataStore:
-    def __init__(self, use_zetaris: Optional[bool] = None):
+    def __init__(self, use_zetaris: Optional[bool] = None, sim_dir: Optional[str] = None):
         sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
         if use_zetaris is None:
             if sample_mode:
@@ -21,6 +21,7 @@ class DataStore:
                 self.use_zetaris = os.getenv("USE_ZETARIS", "false").lower() in ("true", "1")
         else:
             self.use_zetaris = use_zetaris
+        self.sim_dir = sim_dir or os.getenv("SIM_DIR", "data/simulated")
         self.base_url = os.environ.get("ZETARIS_BASE_URL", "http://localhost:3000").rstrip("/")
         self.zetaris_key = os.environ.get("ZETARIS_API_KEY", "")
         self.zetaris_org = os.environ.get("ZETARIS_ORG_ID", "1")
@@ -101,7 +102,7 @@ class DataStore:
             res = self._query_zetaris("SELECT * FROM zetaris.lightning.facilities")
             if res:
                 return res
-        return self._read_csv("data/simulated/facilities.csv")
+        return self._read_csv(os.path.join(self.sim_dir, "facilities.csv"))
 
     def get_medicines(self) -> List[Dict[str, Any]]:
         if self.use_zetaris:
@@ -115,7 +116,7 @@ class DataStore:
             res = self._query_zetaris("SELECT * FROM zetaris.lightning.suppliers")
             if res:
                 return res
-        return self._read_csv("data/simulated/suppliers.csv")
+        return self._read_csv(os.path.join(self.sim_dir, "suppliers.csv"))
 
     def get_batches(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None, as_of_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
         if self.use_zetaris:
@@ -126,9 +127,9 @@ class DataStore:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
             res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.batches{where_sql}")
-            rows = res if res is not None else self._read_csv("data/simulated/batches.csv")
+            rows = res if res is not None else self._read_csv(os.path.join(self.sim_dir, "batches.csv"))
         else:
-            rows = self._read_csv("data/simulated/batches.csv")
+            rows = self._read_csv(os.path.join(self.sim_dir, "batches.csv"))
 
         ref_date = as_of_date or datetime(2026, 10, 24)
         filtered = []
@@ -162,7 +163,7 @@ class DataStore:
                 latest = res[0]
                 latest["ledger_stock"] = float(latest.get("ledger_stock", 0))
                 return latest
-        rows = self._read_csv("data/simulated/ledger_daily.csv")
+        rows = self._read_csv(os.path.join(self.sim_dir, "ledger_daily.csv"))
         matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
         if matching:
             latest = matching[-1]
@@ -178,7 +179,7 @@ class DataStore:
             if res:
                 res[0]["ledger_stock"] = float(res[0].get("ledger_stock", 0))
                 return res[0]
-        rows = self._read_csv("data/simulated/ledger_daily.csv")
+        rows = self._read_csv(os.path.join(self.sim_dir, "ledger_daily.csv"))
         for r in rows:
             if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id and r.get("date") == date_str:
                 r["ledger_stock"] = float(r.get("ledger_stock", 0))
@@ -194,7 +195,7 @@ class DataStore:
                 latest = res[0]
                 latest["counted_stock"] = float(latest.get("counted_stock", 0))
                 return latest
-        rows = self._read_csv("data/simulated/physical_audit.csv")
+        rows = self._read_csv(os.path.join(self.sim_dir, "physical_audit.csv"))
         matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
         if matching:
             latest = matching[-1]
@@ -212,7 +213,7 @@ class DataStore:
                 for r in res:
                     r["units_issued"] = float(r.get("units_issued", 0))
                 return res
-        rows = self._read_csv("data/simulated/consumption_daily.csv")
+        rows = self._read_csv(os.path.join(self.sim_dir, "consumption_daily.csv"))
         matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
         recent = matching[-days:] if len(matching) > days else matching
         for r in recent:
@@ -226,7 +227,7 @@ class DataStore:
             )
             if res:
                 return res
-        rows = self._read_csv("data/simulated/purchase_orders.csv")
+        rows = self._read_csv(os.path.join(self.sim_dir, "purchase_orders.csv"))
         return [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
 
     def get_deliveries(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -238,9 +239,9 @@ class DataStore:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
             res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.deliveries{where_sql}")
-            rows = res if res is not None else self._read_csv("data/simulated/deliveries.csv")
+            rows = res if res is not None else self._read_csv(os.path.join(self.sim_dir, "deliveries.csv"))
         else:
-            rows = self._read_csv("data/simulated/deliveries.csv")
+            rows = self._read_csv(os.path.join(self.sim_dir, "deliveries.csv"))
 
         filtered = []
         for r in rows:
@@ -261,9 +262,9 @@ class DataStore:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
             res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.transfers{where_sql}")
-            rows = res if res is not None else self._read_csv("data/simulated/transfers.csv")
+            rows = res if res is not None else self._read_csv(os.path.join(self.sim_dir, "transfers.csv"))
         else:
-            rows = self._read_csv("data/simulated/transfers.csv")
+            rows = self._read_csv(os.path.join(self.sim_dir, "transfers.csv"))
 
         filtered = []
         for r in rows:

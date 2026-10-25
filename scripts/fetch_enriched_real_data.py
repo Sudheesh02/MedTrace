@@ -38,7 +38,7 @@ def safe_request_json(url, headers=None, timeout=25):
 
 def fetch_openfda_recalls(medicines):
     api_key = get_env_key()
-    print(f"[*] Fetching openFDA Drug Enforcement/Recalls using API Key ({api_key[:6]}...)...")
+    print(f"[*] Fetching openFDA Drug Enforcement/Recalls (API Key: {'configured' if api_key else 'public rate-limit'})...")
     
     all_recalls = {}
     combined_results = []

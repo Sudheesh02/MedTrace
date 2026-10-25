@@ -12,3 +12,10 @@ logs/*.jsonl
 !.env.example
 data/real/raw/*.zip
 data/real/raw/*.tar.gz
+*.zip
+*.tar.gz
+output/*.json
+meterless-repo/
+zetaris-getting-started/
+hackathon details/
+drug-shortages-0001-of-0001.json
