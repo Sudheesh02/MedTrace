@@ -1,0 +1,77 @@
+{
+  "file_path": "data/simulated_seed_2/consumption_daily.csv",
+  "file_size_bytes": 1120722,
+  "rows": 25920,
+  "columns_count": 5,
+  "columns": [
+    "date",
+    "facility_id",
+    "medicine_id",
+    "units_issued",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-04-28",
+        "max": "2026-10-24"
+      }
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "units_issued": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 25920,
+        "min": 0.0,
+        "max": 459.0,
+        "mean": 30.75,
+        "std": 60.51,
+        "median": 7.0,
+        "quantiles": {
+          "p25": 3.0,
+          "p50": 7.0,
+          "p75": 22.0,
+          "p90": 96.0,
+          "p95": 161.0
+        },
+        "outliers_iqr": {
+          "count": 4321,
+          "pct": 16.67,
+          "bounds": [
+            -25.5,
+            50.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 772,
+          "pct": 2.98
+        },
+        "zero_inflation": {
+          "zero_count": 544,
+          "zero_pct": 2.1
+        }
+      }
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

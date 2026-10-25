@@ -1,0 +1,246 @@
+{
+  "file_path": "data/real/supplier_slip.csv",
+  "file_size_bytes": 1831,
+  "rows": 34,
+  "columns_count": 8,
+  "columns": [
+    "vendor",
+    "shipment_mode",
+    "n_records",
+    "mean_slip_days",
+    "median_p50_days",
+    "p90_days",
+    "min_days",
+    "max_days"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "vendor": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "shipment_mode": {
+      "dtype": "string",
+      "null_count": 2,
+      "null_pct": 5.88
+    },
+    "n_records": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 34,
+        "min": 15.0,
+        "max": 2467.0,
+        "mean": 284.06,
+        "std": 504.03,
+        "median": 68.5,
+        "quantiles": {
+          "p25": 33.75,
+          "p50": 68.5,
+          "p75": 322.25,
+          "p90": 560.4,
+          "p95": 1116.7
+        },
+        "outliers_iqr": {
+          "count": 2,
+          "pct": 5.88,
+          "bounds": [
+            -399.0,
+            755.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 1,
+          "pct": 2.94
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "mean_slip_days": {
+      "dtype": "float",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 34,
+        "min": -12.57,
+        "max": 9.91,
+        "mean": 0.22,
+        "std": 3.59,
+        "median": 0.0,
+        "quantiles": {
+          "p25": -0.1,
+          "p50": 0.0,
+          "p75": 0.99,
+          "p90": 2.72,
+          "p95": 5.09
+        },
+        "outliers_iqr": {
+          "count": 9,
+          "pct": 26.47,
+          "bounds": [
+            -1.73,
+            2.63
+          ]
+        },
+        "outliers_zscore": {
+          "count": 1,
+          "pct": 2.94
+        },
+        "zero_inflation": {
+          "zero_count": 9,
+          "zero_pct": 26.47
+        }
+      }
+    },
+    "median_p50_days": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 34,
+        "min": -13.0,
+        "max": 0.0,
+        "mean": -0.41,
+        "std": 2.2,
+        "median": 0.0,
+        "quantiles": {
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p90": 0.0,
+          "p95": 0.0
+        },
+        "outliers_iqr": {
+          "count": 2,
+          "pct": 5.88,
+          "bounds": [
+            0.0,
+            0.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 1,
+          "pct": 2.94
+        },
+        "zero_inflation": {
+          "zero_count": 32,
+          "zero_pct": 94.12
+        }
+      }
+    },
+    "p90_days": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 34,
+        "min": 0.0,
+        "max": 43.0,
+        "mean": 3.32,
+        "std": 9.24,
+        "median": 0.0,
+        "quantiles": {
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p90": 7.7,
+          "p95": 20.65
+        },
+        "outliers_iqr": {
+          "count": 7,
+          "pct": 20.59,
+          "bounds": [
+            0.0,
+            0.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 2,
+          "pct": 5.88
+        },
+        "zero_inflation": {
+          "zero_count": 27,
+          "zero_pct": 79.41
+        }
+      }
+    },
+    "min_days": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 34,
+        "min": -60.0,
+        "max": 0.0,
+        "mean": -19.09,
+        "std": 23.41,
+        "median": -6.5,
+        "quantiles": {
+          "p25": -43.0,
+          "p50": -6.5,
+          "p75": 0.0,
+          "p90": 0.0,
+          "p95": 0.0
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            -107.5,
+            64.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 14,
+          "zero_pct": 41.18
+        }
+      }
+    },
+    "max_days": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 34,
+        "min": 0.0,
+        "max": 165.0,
+        "mean": 46.26,
+        "std": 47.89,
+        "median": 32.5,
+        "quantiles": {
+          "p25": 0.75,
+          "p50": 32.5,
+          "p75": 78.0,
+          "p90": 112.7,
+          "p95": 135.05
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            -115.12,
+            193.88
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 9,
+          "zero_pct": 26.47
+        }
+      }
+    }
+  }
+}

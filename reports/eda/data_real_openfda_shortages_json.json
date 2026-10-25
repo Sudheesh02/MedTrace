@@ -1,0 +1,104 @@
+{
+  "file_path": "data/real/openfda_shortages.json",
+  "file_size_bytes": 2918567,
+  "rows": 1611,
+  "columns_count": 14,
+  "columns": [
+    "update_type",
+    "initial_posting_date",
+    "package_ndc",
+    "generic_name",
+    "contact_info",
+    "availability",
+    "related_info",
+    "openfda",
+    "update_date",
+    "therapeutic_category",
+    "dosage_form",
+    "presentation",
+    "company_name",
+    "status"
+  ],
+  "duplicates_count": 1,
+  "duplicates_pct": 0.06,
+  "columns_detail": {
+    "update_type": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "initial_posting_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2012-01-01",
+        "max": "2026-12-06"
+      }
+    },
+    "package_ndc": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "generic_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "contact_info": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "availability": {
+      "dtype": "string",
+      "null_count": 469,
+      "null_pct": 29.11
+    },
+    "related_info": {
+      "dtype": "string",
+      "null_count": 501,
+      "null_pct": 31.1
+    },
+    "openfda": {
+      "dtype": "string",
+      "null_count": 301,
+      "null_pct": 18.68
+    },
+    "update_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2023-04-28",
+        "max": "2026-12-05"
+      }
+    },
+    "therapeutic_category": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "dosage_form": {
+      "dtype": "string",
+      "null_count": 10,
+      "null_pct": 0.62
+    },
+    "presentation": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "company_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "status": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

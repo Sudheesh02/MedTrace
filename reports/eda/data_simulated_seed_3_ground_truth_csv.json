@@ -1,0 +1,122 @@
+{
+  "file_path": "data/simulated_seed_3/ground_truth.csv",
+  "file_size_bytes": 1518,
+  "rows": 10,
+  "columns_count": 8,
+  "columns": [
+    "anomaly_id",
+    "type",
+    "facility_id",
+    "medicine_id",
+    "day_index",
+    "description",
+    "magnitude",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "anomaly_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "type": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "day_index": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10,
+        "min": 160.0,
+        "max": 175.0,
+        "mean": 169.1,
+        "std": 4.21,
+        "median": 169.5,
+        "quantiles": {
+          "p25": 167.25,
+          "p50": 169.5,
+          "p75": 171.75,
+          "p90": 174.1,
+          "p95": 174.55
+        },
+        "outliers_iqr": {
+          "count": 1,
+          "pct": 10.0,
+          "bounds": [
+            160.5,
+            178.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "description": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "magnitude": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10,
+        "min": 0.0,
+        "max": 900.0,
+        "mean": 252.2,
+        "std": 269.63,
+        "median": 150.0,
+        "quantiles": {
+          "p25": 52.5,
+          "p50": 150.0,
+          "p75": 375.0,
+          "p90": 540.0,
+          "p95": 720.0
+        },
+        "outliers_iqr": {
+          "count": 1,
+          "pct": 10.0,
+          "bounds": [
+            -431.25,
+            858.75
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 1,
+          "zero_pct": 10.0
+        }
+      }
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

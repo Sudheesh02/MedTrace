@@ -1,0 +1,105 @@
+{
+  "file_path": "data/simulated_seed_3/purchase_orders.csv",
+  "file_size_bytes": 101104,
+  "rows": 1236,
+  "columns_count": 9,
+  "columns": [
+    "po_id",
+    "supplier_id",
+    "facility_id",
+    "medicine_id",
+    "quantity",
+    "order_date",
+    "promised_date",
+    "status",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "po_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "supplier_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "quantity": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 1236,
+        "min": 18.0,
+        "max": 12000.0,
+        "mean": 853.09,
+        "std": 1646.18,
+        "median": 192.0,
+        "quantiles": {
+          "p25": 95.75,
+          "p50": 192.0,
+          "p75": 616.0,
+          "p90": 2700.0,
+          "p95": 4500.0
+        },
+        "outliers_iqr": {
+          "count": 207,
+          "pct": 16.75,
+          "bounds": [
+            -684.62,
+            1396.38
+          ]
+        },
+        "outliers_zscore": {
+          "count": 28,
+          "pct": 2.27
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "order_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-05-05",
+        "max": "2026-10-24"
+      }
+    },
+    "promised_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-05-11",
+        "max": "2026-11-01"
+      }
+    },
+    "status": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

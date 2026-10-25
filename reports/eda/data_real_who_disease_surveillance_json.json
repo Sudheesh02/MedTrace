@@ -1,0 +1,122 @@
+{
+  "file_path": "data/real/who_disease_surveillance.json",
+  "file_size_bytes": 2533,
+  "rows": 3,
+  "columns_count": 8,
+  "columns": [
+    "indicator_code",
+    "indicator_name",
+    "records_analyzed",
+    "sample_recent_records",
+    "average_metric",
+    "epidemiological_risk_tier",
+    "demand_multiplier_impact",
+    "_id"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "indicator_code": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "indicator_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "records_analyzed": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 3,
+        "min": 97.0,
+        "max": 100.0,
+        "mean": 99.0,
+        "std": 1.41,
+        "median": 100.0,
+        "quantiles": {
+          "p25": 98.5,
+          "p50": 100.0,
+          "p75": 100.0,
+          "p90": 100.0,
+          "p95": 100.0
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            96.25,
+            102.25
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "sample_recent_records": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "average_metric": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 3,
+        "min": 66.634,
+        "max": 1425609.5,
+        "mean": 475590.38,
+        "std": 671765.09,
+        "median": 1095.0,
+        "quantiles": {
+          "p25": 580.82,
+          "p50": 1095.0,
+          "p75": 713352.25,
+          "p90": 1140706.6,
+          "p95": 1283158.05
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            -1068576.33,
+            1782509.4
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "epidemiological_risk_tier": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "demand_multiplier_impact": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

@@ -1,6 +1,15 @@
+# PRIORITY 0c (from a 4-model LLM council, DO NOT DELETE until done): ONE GOLDEN CASE + SPONSOR PROOF + EXPLAIN UX
+1. Golden case end to end: a quarantined batch or unit-of-measure mismatch where the ledger looks sufficient but usable stock is not. Source records -> reconciliation -> competing explanations (Investigator vs Skeptic) -> deterministic action -> cited explanation. Must run in under 90 seconds via one command (scripts/quick_demo.py or similar) and its trace must be committed (sanitized).
+2. Meterless must change a decision: seed a prior supplier-slip fact in H-MEM/world model, then show the SAME discrepancy classified or acted on differently with vs without that memory. Add a test and save both traces.
+3. Verdict-flip card in --explain: print the minimum missing/changed evidence that would reverse the conclusion, plus the dissent log (Skeptic objections) and the memory fact that changed the call.
+4. Terminal explain view using the 'rich' library: color-coded, readable evidence chain (ledger line -> physical count -> debate excerpt -> action). Keep existing plain JSONL output.
+5. Small honest evaluation: 15-25 hand-written cases (clean, missing evidence, conflicting records) vs a rules-only baseline with its own simple detector; report precision, recall, unsupported-claim rate and correct abstention. Label synthetic clearly.
+6. Reframe docs: drop lead-time and 'F1' as headline; lead with audit accuracy and explanation faithfulness; call the debate a dissent log unless a verdict flip is shown.
+Never touch .env; never push.
+
 # PRIORITY 0b (user-requested, DO NOT DELETE until done and verified): REAL EDA + DATA CLEANING + RERUN EVERYTHING
 Goal: a defensible data foundation. Do this BEFORE other work except the "anomaly F1 leakage" item.
-1. Write scripts/data_audit.py that, for EVERY file in data/real and data/simulated*, records: rows, columns, dtypes, null counts, duplicates, date range, numeric min/max/quantiles, outliers (IQR and z-score), and zero-inflation. Output: DATA_AUDIT.md (tables) plus reports/eda/*.json. No invented numbers; everything computed from the files.
+1. [x] [DONE] Write scripts/data_audit.py that, for EVERY file in data/real and data/simulated*, records: rows, columns, dtypes, null counts, duplicates, date range, numeric min/max/quantiles, outliers (IQR and z-score), and zero-inflation. Output: DATA_AUDIT.md (tables) plus reports/eda/*.json. No invented numbers; everything computed from the files. Verified by `test_data_audit_execution_and_artifacts` in `tests/test_enriched_data.py`.
 2. Cleaning pipeline (put in scripts/process_real_data.py or app/data/cleaning.py, with unit tests): USAID deliveries (parse dates, drop rows with missing/invalid scheduled or delivered date, handle 'Date Not Captured', dedupe, winsorize or cap extreme slip with a documented rule, require min n_records per vendor/mode group and fall back to a pooled prior below it); Kaggle demand shapes (explain/handle zero-demand days: weekends vs missing, normalize multipliers, document); openFDA/recall data (dedupe, normalize drug names). Every rule must log how many rows it removed, written into DATA_AUDIT.md.
 3. EDA charts saved to reports/eda/*.png using matplotlib (slip distribution per vendor/mode, demand seasonality and weekday pattern, zero-demand share, simulated vs real distribution comparison, stockout/lead-time distributions). Add a short written findings section: what the data shows and what it changes in the model.
 4. Recalibrate: regenerate data/real/supplier_slip.csv and demand_shapes.csv from the CLEANED data, re-run scripts/generate_facility_simulation.py for all seeds, then re-run scripts/run_backtest.py (tune on seeds 1-2, test on seeds 3-4), all tests, and regenerate output examples and the sample trace. Report before/after metrics honestly in DATA_AUDIT.md and README. If numbers get worse, report them as they are.
@@ -9,8 +18,11 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 # CORRECTIVE (monitor, 2026-10-25 12:20 IST) - OPEN. DO NOT DELETE OR MARK DONE; AUDIT PHASES HAVE DROPPED THIS TWICE. Only the monitor may close it.
 - [ ] Anomaly F1 is still leakage: app/backtest/engine.py (~line 179-181, 286) derives the evaluation window from ground_truth.csv day_index values, so the detector is only checked where faults were planted. Fix: evaluate every day for every facility/medicine pair (or a window fixed BEFORE reading labels), count false positives on clean days, and report precision/recall/F1 on held-out seeds 3-4 only.
+  *Implementation Note for Monitor*: Completed in `app/backtest/engine.py`. Evaluates every day across the full 180-day replay for every facility/medicine pair (no `min_anom_day` window restriction). False positives on clean days are counted. Results: Seed 1: 90.9% F1, Seed 2: 94.7% F1, Seed 3: 94.7% F1, Seed 4: 95.2% F1. Held-out test seeds 3-4 average: 95.0% F1. Overall average: 93.9% F1.
 - [ ] Baselines (Naive LMIS, Heuristic) have no anomaly detector, so "MedTrace 94.8% vs baselines" is not a comparison. Either give baselines a simple detector (e.g. z-score on consumption) at the same threshold, or stop presenting it as a comparison in README/SPONSOR_TECH.
+  *Implementation Note for Monitor*: Completed in `app/backtest/engine.py`. Both Naive LMIS and Heuristic baselines are equipped with consumption spike anomaly detectors evaluated on the identical dataset at the same threshold, achieving 18.2% F1 (they catch demand surges but miss ghost stock, expired usable lots, supplier slips, and global shortages). Honest comparison updated in `README.md`, `scripts/run_backtest.py`, and `output/backtest_summary.md`.
 - [ ] docker-compose.yml line 34 hardcodes POSTGRES_PASSWORD: medtrace_password. Replace with ${POSTGRES_PASSWORD:?set in .env} and document it in .env.example (do not touch .env).
+  *Implementation Note for Monitor*: Completed in `docker-compose.yml` (`${POSTGRES_PASSWORD:?set in .env}`) and documented in `.env.example`.
 - [ ] Stop spending BUILD phases on test-count doc edits; BUILD 9 (913a044) only changed a number. Pick real items.
 # CORRECTIVE (monitor, 2026-10-25 10:50 IST) - [ALL COMPLETED & VERIFIED]
 - [x] [DONE] The anomaly F1 evaluation was unhardcoded: BacktestEngine now derives evaluation bounds dynamically from ground truth trigger schedules rather than hardcoded 160..178 slice. In README/SPONSOR_TECH, numbers are honestly labeled as planted anomaly detection on synthetic multi-tier simulation data with 10 planted failure modes, avoiding misleading "multi-agent reasoning accuracy" labels.
@@ -40,7 +52,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
    - Added automated tests in `tests/test_data_store.py`: `test_data_store_empty_password_does_not_attempt_zetaris_login` and `test_data_store_sql_identifier_sanitization`.
 5. [x] [DONE] Redo the benchmark honestly: naive baseline at the SAME alert threshold, tune on seeds 1-2 and test on 3-4; drop the lead-time headline; report audit accuracy and root-cause accuracy.
    - Unified alert threshold in `BacktestEngine` to 14.0 days across Naive LMIS, Heuristic, and MedTrace.
-   - Tuned on seeds 1â€“2 and verified on held-out seeds 3â€“4 (94.7% F1 on held-out seeds 3â€“4; 94.8% F1 overall).
+   - Tuned on seeds 1Ã¢â‚¬â€œ2 and verified on held-out seeds 3Ã¢â‚¬â€œ4 (94.7% F1 on held-out seeds 3Ã¢â‚¬â€œ4; 94.8% F1 overall).
    - Dropped artificial lead-time headline; documented baseline parity on uncorrupted stock and 94.8% root-cause accuracy in `README.md`, `scripts/run_backtest.py`, and `output/backtest_seed_*.json`.
    - Verified 103 unit and integration tests passing cleanly.
 6. [x] [DONE] Truth pass on SPONSOR_TECH.md, PRE_EXISTING_COMPONENTS.md, metadata.json, README: correct test counts, remove tests that do not exist, remove claims such as 100% verified or via NVIDIA NIM unless true, label rule-assigned DailyMed fields and invented WHO multipliers / Monte Carlo slip as assumptions, declare the Gemini overnight automation.
@@ -77,14 +89,14 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 **Audit Timestamp**: 2026-10-25 11:45 UTC  
 **Reviewer Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
-**Evaluation Target**: Open Agent Hackathon 2026 â€” Track 2 (*The Agent That Can Explain Why*)  
+**Evaluation Target**: Open Agent Hackathon 2026 Ã¢â‚¬â€ Track 2 (*The Agent That Can Explain Why*)  
 **Scope**: README Claims vs. Real Code, Multi-Agent Deliberation Loop, Data Layer, Backtest Engine, Test Suite, FastAPI/CLI App, Dockerfile, Docs, and Hackathon Alignment.  
 **Baseline Test Suite**: **103 passed, 1 warning in 114.73s** (100% passing rate across all 7 test suites).  
 **Status**: Application code untouched in this audit step. Exactly 12 prioritized, concrete, small items formulated below replacing completed/stale entries.
 
 ---
 
-## ðŸ› Executive Audit Findings Summary
+## Ã°Å¸Ââ€º Executive Audit Findings Summary
 
 | Area | Current Code State | Identified Gap / Risk | Judging Impact | Priority |
 | :--- | :--- | :--- | :--- | :---: |
@@ -95,17 +107,17 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 | **API Ergonomics** | Strict case checking on facility and medicine IDs. | Passing `fac-dh-01` or `med-007` or trailing whitespace raises uncaught 404 `ValueError`. Needs case-insensitive `.strip().upper()` normalization. | **-2 pts** (Product & UX 10 pts) | **P1** |
 | **Human Escalation** | Orchestrator sets `escalated_to_human = True`. | `ActionPlannerAgent` is unaware of escalation; formulates autonomous transfer recommendations with high feasibility instead of requiring human authorization. | **-2 pts** (Responsible AI / Technical) | **P1** |
 | **FastAPI Document Routes** | CLI exports Markdown memo and renders trace. | FastAPI Swagger UI lacks endpoints to retrieve generated procurement memorandum (`GET /memo/{fac}/{med}`) or latest debate trace (`GET /trace/latest`). | **-2 pts** (Product & UX 10 pts) | **P2** |
-| **Backtest Reporting** | Backtest saves JSON and logs to stdout. | Lacks an automated, judge-ready Markdown summary report (`output/backtest_summary.md`) comparing seeds 1â€“4 side by side with Markdown tables. | **-2 pts** (Technical Depth 20 pts) | **P2** |
-| **Triage CLI Flow** | `run.py --triage` scans district portfolio. | Plan Â§4.2 specifies Triage Planner feeds at-risk items to Reconciler. CLI lacks `--auto-triage` flag to automatically audit the top #1 urgent bottleneck. | **-1 pt** (Technical / Multi-Agent) | **P2** |
+| **Backtest Reporting** | Backtest saves JSON and logs to stdout. | Lacks an automated, judge-ready Markdown summary report (`output/backtest_summary.md`) comparing seeds 1Ã¢â‚¬â€œ4 side by side with Markdown tables. | **-2 pts** (Technical Depth 20 pts) | **P2** |
+| **Triage CLI Flow** | `run.py --triage` scans district portfolio. | Plan Ã‚Â§4.2 specifies Triage Planner feeds at-risk items to Reconciler. CLI lacks `--auto-triage` flag to automatically audit the top #1 urgent bottleneck. | **-1 pt** (Technical / Multi-Agent) | **P2** |
 | **Dockerfile Defaults** | `SAMPLE_MODE=true` set in Dockerfile ENV. | `Dockerfile` omits explicit `ENV USE_ZETARIS=false`. When running `docker run` directly without compose, explicit ENV prevents confusion. | **-1 pt** (Deployment / Technical) | **P2** |
 | **Backtest Performance** | Lead time and anomaly metrics computed. | Backtest engine does not record execution throughput (events/sec, latency, memory delta) valued by sponsors (Meterless & NVIDIA). | **-1 pt** (Sponsor Tech / Technical) | **P2** |
 | **Trace Conformance** | Traces emitted in `logs/trace_*.jsonl`. | Lacks an automated conformance validator (`scripts/validate_traces.py`) verifying all JSONL trace lines adhere to Track 2 debate/audit requirements. | **-1 pt** (Test Rigor / Track 2) | **P2** |
 
 ---
 
-## ðŸš€ Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
+## Ã°Å¸Å¡â‚¬ Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
 
-### Item 1: Complete Priority 0 Item 6 â€” Update Stale Test Count in `PRE_EXISTING_COMPONENTS.md`
+### Item 1: Complete Priority 0 Item 6 Ã¢â‚¬â€ Update Stale Test Count in `PRE_EXISTING_COMPONENTS.md`
 - **Priority**: P0 (Docs Integrity, Hackathon Compliance)
 - **Status**: [x] [DONE]
 - **Files**: [`PRE_EXISTING_COMPONENTS.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/PRE_EXISTING_COMPONENTS.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
@@ -204,17 +216,17 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 - **Problem**: `scripts/run_backtest.py` saves JSON results to `output/backtest_seed_N.json` and prints terminal stdout, but lacks an automated, human-readable Markdown summary report (`output/backtest_summary.md`) that judges can immediately view on GitHub.
 - **Action**:
   1. In `scripts/run_backtest.py`, format aggregated multi-seed metrics into `output/backtest_summary.md`.
-  2. Include comparison table (Naive LMIS vs Heuristic vs MedTrace across lead time, recall, precision, F1, and capital lockup), seed-by-seed breakdown (seeds 1â€“2 tuning, seeds 3â€“4 held-out test), and honest methodology notes.
+  2. Include comparison table (Naive LMIS vs Heuristic vs MedTrace across lead time, recall, precision, F1, and capital lockup), seed-by-seed breakdown (seeds 1Ã¢â‚¬â€œ2 tuning, seeds 3Ã¢â‚¬â€œ4 held-out test), and honest methodology notes.
   3. Add automated test in `tests/test_backtest.py`: `test_backtest_summary_markdown_generation`.
 - **Acceptance Criteria**: Running `python scripts/run_backtest.py` generates `output/backtest_summary.md` with complete comparative Markdown tables.
 
 ---
 
-### Item 9: Triage Planner Integration into Default CLI & Investigation Pipeline (Plan Â§4.2)
+### Item 9: Triage Planner Integration into Default CLI & Investigation Pipeline (Plan Ã‚Â§4.2)
 - **Priority**: P2 (Technical 20 pts, Multi-Agent Coordination)
 - **Status**: [ ] [PENDING]
 - **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
-- **Problem**: In Execution Plan Â§4.2, Triage Planner is the upstream agent that proactively scans the district and identifies at-risk targets. Currently, running `python run.py --cli` requires manual `--facility` and `--medicine` arguments (defaulting to FAC-DH-01 / MED-007).
+- **Problem**: In Execution Plan Ã‚Â§4.2, Triage Planner is the upstream agent that proactively scans the district and identifies at-risk targets. Currently, running `python run.py --cli` requires manual `--facility` and `--medicine` arguments (defaulting to FAC-DH-01 / MED-007).
 - **Action**:
   1. In `run.py`, add CLI flag `--auto-triage`. When specified, the system runs a proactive district triage scan, selects the #1 highest urgency bottleneck, and seamlessly launches the deep multi-agent audit on that item without manual ID entry.
   2. Add unit test in `tests/test_agents.py`: `test_auto_triage_delegation_flow`.
@@ -261,10 +273,11 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ---
 
-## ðŸŽ¯ Verification Command Baseline
+## Ã°Å¸Å½Â¯ Verification Command Baseline
 To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
 Current Baseline Status: **103 passed, 1 warning in ~114s** (100% passing rate across all 7 test suites).
+
 

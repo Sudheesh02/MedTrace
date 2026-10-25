@@ -1,0 +1,89 @@
+{
+  "file_path": "data/simulated_seed_3/deliveries.csv",
+  "file_size_bytes": 72908,
+  "rows": 1181,
+  "columns_count": 7,
+  "columns": [
+    "delivery_id",
+    "po_id",
+    "facility_id",
+    "medicine_id",
+    "received_date",
+    "received_qty",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "delivery_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "po_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "received_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-05-11",
+        "max": "2026-10-24"
+      }
+    },
+    "received_qty": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 1181,
+        "min": 18.0,
+        "max": 11600.0,
+        "mean": 814.42,
+        "std": 1505.03,
+        "median": 189.0,
+        "quantiles": {
+          "p25": 92.0,
+          "p50": 189.0,
+          "p75": 616.0,
+          "p90": 2625.0,
+          "p95": 4400.0
+        },
+        "outliers_iqr": {
+          "count": 194,
+          "pct": 16.43,
+          "bounds": [
+            -694.0,
+            1402.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 31,
+          "pct": 2.62
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

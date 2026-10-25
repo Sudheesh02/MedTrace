@@ -1,0 +1,427 @@
+{
+  "file_path": "data/real/raw/usaid_deliveries.csv",
+  "file_size_bytes": 3785904,
+  "rows": 10324,
+  "columns_count": 33,
+  "columns": [
+    "\ufeffID",
+    "Project Code",
+    "PQ #",
+    "PO / SO #",
+    "ASN/DN #",
+    "Country",
+    "Managed By",
+    "Fulfill Via",
+    "Vendor INCO Term",
+    "Shipment Mode",
+    "PQ First Sent to Client Date",
+    "PO Sent to Vendor Date",
+    "Scheduled Delivery Date",
+    "Delivered to Client Date",
+    "Delivery Recorded Date",
+    "Product Group",
+    "Sub Classification",
+    "Vendor",
+    "Item Description",
+    "Molecule/Test Type",
+    "Brand",
+    "Dosage",
+    "Dosage Form",
+    "Unit of Measure (Per Pack)",
+    "Line Item Quantity",
+    "Line Item Value",
+    "Pack Price",
+    "Unit Price",
+    "Manufacturing Site",
+    "First Line Designation",
+    "Weight (Kilograms)",
+    "Freight Cost (USD)",
+    "Line Item Insurance (USD)"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "\ufeffID": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 1.0,
+        "max": 86823.0,
+        "mean": 51098.97,
+        "std": 31942.79,
+        "median": 57540.5,
+        "quantiles": {
+          "p25": 12795.75,
+          "p50": 57540.5,
+          "p75": 83648.25,
+          "p90": 85541.7,
+          "p95": 86167.85
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            -93483.0,
+            189927.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "Project Code": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "PQ #": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "PO / SO #": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "ASN/DN #": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Country": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Managed By": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Fulfill Via": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Vendor INCO Term": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Shipment Mode": {
+      "dtype": "string",
+      "null_count": 360,
+      "null_pct": 3.49
+    },
+    "PQ First Sent to Client Date": {
+      "dtype": "string",
+      "null_count": 205,
+      "null_pct": 1.99
+    },
+    "PO Sent to Vendor Date": {
+      "dtype": "string",
+      "null_count": 328,
+      "null_pct": 3.18
+    },
+    "Scheduled Delivery Date": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Delivered to Client Date": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Delivery Recorded Date": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Product Group": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Sub Classification": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Vendor": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Item Description": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Molecule/Test Type": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Brand": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Dosage": {
+      "dtype": "string",
+      "null_count": 1736,
+      "null_pct": 16.82
+    },
+    "Dosage Form": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Unit of Measure (Per Pack)": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 1.0,
+        "max": 1000.0,
+        "mean": 77.99,
+        "std": 76.58,
+        "median": 60.0,
+        "quantiles": {
+          "p25": 30.0,
+          "p50": 60.0,
+          "p75": 90.0,
+          "p90": 180.0,
+          "p95": 240.0
+        },
+        "outliers_iqr": {
+          "count": 1023,
+          "pct": 9.91,
+          "bounds": [
+            -60.0,
+            180.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 67,
+          "pct": 0.65
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "Line Item Quantity": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 1.0,
+        "max": 619999.0,
+        "mean": 18332.53,
+        "std": 40033.36,
+        "median": 3000.0,
+        "quantiles": {
+          "p25": 408.0,
+          "p50": 3000.0,
+          "p75": 17039.75,
+          "p90": 53267.0,
+          "p95": 90951.55
+        },
+        "outliers_iqr": {
+          "count": 1371,
+          "pct": 13.28,
+          "bounds": [
+            -24539.62,
+            41987.38
+          ]
+        },
+        "outliers_zscore": {
+          "count": 217,
+          "pct": 2.1
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "Line Item Value": {
+      "dtype": "float",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 0.0,
+        "max": 5951990.4,
+        "mean": 157650.57,
+        "std": 345275.34,
+        "median": 30471.47,
+        "quantiles": {
+          "p25": 4314.59,
+          "p50": 30471.47,
+          "p75": 166447.14,
+          "p90": 437487.79,
+          "p95": 702831.0
+        },
+        "outliers_iqr": {
+          "count": 1127,
+          "pct": 10.92,
+          "bounds": [
+            -238884.23,
+            409645.96
+          ]
+        },
+        "outliers_zscore": {
+          "count": 193,
+          "pct": 1.87
+        },
+        "zero_inflation": {
+          "zero_count": 17,
+          "zero_pct": 0.16
+        }
+      }
+    },
+    "Pack Price": {
+      "dtype": "float",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 0.0,
+        "max": 1345.64,
+        "mean": 21.91,
+        "std": 45.61,
+        "median": 9.3,
+        "quantiles": {
+          "p25": 4.12,
+          "p50": 9.3,
+          "p75": 23.59,
+          "p90": 69.94,
+          "p95": 80.0
+        },
+        "outliers_iqr": {
+          "count": 1160,
+          "pct": 11.24,
+          "bounds": [
+            -25.09,
+            52.8
+          ]
+        },
+        "outliers_zscore": {
+          "count": 80,
+          "pct": 0.77
+        },
+        "zero_inflation": {
+          "zero_count": 18,
+          "zero_pct": 0.17
+        }
+      }
+    },
+    "Unit Price": {
+      "dtype": "float",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 0.0,
+        "max": 238.65,
+        "mean": 0.61,
+        "std": 3.28,
+        "median": 0.16,
+        "quantiles": {
+          "p25": 0.08,
+          "p50": 0.16,
+          "p75": 0.47,
+          "p90": 0.89,
+          "p95": 1.6
+        },
+        "outliers_iqr": {
+          "count": 880,
+          "pct": 8.52,
+          "bounds": [
+            -0.51,
+            1.05
+          ]
+        },
+        "outliers_zscore": {
+          "count": 90,
+          "pct": 0.87
+        },
+        "zero_inflation": {
+          "zero_count": 103,
+          "zero_pct": 1.0
+        }
+      }
+    },
+    "Manufacturing Site": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "First Line Designation": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Weight (Kilograms)": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Freight Cost (USD)": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "Line Item Insurance (USD)": {
+      "dtype": "float",
+      "null_count": 287,
+      "null_pct": 2.78,
+      "numeric_stats": {
+        "count": 10037,
+        "min": 0.0,
+        "max": 7708.44,
+        "mean": 240.12,
+        "std": 500.17,
+        "median": 47.04,
+        "quantiles": {
+          "p25": 6.51,
+          "p50": 47.04,
+          "p75": 252.4,
+          "p90": 682.95,
+          "p95": 1082.03
+        },
+        "outliers_iqr": {
+          "count": 1116,
+          "pct": 11.12,
+          "bounds": [
+            -362.33,
+            621.24
+          ]
+        },
+        "outliers_zscore": {
+          "count": 214,
+          "pct": 2.13
+        },
+        "zero_inflation": {
+          "zero_count": 54,
+          "zero_pct": 0.54
+        }
+      }
+    }
+  }
+}

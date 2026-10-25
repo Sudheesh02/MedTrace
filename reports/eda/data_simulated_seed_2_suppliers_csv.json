@@ -1,0 +1,116 @@
+{
+  "file_path": "data/simulated_seed_2/suppliers.csv",
+  "file_size_bytes": 408,
+  "rows": 4,
+  "columns_count": 7,
+  "columns": [
+    "supplier_id",
+    "supplier_name",
+    "real_vendor_ref",
+    "shipment_mode",
+    "historical_mean_slip",
+    "historical_p90_slip",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "supplier_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "supplier_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "real_vendor_ref": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "shipment_mode": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "historical_mean_slip": {
+      "dtype": "float",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 4,
+        "min": -12.57,
+        "max": 1.03,
+        "mean": -4.67,
+        "std": 5.03,
+        "median": -3.58,
+        "quantiles": {
+          "p25": -6.9,
+          "p50": -3.58,
+          "p75": -1.35,
+          "p90": 0.08,
+          "p95": 0.55
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            -15.22,
+            6.96
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "historical_p90_slip": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 4,
+        "min": 3.0,
+        "max": 14.0,
+        "mean": 7.5,
+        "std": 4.15,
+        "median": 6.5,
+        "quantiles": {
+          "p25": 4.5,
+          "p50": 6.5,
+          "p75": 9.5,
+          "p90": 12.2,
+          "p95": 13.1
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            -3.0,
+            17.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

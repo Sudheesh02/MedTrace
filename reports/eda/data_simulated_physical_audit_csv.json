@@ -1,0 +1,89 @@
+{
+  "file_path": "data/simulated/physical_audit.csv",
+  "file_size_bytes": 37269,
+  "rows": 432,
+  "columns_count": 7,
+  "columns": [
+    "audit_id",
+    "date",
+    "facility_id",
+    "medicine_id",
+    "counted_stock",
+    "auditor_notes",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "audit_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-06-27",
+        "max": "2026-10-10"
+      }
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "counted_stock": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 432,
+        "min": 0.0,
+        "max": 56149.0,
+        "mean": 2523.41,
+        "std": 5765.75,
+        "median": 519.5,
+        "quantiles": {
+          "p25": 243.25,
+          "p50": 519.5,
+          "p75": 1775.75,
+          "p90": 6499.0,
+          "p95": 13773.9
+        },
+        "outliers_iqr": {
+          "count": 64,
+          "pct": 14.81,
+          "bounds": [
+            -2055.5,
+            4074.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 10,
+          "pct": 2.31
+        },
+        "zero_inflation": {
+          "zero_count": 1,
+          "zero_pct": 0.23
+        }
+      }
+    },
+    "auditor_notes": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

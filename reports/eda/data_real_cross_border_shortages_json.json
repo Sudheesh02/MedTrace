@@ -1,0 +1,122 @@
+{
+  "file_path": "data/real/cross_border_shortages.json",
+  "file_size_bytes": 3943,
+  "rows": 12,
+  "columns_count": 8,
+  "columns": [
+    "generic_name",
+    "primary_search_term",
+    "active_shortage_flag",
+    "root_cause_classification",
+    "regulatory_records_found",
+    "reported_reasons",
+    "multi_country_impact",
+    "_id"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "generic_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "primary_search_term": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "active_shortage_flag": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 12,
+        "min": 0.0,
+        "max": 1.0,
+        "mean": 0.08,
+        "std": 0.28,
+        "median": 0.0,
+        "quantiles": {
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p90": 0.0,
+          "p95": 0.45
+        },
+        "outliers_iqr": {
+          "count": 1,
+          "pct": 8.33,
+          "bounds": [
+            0.0,
+            0.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 1,
+          "pct": 8.33
+        },
+        "zero_inflation": {
+          "zero_count": 11,
+          "zero_pct": 91.67
+        }
+      }
+    },
+    "root_cause_classification": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "regulatory_records_found": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 12,
+        "min": 0.0,
+        "max": 6.0,
+        "mean": 1.17,
+        "std": 1.91,
+        "median": 0.0,
+        "quantiles": {
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 2.0,
+          "p90": 3.8,
+          "p95": 4.9
+        },
+        "outliers_iqr": {
+          "count": 1,
+          "pct": 8.33,
+          "bounds": [
+            -3.0,
+            5.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 8,
+          "zero_pct": 66.67
+        }
+      }
+    },
+    "reported_reasons": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "multi_country_impact": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

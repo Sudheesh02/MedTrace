@@ -1,0 +1,89 @@
+{
+  "file_path": "data/simulated/batches.csv",
+  "file_size_bytes": 17318,
+  "rows": 291,
+  "columns_count": 7,
+  "columns": [
+    "batch_id",
+    "medicine_id",
+    "facility_id",
+    "quantity",
+    "expiry_date",
+    "quarantined",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "batch_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "quantity": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 291,
+        "min": 7.0,
+        "max": 5520.0,
+        "mean": 347.0,
+        "std": 706.92,
+        "median": 79.0,
+        "quantiles": {
+          "p25": 36.5,
+          "p50": 79.0,
+          "p75": 297.5,
+          "p90": 912.0,
+          "p95": 1687.5
+        },
+        "outliers_iqr": {
+          "count": 38,
+          "pct": 13.06,
+          "bounds": [
+            -355.0,
+            689.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 7,
+          "pct": 2.41
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "expiry_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-10-29",
+        "max": "2028-06-15"
+      }
+    },
+    "quarantined": {
+      "dtype": "boolean",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

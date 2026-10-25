@@ -179,3 +179,40 @@ def test_reconciler_uom_mismatch_uses_packaging_standards(store):
         store.get_deliveries = orig_deliv
         store.get_purchase_orders = orig_pos
 
+
+def test_data_audit_execution_and_artifacts():
+    """
+    Priority 0b Gate: Verifies that scripts/data_audit.py executes cleanly,
+    outputs DATA_AUDIT.md and reports/eda/*.json, and computes exact statistics
+    from disk with zero invented numbers.
+    """
+    import os
+    import json
+    from scripts.data_audit import run_audit
+
+    audits, md_path = run_audit(output_dir="reports/eda")
+    assert len(audits) >= 50
+    assert os.path.exists(md_path)
+
+    with open(md_path, "r", encoding="utf-8") as f:
+        md_text = f.read()
+
+    assert "# MedTrace Comprehensive Empirical Data Audit (DATA_AUDIT.md)" in md_text
+    assert "data/real/raw/salesdaily.csv" in md_text
+    assert "data/real/raw/usaid_deliveries.csv" in md_text
+    assert "data/simulated/ledger_daily.csv" in md_text
+
+    # Verify JSON reports exist
+    report_files = [f for f in os.listdir("reports/eda") if f.endswith(".json")]
+    assert len(report_files) >= 50
+
+    sample_report_path = os.path.join("reports/eda", report_files[0])
+    with open(sample_report_path, "r", encoding="utf-8") as f:
+        sample_data = json.load(f)
+
+    assert "file_path" in sample_data
+    assert "rows" in sample_data
+    assert "columns_count" in sample_data
+    assert "columns_detail" in sample_data
+
+

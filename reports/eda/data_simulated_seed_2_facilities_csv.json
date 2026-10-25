@@ -1,0 +1,73 @@
+{
+  "file_path": "data/simulated_seed_2/facilities.csv",
+  "file_size_bytes": 703,
+  "rows": 12,
+  "columns_count": 5,
+  "columns": [
+    "facility_id",
+    "name",
+    "level",
+    "catchment_scale",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "level": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "catchment_scale": {
+      "dtype": "float",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 12,
+        "min": 0.12,
+        "max": 5.0,
+        "mean": 0.86,
+        "std": 1.41,
+        "median": 0.23,
+        "quantiles": {
+          "p25": 0.12,
+          "p50": 0.23,
+          "p75": 0.51,
+          "p90": 2.35,
+          "p95": 3.62
+        },
+        "outliers_iqr": {
+          "count": 2,
+          "pct": 16.67,
+          "bounds": [
+            -0.47,
+            1.1
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

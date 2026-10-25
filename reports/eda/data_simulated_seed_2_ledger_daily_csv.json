@@ -1,0 +1,77 @@
+{
+  "file_path": "data/simulated_seed_2/ledger_daily.csv",
+  "file_size_bytes": 1166559,
+  "rows": 25920,
+  "columns_count": 5,
+  "columns": [
+    "date",
+    "facility_id",
+    "medicine_id",
+    "ledger_stock",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-04-28",
+        "max": "2026-10-24"
+      }
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "ledger_stock": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 25920,
+        "min": 0.0,
+        "max": 48544.0,
+        "mean": 2364.27,
+        "std": 5540.74,
+        "median": 480.0,
+        "quantiles": {
+          "p25": 195.0,
+          "p50": 480.0,
+          "p75": 1511.0,
+          "p90": 6176.0,
+          "p95": 12262.05
+        },
+        "outliers_iqr": {
+          "count": 3839,
+          "pct": 14.81,
+          "bounds": [
+            -1779.0,
+            3485.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 732,
+          "pct": 2.82
+        },
+        "zero_inflation": {
+          "zero_count": 37,
+          "zero_pct": 0.14
+        }
+      }
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

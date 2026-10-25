@@ -1,0 +1,77 @@
+{
+  "file_path": "data/simulated_seed_3/true_stock_daily.csv",
+  "file_size_bytes": 1166532,
+  "rows": 25920,
+  "columns_count": 5,
+  "columns": [
+    "date",
+    "facility_id",
+    "medicine_id",
+    "true_stock",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-04-28",
+        "max": "2026-10-24"
+      }
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "true_stock": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 25920,
+        "min": 0.0,
+        "max": 60728.0,
+        "mean": 2488.53,
+        "std": 5732.23,
+        "median": 491.0,
+        "quantiles": {
+          "p25": 201.0,
+          "p50": 491.0,
+          "p75": 1529.25,
+          "p90": 6840.3,
+          "p95": 13900.35
+        },
+        "outliers_iqr": {
+          "count": 4083,
+          "pct": 15.75,
+          "bounds": [
+            -1791.38,
+            3521.62
+          ]
+        },
+        "outliers_zscore": {
+          "count": 679,
+          "pct": 2.62
+        },
+        "zero_inflation": {
+          "zero_count": 29,
+          "zero_pct": 0.11
+        }
+      }
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

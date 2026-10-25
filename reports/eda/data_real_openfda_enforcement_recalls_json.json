@@ -1,0 +1,108 @@
+{
+  "file_path": "data/real/openfda_enforcement_recalls.json",
+  "file_size_bytes": 356403,
+  "rows": 3,
+  "columns_count": 5,
+  "columns": [
+    "source",
+    "total_curated_records",
+    "generated_at",
+    "medicines_covered",
+    "_id"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "source": {
+      "dtype": "string",
+      "null_count": 2,
+      "null_pct": 66.67
+    },
+    "total_curated_records": {
+      "dtype": "integer",
+      "null_count": 2,
+      "null_pct": 66.67,
+      "numeric_stats": {
+        "count": 1,
+        "min": 189.0,
+        "max": 189.0,
+        "mean": 189.0,
+        "std": 0.0,
+        "median": 189.0,
+        "quantiles": {
+          "p25": 189.0,
+          "p50": 189.0,
+          "p75": 189.0,
+          "p90": 189.0,
+          "p95": 189.0
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            189.0,
+            189.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "generated_at": {
+      "dtype": "date",
+      "null_count": 2,
+      "null_pct": 66.67,
+      "date_range": {
+        "min": "2026-10-24",
+        "max": "2026-10-24"
+      }
+    },
+    "medicines_covered": {
+      "dtype": "integer",
+      "null_count": 2,
+      "null_pct": 66.67,
+      "numeric_stats": {
+        "count": 1,
+        "min": 12.0,
+        "max": 12.0,
+        "mean": 12.0,
+        "std": 0.0,
+        "median": 12.0,
+        "quantiles": {
+          "p25": 12.0,
+          "p50": 12.0,
+          "p75": 12.0,
+          "p90": 12.0,
+          "p95": 12.0
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            12.0,
+            12.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "_id": {
+      "dtype": "string",
+      "null_count": 1,
+      "null_pct": 33.33
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "file_path": "data/simulated_seed_2/batches.csv",
+  "file_size_bytes": 17320,
+  "rows": 291,
+  "columns_count": 7,
+  "columns": [
+    "batch_id",
+    "medicine_id",
+    "facility_id",
+    "quantity",
+    "expiry_date",
+    "quarantined",
+    "source"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "batch_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "facility_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "quantity": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 291,
+        "min": 7.0,
+        "max": 5040.0,
+        "mean": 344.45,
+        "std": 705.02,
+        "median": 80.0,
+        "quantiles": {
+          "p25": 36.0,
+          "p50": 80.0,
+          "p75": 275.0,
+          "p90": 991.0,
+          "p95": 1567.5
+        },
+        "outliers_iqr": {
+          "count": 44,
+          "pct": 15.12,
+          "bounds": [
+            -322.5,
+            633.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 8,
+          "pct": 2.75
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "expiry_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2026-10-29",
+        "max": "2028-06-12"
+      }
+    },
+    "quarantined": {
+      "dtype": "boolean",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "source": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

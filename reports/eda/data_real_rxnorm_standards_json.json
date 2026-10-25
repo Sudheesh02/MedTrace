@@ -1,0 +1,91 @@
+{
+  "file_path": "data/real/rxnorm_standards.json",
+  "file_size_bytes": 2828,
+  "rows": 12,
+  "columns_count": 8,
+  "columns": [
+    "medicine_id",
+    "generic_name",
+    "rxcui",
+    "rxnorm_name",
+    "standard_form",
+    "strength",
+    "atc_code",
+    "_id"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "generic_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "rxcui": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 12,
+        "min": 161.0,
+        "max": 195085.0,
+        "mean": 28628.75,
+        "std": 53297.77,
+        "median": 6591.0,
+        "quantiles": {
+          "p25": 2697.0,
+          "p50": 6591.0,
+          "p75": 18909.75,
+          "p90": 63480.6,
+          "p95": 125322.45
+        },
+        "outliers_iqr": {
+          "count": 2,
+          "pct": 16.67,
+          "bounds": [
+            -21622.12,
+            43228.88
+          ]
+        },
+        "outliers_zscore": {
+          "count": 1,
+          "pct": 8.33
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "rxnorm_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "standard_form": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "strength": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "atc_code": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}

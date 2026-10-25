@@ -1,0 +1,140 @@
+{
+  "file_path": "data/real/medicine_master.csv",
+  "file_size_bytes": 1796,
+  "rows": 12,
+  "columns_count": 11,
+  "columns": [
+    "medicine_id",
+    "generic_name",
+    "rxcui",
+    "strength",
+    "form",
+    "atc_code",
+    "level_min",
+    "shelf_life_months",
+    "demand_group",
+    "supply_group",
+    "source_url"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "medicine_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "generic_name": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "rxcui": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 12,
+        "min": 161.0,
+        "max": 195085.0,
+        "mean": 28628.75,
+        "std": 53297.77,
+        "median": 6591.0,
+        "quantiles": {
+          "p25": 2697.0,
+          "p50": 6591.0,
+          "p75": 18909.75,
+          "p90": 63480.6,
+          "p95": 125322.45
+        },
+        "outliers_iqr": {
+          "count": 2,
+          "pct": 16.67,
+          "bounds": [
+            -21622.12,
+            43228.88
+          ]
+        },
+        "outliers_zscore": {
+          "count": 1,
+          "pct": 8.33
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "strength": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "form": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "atc_code": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "level_min": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "shelf_life_months": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 12,
+        "min": 24.0,
+        "max": 36.0,
+        "mean": 33.0,
+        "std": 5.2,
+        "median": 36.0,
+        "quantiles": {
+          "p25": 33.0,
+          "p50": 36.0,
+          "p75": 36.0,
+          "p90": 36.0,
+          "p95": 36.0
+        },
+        "outliers_iqr": {
+          "count": 3,
+          "pct": 25.0,
+          "bounds": [
+            28.5,
+            40.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "demand_group": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "supply_group": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "source_url": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    }
+  }
+}
