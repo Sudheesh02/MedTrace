@@ -267,3 +267,6 @@ docker compose up --build
 - **Author**: [@Sudheesh02](https://github.com/Sudheesh02)
 - **Track**: Track 2 — *The Agent That Can Explain Why*
 - **License**: MIT
+
+
+> **Dashboard**: a read-only Next.js UI over run outputs lives in [`dashboard/`](dashboard/README.md) (`cd dashboard; npm install; npm run dev`, http://localhost:3001).

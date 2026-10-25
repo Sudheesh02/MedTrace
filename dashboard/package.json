@@ -1,0 +1,17 @@
+{
+  "name": "medtrace-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only dashboard over MedTrace run outputs (traces, action packs, eval reports).",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}
