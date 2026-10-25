@@ -356,3 +356,7 @@ td.neg { color: var(--warn); font-weight: 600; }
 
 /* mobile: grid items must be allowed to shrink below their content width (prevents horizontal page overflow) */
 .md > *, .dgrid > *, .two > *, .vs > *, .flipwrap > * { min-width: 0; }
+
+/* long file paths in inline code must wrap instead of widening the page on mobile */
+code { white-space: normal; overflow-wrap: anywhere; }
+
