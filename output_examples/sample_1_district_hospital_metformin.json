@@ -1,9 +1,9 @@
 {
-  "run_id": "run-01a63d03",
+  "run_id": "run-838aa74e",
   "status": "success",
-  "execution_time_seconds": 0.73,
+  "execution_time_seconds": 0.16,
   "output": {
-    "run_id": "run-01a63d03",
+    "run_id": "run-838aa74e",
     "facility_id": "FAC-DH-01",
     "medicine_id": "MED-007",
     "stockout_prevented": false,
@@ -46,6 +46,22 @@
         }
       },
       {
+        "action_id": "ACT-MON-FAC-DH-01-MED-007",
+        "action_type": "MONITOR_BUFFER",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.92,
+        "justification": "Following 50-unit ledger debit adjustment, verified usable stock covers 103.9 days. Routine buffer monitoring active; emergency quotas remain on standby.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "trust_cover_days": 103.94
+        }
+      },
+      {
         "action_id": "ACT-TRF-FAC-DH-01-MED-007",
         "action_type": "PEER_TRANSFER",
         "facility_id": "FAC-DH-01",
@@ -53,12 +69,12 @@
         "recommended_units": 0.0,
         "source_facility_id": null,
         "supplier_id": null,
-        "feasibility_score": 0.5,
+        "feasibility_score": 0.2,
         "justification": "No emergency stock transfer required: Facility holds 103.9 days of verified usable cover, exceeding safety threshold. Inter-facility transfer queue on standby.",
         "number_provenance": {
           "shortfall_units": 0.0,
           "gap_days": 0.0,
-          "peer_surplus": 17066.0
+          "peer_surplus": 4309.0
         }
       },
       {
@@ -69,7 +85,7 @@
         "recommended_units": 0.0,
         "source_facility_id": null,
         "supplier_id": "SUP-003",
-        "feasibility_score": 0.4,
+        "feasibility_score": 0.15,
         "justification": "Standard procurement cycle: No expedited dispatch required; existing inventory covers 103.9 days.",
         "number_provenance": {
           "shortfall_units": 0.0,
@@ -84,7 +100,7 @@
         "recommended_units": 0.0,
         "source_facility_id": null,
         "supplier_id": null,
-        "feasibility_score": 0.3,
+        "feasibility_score": 0.1,
         "justification": "Zero emergency procurement required: Local stock is adequate (103.9 days of cover); emergency quota preserved.",
         "number_provenance": {
           "shortfall_units": 0.0,
@@ -93,11 +109,21 @@
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-01a63d03.jsonl",
+    "trace_file": "logs\\trace_run-838aa74e.jsonl",
+    "action_plan_audit": {
+      "audited": true,
+      "passed": true,
+      "verified_recommendations_count": 5,
+      "flagged_inconsistencies": []
+    },
     "escalated_to_human": false,
     "escalation_reason": null
   },
   "agents": [
+    {
+      "name": "TriagePlanner",
+      "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"
+    },
     {
       "name": "Reconciler",
       "role": "Audits ledger vs physical audit vs batch expiry"
@@ -123,5 +149,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-01a63d03.jsonl"
+  "trace_file": "logs\\trace_run-838aa74e.jsonl"
 }

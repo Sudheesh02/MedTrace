@@ -22,6 +22,11 @@
       "recall_pct": 90.0,
       "f1_score_pct": 94.7
     },
+    "action_sizing_error_pct": {
+      "naive_lmis": 62.0,
+      "heuristic_rule_based": 0.0,
+      "medtrace": 1.6
+    },
     "capital_lockup_false_reorders": {
       "naive_lmis": 0,
       "heuristic_rule_based": 0,

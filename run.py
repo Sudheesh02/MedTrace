@@ -104,12 +104,7 @@ def api_run(req: RunRequest):
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
-        duration = round(time.time() - start_time, 2)
-        return {
-            "status": "error",
-            "execution_time_seconds": duration,
-            "error": {"type": type(e).__name__, "message": str(e)}
-        }
+        raise HTTPException(status_code=500, detail=str(e))
 
 def main():
     parser = argparse.ArgumentParser(description="MedTrace Agent Runner")
@@ -124,6 +119,7 @@ def main():
     parser.add_argument("--reason", default="Manual officer judgment", help="Reason for decision")
     parser.add_argument("--triage", action="store_true", help="Execute proactive district-wide inventory triage scan")
     parser.add_argument("--top-n", type=int, default=5, help="Number of urgent items to display in triage")
+    parser.add_argument("--explain", action="store_true", help="Render executive multi-agent debate timeline after investigation")
     args = parser.parse_args()
 
     if args.sample_mode:
@@ -193,6 +189,9 @@ def main():
         print(f"- Justification: {top_act.justification}")
         print(f"\nTrace log written to: {pack.trace_file}")
         print("="*60)
+        if args.explain:
+            from scripts.explain_trace import render_trace
+            render_trace(pack.trace_file)
     else:
         port = int(os.getenv("PORT", args.port))
         print(f"[*] Starting MedTrace HTTP Server on 0.0.0.0:{port}...")

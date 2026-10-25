@@ -68,6 +68,7 @@ def main():
             "execution_time_seconds": duration,
             "output": pack.model_dump(),
             "agents": [
+                {"name": "TriagePlanner", "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"},
                 {"name": "Reconciler", "role": "Audits ledger vs physical audit vs batch expiry"},
                 {"name": "WorldModel", "role": "Maintains shared canonical grounded entities & relations"},
                 {"name": "Investigator", "role": "Generates >= 3 competing hypotheses with evidence queries"},

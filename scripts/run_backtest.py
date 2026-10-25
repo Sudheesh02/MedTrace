@@ -57,6 +57,10 @@ def main():
     avg_anom_r = sum(r["metrics"]["anomaly_detection"]["recall_pct"] for r in all_results) / len(all_results)
     avg_anom_f1 = sum(r["metrics"]["anomaly_detection"]["f1_score_pct"] for r in all_results) / len(all_results)
 
+    avg_naive_sizing = sum(r["metrics"]["action_sizing_error_pct"]["naive_lmis"] for r in all_results) / len(all_results)
+    avg_heur_sizing = sum(r["metrics"]["action_sizing_error_pct"]["heuristic_rule_based"] for r in all_results) / len(all_results)
+    avg_med_sizing = sum(r["metrics"]["action_sizing_error_pct"]["medtrace"] for r in all_results) / len(all_results)
+
     total_naive_false = sum(r["metrics"]["capital_lockup_false_reorders"]["naive_lmis"] for r in all_results)
     total_heur_false = sum(r["metrics"]["capital_lockup_false_reorders"]["heuristic_rule_based"] for r in all_results)
     total_med_false = sum(r["metrics"]["capital_lockup_false_reorders"]["medtrace"] for r in all_results)
@@ -66,6 +70,7 @@ def main():
     print(f"{'Anomaly Precision':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {avg_anom_p:>11.1f} % | High precision")
     print(f"{'Anomaly Recall':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {avg_anom_r:>11.1f} % | Target >85%")
     print(f"{'Anomaly F1 Score':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {avg_anom_f1:>11.1f} % | Target >85%")
+    print(f"{'Action Sizing Error':<32} | {avg_naive_sizing:>11.1f} % | {avg_heur_sizing:>11.1f} % | {avg_med_sizing:>11.1f} % | -{avg_naive_sizing - avg_med_sizing:.1f}% error vs baseline")
     print(f"{'False Emergency Orders':<32} | {total_naive_false:>14} | {total_heur_false:>14} | {total_med_false:>14} | Low capital lockup")
     print("="*85)
 

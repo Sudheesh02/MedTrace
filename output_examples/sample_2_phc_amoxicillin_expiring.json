@@ -1,9 +1,9 @@
 {
-  "run_id": "run-0c0cc9c9",
+  "run_id": "run-2ef0498e",
   "status": "success",
-  "execution_time_seconds": 0.68,
+  "execution_time_seconds": 0.08,
   "output": {
-    "run_id": "run-0c0cc9c9",
+    "run_id": "run-2ef0498e",
     "facility_id": "FAC-PHC-01",
     "medicine_id": "MED-004",
     "stockout_prevented": true,
@@ -76,11 +76,21 @@
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-0c0cc9c9.jsonl",
+    "trace_file": "logs\\trace_run-2ef0498e.jsonl",
+    "action_plan_audit": {
+      "audited": true,
+      "passed": true,
+      "verified_recommendations_count": 3,
+      "flagged_inconsistencies": []
+    },
     "escalated_to_human": false,
     "escalation_reason": null
   },
   "agents": [
+    {
+      "name": "TriagePlanner",
+      "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"
+    },
     {
       "name": "Reconciler",
       "role": "Audits ledger vs physical audit vs batch expiry"
@@ -106,5 +116,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-0c0cc9c9.jsonl"
+  "trace_file": "logs\\trace_run-2ef0498e.jsonl"
 }

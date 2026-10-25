@@ -1,9 +1,9 @@
 {
-  "run_id": "run-2543d040",
+  "run_id": "run-b3ee596b",
   "status": "success",
-  "execution_time_seconds": 0.69,
+  "execution_time_seconds": 0.03,
   "output": {
-    "run_id": "run-2543d040",
+    "run_id": "run-b3ee596b",
     "facility_id": "FAC-CHC-01",
     "medicine_id": "MED-001",
     "stockout_prevented": true,
@@ -35,14 +35,14 @@
         "facility_id": "FAC-CHC-01",
         "medicine_id": "MED-001",
         "recommended_units": 148.3,
-        "source_facility_id": "FAC-WH-01",
+        "source_facility_id": "FAC-WH-02",
         "supplier_id": null,
         "feasibility_score": 0.9,
-        "justification": "Transfer 148.3 units from peer warehouse FAC-WH-01 (usable surplus 29866 units, lead time 24h) to cover 5.27-day gap.",
+        "justification": "Transfer 148.3 units from peer warehouse FAC-WH-02 (usable surplus 9099 units, lead time 24h) to cover 5.27-day gap.",
         "number_provenance": {
           "shortfall_units": 148.3,
           "gap_days": 5.27,
-          "peer_surplus": 29866.0
+          "peer_surplus": 9099.0
         }
       },
       {
@@ -93,11 +93,21 @@
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-2543d040.jsonl",
+    "trace_file": "logs\\trace_run-b3ee596b.jsonl",
+    "action_plan_audit": {
+      "audited": true,
+      "passed": true,
+      "verified_recommendations_count": 4,
+      "flagged_inconsistencies": []
+    },
     "escalated_to_human": false,
     "escalation_reason": null
   },
   "agents": [
+    {
+      "name": "TriagePlanner",
+      "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"
+    },
     {
       "name": "Reconciler",
       "role": "Audits ledger vs physical audit vs batch expiry"
@@ -123,5 +133,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-2543d040.jsonl"
+  "trace_file": "logs\\trace_run-b3ee596b.jsonl"
 }
