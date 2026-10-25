@@ -62,15 +62,16 @@ An exhaustive audit of [README.md](file:///C:/Users/Asus/Desktop/Open%20Agent/RE
 
 ### Item 1: Officer Decision & Feedback API/CLI Endpoint (`POST /decision` & H-MEM Bridge)
 - **Priority**: P0 (Product & UX 10 pts, Sponsor Tech 10 pts, Execution Plan §1.5 & §4.2)
-- **Status**: [ ] PROPOSED
-- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Status**: [x] DONE (Verified with 2 new automated API tests; 65 passed in 34.28s)
+- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md)
 - **Problem**: `HMemEngine.record_officer_decision()` works internally, but there is no external route for a user, officer, or judge to record approvals or rejections (`POST /decision` or `python run.py --record-decision`). Consequently, cross-session memory adaptation cannot be evaluated or demonstrated live from the API or CLI.
-- **Action**:
-  1. In `run.py`, create a `DecisionRequest` model (`facility_id`, `medicine_id`, `action_type`, `decision`, `reason`) and endpoint `POST /decision`.
-  2. Implement `orchestrator.record_decision(...)` that delegates to `self.hmem.record_officer_decision(...)` and returns the updated preference state.
-  3. Add CLI flags `--record-decision`, `--decision` (`APPROVED`|`REJECTED`), and `--reason`.
-  4. Add unit test `test_api_record_officer_decision_and_hmem_adaptation` in `tests/test_api.py`.
-- **Acceptance Criteria**: `POST /decision` records officer feedback with HTTP 200, and a subsequent `POST /run` reflects adjusted action feasibility scores influenced by H-MEM memory.
+- **Action Taken**:
+  1. In `run.py`, defined `DecisionRequest` model (`facility_id`, `medicine_id`, `action_type`, `decision`, `reason`) and implemented `POST /decision` endpoint with structured HTTP 400/404 error handling.
+  2. Implemented `orchestrator.record_decision(...)` with input entity validation, normalising action types, delegating to `self.hmem.record_officer_decision(...)`, and returning the updated preference and rejected pattern state.
+  3. Added CLI flags `--record-decision`, `--action-type`, `--decision` (`APPROVED`|`REJECTED`), and `--reason` in `run.py`, displaying a clean formatted summary card.
+  4. Added comprehensive tests `test_api_record_officer_decision_and_hmem_adaptation` and `test_api_decision_validation_errors` in `tests/test_api.py`, asserting that officer rejection penalizes action feasibility by 0.20 and subsequent approval deterministically resolves the contradiction and restores feasibility.
+  5. Updated `README.md` and `SPONSOR_TECH.md` with interactive CLI and API documentation.
+- **Verification**: `python -m pytest tests/test_api.py -v` (9 passed); full suite `python -m pytest tests -q` (65 passed in 34.28s). Clean CLI execution tested via `python run.py --record-decision`.
 
 ---
 
@@ -226,4 +227,4 @@ To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
-Current Status: **63 passed, 1 warning in 33.43s** (100% passing rate).
+Current Status: **65 passed, 1 warning in 34.28s** (100% passing rate).

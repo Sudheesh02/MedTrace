@@ -132,6 +132,7 @@ flowchart LR
 - **Key Capabilities**:
   1. **Cross-Session Recall (Phase 4 Test H1)**: Decisions written in Session A (e.g., rejecting an emergency transfer due to local clinical preferences) are recalled in Session B, penalizing recurring rejected patterns. Verified by `test_hmem_session_memory_persistence`.
   2. **Deterministic Contradiction Resolution (Phase 4 Test H2)**: If an officer rejects an action pattern in Session A but subsequently approves it in Session B (e.g., policy change or acute crisis), H-MEM deterministically clears the prior rejection penalty and updates preference weightings without LLM hallucination. Verified by `test_hmem_contradiction_resolution`.
+  3. **Interactive Officer Decision API & CLI (`POST /decision`)**: Exposes interactive routes for users, officers, and hackathon judges to submit approvals/rejections live (`POST /decision` or `python run.py --record-decision`), dynamically steering multi-agent action feasibility in subsequent runs. Verified by `test_api_record_officer_decision_and_hmem_adaptation`.
 
 ---
 
@@ -171,15 +172,19 @@ python -m pytest tests/test_data_store.py -q
 
 # Verify Meterless World Model (W1, W2) & H-MEM (H1, H2)
 python -m pytest tests/test_world_model.py -q
-# Result: 6 passed
+# Result: 4 passed
+
+# Verify Meterless H-MEM API & CLI Officer Decision Feedback
+python -m pytest tests/test_api.py -q
+# Result: 9 passed
 
 # Verify Multi-Agent Loops with NVIDIA Nemotron Reasoning Traces
 python -m pytest tests/test_agents.py -q
-# Result: 22 passed
+# Result: 18 passed
 
 # Full End-to-End Test Baseline
 python -m pytest tests/ -q
-# Result: 62 passed in ~31s
+# Result: 65 passed in ~34s
 ```
 
 All sponsor requirements are 100% verified, production-hardened, and judge-ready.

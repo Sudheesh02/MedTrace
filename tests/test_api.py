@@ -99,3 +99,120 @@ def test_api_run_multiple_facilities_dynamism(client, fac_id, med_id):
     assert pack["days_of_cover_trust"] >= 0.0
     assert len(pack["recommendations"]) >= 2
     assert "trace_file" in data
+
+def test_api_record_officer_decision_and_hmem_adaptation(client):
+    """
+    Test Phase 4 H-MEM API Integration:
+    1. Runs baseline investigation where PEER_TRANSFER has high feasibility (0.90).
+    2. Records an officer rejection via POST /decision, storing the decision in H-MEM.
+    3. Re-runs investigation, asserting that H-MEM cross-session recall penalizes PEER_TRANSFER feasibility.
+    4. Records an officer approval via POST /decision, asserting deterministic contradiction resolution.
+    5. Re-runs investigation, asserting feasibility penalty is cleared and restored.
+    """
+    import os
+    from run import orchestrator
+
+    # Reset any active memory in orchestrator
+    orchestrator.hmem.episodic_memory.clear()
+    orchestrator.hmem.long_term_beliefs = {
+        "supplier_delays": {},
+        "officer_action_preferences": {},
+        "rejected_patterns": []
+    }
+
+    # Step 1: Baseline investigation for FAC-CHC-01 and MED-001
+    res_base = client.post("/run", json={"facility_id": "FAC-CHC-01", "medicine_id": "MED-001"})
+    assert res_base.status_code == 200
+    base_pack = res_base.json()["output"]
+    base_transfer = [r for r in base_pack["recommendations"] if r["action_type"] == "PEER_TRANSFER"][0]
+    base_feasibility = base_transfer["feasibility_score"]
+    assert base_feasibility == 0.90
+
+    # Step 2: Officer rejects PEER_TRANSFER via POST /decision
+    decision_payload = {
+        "facility_id": "FAC-CHC-01",
+        "medicine_id": "MED-001",
+        "action_type": "PEER_TRANSFER",
+        "decision": "REJECTED",
+        "reason": "Primary route flooded; mountain pass blocked"
+    }
+    dec_res = client.post("/decision", json=decision_payload)
+    assert dec_res.status_code == 200
+    dec_data = dec_res.json()
+    assert dec_data["status"] == "success"
+    assert "memory_state" in dec_data
+    assert dec_data["memory_state"]["preferences"]["rejected"] == 1
+    assert any("PEER_TRANSFER" in p for p in dec_data["memory_state"]["rejected_patterns"])
+
+    # Step 3: Re-run investigation and verify feasibility is penalized
+    res_penalized = client.post("/run", json={"facility_id": "FAC-CHC-01", "medicine_id": "MED-001"})
+    assert res_penalized.status_code == 200
+    penalized_pack = res_penalized.json()["output"]
+    penalized_transfer = [r for r in penalized_pack["recommendations"] if r["action_type"] == "PEER_TRANSFER"][0]
+    assert penalized_transfer["feasibility_score"] == round(base_feasibility - 0.20, 2)
+    assert penalized_transfer["feasibility_score"] == 0.70
+
+    # Step 4: Contradiction Resolution — Officer later approves PEER_TRANSFER
+    approval_payload = {
+        "facility_id": "FAC-CHC-01",
+        "medicine_id": "MED-001",
+        "action_type": "PEER_TRANSFER",
+        "decision": "APPROVED",
+        "reason": "Road repair complete; alternative route certified"
+    }
+    app_res = client.post("/decision", json=approval_payload)
+    assert app_res.status_code == 200
+    app_data = app_res.json()
+    assert app_data["status"] == "success"
+    assert app_data["memory_state"]["preferences"]["approved"] == 1
+    assert app_data["memory_state"]["preferences"]["rejected"] == 0
+    assert not any("PEER_TRANSFER" in p for p in app_data["memory_state"]["rejected_patterns"])
+
+    # Step 5: Re-run investigation and verify feasibility penalty is restored
+    res_restored = client.post("/run", json={"facility_id": "FAC-CHC-01", "medicine_id": "MED-001"})
+    assert res_restored.status_code == 200
+    restored_pack = res_restored.json()["output"]
+    restored_transfer = [r for r in restored_pack["recommendations"] if r["action_type"] == "PEER_TRANSFER"][0]
+    assert restored_transfer["feasibility_score"] == base_feasibility
+
+    # Cleanup memory and persistence file
+    orchestrator.hmem.episodic_memory.clear()
+    orchestrator.hmem.long_term_beliefs = {
+        "supplier_delays": {},
+        "officer_action_preferences": {},
+        "rejected_patterns": []
+    }
+    if os.path.exists("logs/hmem_store.json"):
+        os.remove("logs/hmem_store.json")
+
+def test_api_decision_validation_errors(client):
+    """Verify POST /decision returns structured 404/400 errors for invalid inputs."""
+    # Invalid facility
+    res_fac = client.post("/decision", json={
+        "facility_id": "FAC-NONEXISTENT",
+        "medicine_id": "MED-001",
+        "action_type": "PEER_TRANSFER",
+        "decision": "APPROVED"
+    })
+    assert res_fac.status_code == 404
+    assert "Unrecognized facility_id" in res_fac.json()["detail"]
+
+    # Invalid medicine
+    res_med = client.post("/decision", json={
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-NONEXISTENT",
+        "action_type": "PEER_TRANSFER",
+        "decision": "APPROVED"
+    })
+    assert res_med.status_code == 404
+    assert "Unrecognized medicine_id" in res_med.json()["detail"]
+
+    # Invalid decision string
+    res_dec = client.post("/decision", json={
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "action_type": "PEER_TRANSFER",
+        "decision": "MAYBE"
+    })
+    assert res_dec.status_code == 400
+    assert "Invalid decision" in res_dec.json()["detail"]

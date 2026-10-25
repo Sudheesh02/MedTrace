@@ -137,6 +137,9 @@ python run.py --cli --facility FAC-CHC-01 --medicine MED-001
 
 # Offline / Judge Sample Mode (runs 100% locally with zero external network dependencies)
 python run.py --cli --facility FAC-CHC-01 --medicine MED-001 --sample-mode
+
+# Record human officer feedback into Meterless H-MEM cross-session memory
+python run.py --record-decision --facility FAC-CHC-01 --medicine MED-001 --action-type PEER_TRANSFER --decision REJECTED --reason "Route flooded"
 ```
 
 ### 5. Launch FastAPI Service
@@ -145,6 +148,7 @@ python run.py
 ```
 - Interactive Swagger UI: `http://localhost:8000/docs`
 - Execute run: `POST http://localhost:8000/run`
+- Record officer decision: `POST http://localhost:8000/decision`
 
 ### 6. Run Test Suite & Backtest Evaluation
 ```bash

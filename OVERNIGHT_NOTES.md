@@ -324,3 +324,33 @@
   - Item 7: Clean CLI formatting for enum values.
   - Item 8: Create `scripts/explain_trace.py` for human-readable debate timeline rendering.
   - Item 9: Prune Docker build context in `.dockerignore`.
+
+---
+
+### Session: 2026-10-25 07:35 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 1 — Item 1 Implementation (Officer Decision & Feedback API/CLI Endpoint & H-MEM Bridge)
+
+#### What Was Done
+1. **Implemented `POST /decision` Endpoint**:
+   - In [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), created `DecisionRequest` model (`facility_id`, `medicine_id`, `action_type`, `decision`, `reason`) and implemented `POST /decision` with HTTP 400 for invalid decision strings and HTTP 404 for unrecognized facilities or medicines.
+2. **Added `record_decision` to MedTraceOrchestrator**:
+   - In [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), added `record_decision(...)` method that validates target facility and medicine against `DataStore`, normalizes action type, delegates to `self.hmem.record_officer_decision(...)`, and returns the updated preference state and active rejected patterns.
+   - Added optional `hmem` parameter to `MedTraceOrchestrator.__init__` for test isolation.
+3. **Added CLI Support for Interactive Officer Feedback**:
+   - In [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), added `--record-decision`, `--action-type`, `--decision` (`APPROVED`|`REJECTED`), and `--reason` flags. Tested interactive CLI invocation.
+   - Polished action type terminal formatting to print clean enum strings (e.g. `- Type: PEER_TRANSFER`).
+4. **Engineered Comprehensive Automated Test Suite**:
+   - In [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py), added:
+     - `test_api_record_officer_decision_and_hmem_adaptation`: Verifies that officer rejection via `POST /decision` penalizes `PEER_TRANSFER` feasibility by 0.20 in subsequent `POST /run` calls, and subsequent approval triggers deterministic contradiction resolution in H-MEM to restore feasibility.
+     - `test_api_decision_validation_errors`: Validates structured 404 and 400 error responses on invalid facilities, medicines, and decision values.
+5. **Synchronized Documentation**:
+   - Updated [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md) and [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md) with interactive `POST /decision` API and `--record-decision` CLI documentation and updated test counts (65 passed in ~34s).
+   - Marked Item 1 as DONE in [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md).
+6. **Verified Full Test Suite**:
+   - Executed `python -m pytest tests -q` — **65 passed, 1 warning in 34.28s** (100% passing rate).
+
+#### What Is Next
+- **Item 2 (Next Highest Priority)**: Implement `TriagePlannerAgent` (`app/agents/triage_planner.py` & `GET /triage`) for proactive district portfolio scanning.
+- **Item 3**: Add `ActionType.MONITOR_BUFFER` for healthy stock scenarios.
+- **Item 4**: Deduce peer phantom drift in `ActionPlannerAgent` before recommending transfers.

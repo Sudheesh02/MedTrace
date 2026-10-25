@@ -26,6 +26,13 @@ class RunRequest(BaseModel):
     medicine_id: Optional[str] = "MED-007"
     options: Optional[Dict[str, Any]] = None
 
+class DecisionRequest(BaseModel):
+    facility_id: str
+    medicine_id: str
+    action_type: str
+    decision: str
+    reason: Optional[str] = ""
+
 @app.get("/health")
 def health_check():
     return {
@@ -34,6 +41,27 @@ def health_check():
         "sample_mode": orchestrator.llm_client.sample_mode,
         "zetaris_enabled": orchestrator.data_store.use_zetaris
     }
+
+@app.post("/decision")
+def api_record_decision(req: DecisionRequest):
+    try:
+        res = orchestrator.record_decision(
+            facility_id=req.facility_id,
+            medicine_id=req.medicine_id,
+            action_type=req.action_type,
+            decision=req.decision,
+            reason=req.reason or ""
+        )
+        return {
+            "status": "success",
+            "message": f"Officer decision '{req.decision.upper()}' recorded for {req.facility_id} {req.action_type}",
+            "memory_state": res
+        }
+    except ValueError as ve:
+        status_code = 400 if "Invalid decision" in str(ve) else 404
+        raise HTTPException(status_code=status_code, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/run")
 def api_run(req: RunRequest):
@@ -81,12 +109,34 @@ def main():
     parser.add_argument("--medicine", default="MED-007", help="Target medicine ID")
     parser.add_argument("--port", type=int, default=8000, help="API server port")
     parser.add_argument("--sample-mode", action="store_true", help="Force sample mode offline execution")
+    parser.add_argument("--record-decision", action="store_true", help="Record an officer approval/rejection decision into H-MEM")
+    parser.add_argument("--action-type", default="PEER_TRANSFER", help="Action type to decide on (e.g. PEER_TRANSFER, EXPEDITE_PO)")
+    parser.add_argument("--decision", choices=["APPROVED", "REJECTED", "approved", "rejected"], default="APPROVED", help="Decision (APPROVED or REJECTED)")
+    parser.add_argument("--reason", default="Manual officer judgment", help="Reason for decision")
     args = parser.parse_args()
 
     if args.sample_mode:
         os.environ["SAMPLE_MODE"] = "true"
         orchestrator.llm_client.sample_mode = True
         orchestrator.data_store.use_zetaris = False
+
+    if args.record_decision:
+        print(f"[*] Recording Officer Decision in H-MEM: Facility={args.facility}, Medicine={args.medicine}, Action={args.action_type}, Decision={args.decision.upper()}...")
+        try:
+            res = orchestrator.record_decision(
+                facility_id=args.facility,
+                medicine_id=args.medicine,
+                action_type=args.action_type,
+                decision=args.decision.upper(),
+                reason=args.reason
+            )
+            print("[+] Successfully recorded officer decision in H-MEM.")
+            print(f"    Preference State for {args.facility}_{res['action_type']}: {res['preferences']}")
+            print(f"    Active Rejected Patterns: {res['rejected_patterns']}")
+        except ValueError as ve:
+            print(f"[!] Validation Error: {ve}")
+            sys.exit(1)
+        return
 
     if args.cli:
         print(f"[*] Starting MedTrace CLI Investigation: Facility={args.facility}, Medicine={args.medicine}...")
@@ -108,7 +158,8 @@ def main():
         print(f"Skeptic Rounds: {pack.skeptic_rounds}")
         print("\nTop Recommended Action:")
         top_act = pack.recommendations[0]
-        print(f"- Type: {top_act.action_type}")
+        act_type_str = top_act.action_type.value if hasattr(top_act.action_type, 'value') else str(top_act.action_type)
+        print(f"- Type: {act_type_str}")
         print(f"- Recommended Quantity: {top_act.recommended_units} units")
         print(f"- Justification: {top_act.justification}")
         print(f"\nTrace log written to: {pack.trace_file}")

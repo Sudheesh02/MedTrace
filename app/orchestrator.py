@@ -21,7 +21,7 @@ from app.agents.action_planner import ActionPlannerAgent
 from app.models.schemas import ActionPack
 
 class MedTraceOrchestrator:
-    def __init__(self, use_zetaris: bool = False, logs_dir: str = "logs"):
+    def __init__(self, use_zetaris: bool = False, logs_dir: str = "logs", hmem: Optional[HMemEngine] = None):
         self.logs_dir = logs_dir
         os.makedirs(self.logs_dir, exist_ok=True)
 
@@ -32,7 +32,7 @@ class MedTraceOrchestrator:
         self.world_store = WorldStoreService()
         self.ingest_service = IngestPipelineService(self.world_store)
         self.context_builder = ContextBuilderService(self.world_store)
-        self.hmem = HMemEngine()
+        self.hmem = hmem or HMemEngine()
 
         # Agents
         self.reconciler = ReconcilerAgent(self.data_store, self.ingest_service)
@@ -199,3 +199,48 @@ class MedTraceOrchestrator:
 
         log_step("Orchestrator", "RUN_COMPLETE", {"run_id": run_id, "status": "SUCCESS"})
         return pack
+
+    def record_decision(
+        self,
+        facility_id: str,
+        medicine_id: str,
+        action_type: str,
+        decision: str,
+        reason: str = ""
+    ) -> Dict[str, Any]:
+        """
+        Records an officer's approval or rejection decision into Meterless H-MEM.
+        Enforces entity existence validation and updates long-term preferences.
+        """
+        valid_facs = {f["facility_id"] for f in self.data_store.get_facilities()}
+        valid_meds = {m["medicine_id"] for m in self.data_store.get_medicines()}
+        if valid_facs and facility_id not in valid_facs:
+            raise ValueError(f"Unrecognized facility_id '{facility_id}'. Registered facilities: {sorted(list(valid_facs))}")
+        if valid_meds and medicine_id not in valid_meds:
+            raise ValueError(f"Unrecognized medicine_id '{medicine_id}'. Registered medicines: {sorted(list(valid_meds))}")
+
+        normalized_decision = decision.strip().upper()
+        if normalized_decision not in ("APPROVED", "REJECTED"):
+            raise ValueError(f"Invalid decision '{decision}'. Must be 'APPROVED' or 'REJECTED'.")
+
+        action_type_clean = action_type.value if hasattr(action_type, "value") else str(action_type).replace("ActionType.", "").strip().upper()
+
+        self.hmem.record_officer_decision(
+            facility_id=facility_id,
+            medicine_id=medicine_id,
+            action_type=action_type_clean,
+            decision=normalized_decision,
+            reason=reason
+        )
+
+        pref_key = f"{facility_id}_{action_type_clean}"
+        return {
+            "facility_id": facility_id,
+            "medicine_id": medicine_id,
+            "action_type": action_type_clean,
+            "decision": normalized_decision,
+            "reason": reason,
+            "preferences": self.hmem.long_term_beliefs["officer_action_preferences"].get(pref_key, {}),
+            "all_preferences": self.hmem.long_term_beliefs["officer_action_preferences"],
+            "rejected_patterns": self.hmem.long_term_beliefs["rejected_patterns"][-5:]
+        }
