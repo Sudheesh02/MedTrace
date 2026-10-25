@@ -9,7 +9,7 @@
 # PRIORITY 0c (from a 4-model LLM council, DO NOT DELETE until done): ONE GOLDEN CASE + SPONSOR PROOF + EXPLAIN UX
 1. [x] [DONE] Golden case end to end: a quarantined batch or unit-of-measure mismatch where the ledger looks sufficient but usable stock is not. Source records -> reconciliation -> competing explanations (Investigator vs Skeptic) -> deterministic action -> cited explanation. Must run in under 90 seconds via one command (scripts/quick_demo.py or similar) and its trace must be committed (sanitized). Verified via `scripts/quick_demo.py --case golden` and `tests/test_api.py::test_quick_demo_golden_case_execution`.
 2. [x] [DONE] Meterless must change a decision: seed a prior supplier-slip fact in H-MEM/world model, then show the SAME discrepancy classified or acted on differently with vs without that memory. Add a test and save both traces. Verified by `test_hmem_supplier_delay_belief_changes_decision` in `tests/test_world_model.py`; saved `logs/trace_without_memory.jsonl` and `logs/trace_with_memory.jsonl`.
-3. Verdict-flip card in --explain: print the minimum missing/changed evidence that would reverse the conclusion, plus the dissent log (Skeptic objections) and the memory fact that changed the call.
+3. [x] [DONE] Verdict-flip card in --explain: print the minimum missing/changed evidence that would reverse the conclusion, plus the dissent log (Skeptic objections) and the memory fact that changed the call. Implemented in `scripts/explain_trace.py`, wired into `run.py` (`--explain` and `--verdict-flip`) and FastAPI endpoints (`GET /trace/latest` and `GET /trace/verdict-flip`). Verified by `test_explain_trace_renders_verdict_flip_card` and `test_explain_trace_rich_and_plain_modes` in `tests/test_api.py`.
 4. Terminal explain view using the 'rich' library: color-coded, readable evidence chain (ledger line -> physical count -> debate excerpt -> action). Keep existing plain JSONL output.
 5. Small honest evaluation: 15-25 hand-written cases (clean, missing evidence, conflicting records) vs a rules-only baseline with its own simple detector; report precision, recall, unsupported-claim rate and correct abstention. Label synthetic clearly.
 6. Reframe docs: drop lead-time and 'F1' as headline; lead with audit accuracy and explanation faithfulness; call the debate a dissent log unless a verdict flip is shown.
@@ -145,7 +145,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 1: Executive Verdict-Flip Card & Counterfactual Dissent Log in CLI `--explain`
 - **Priority**: P0 (Priority 0c Item 3, Track 2 "Explain Why", Product & UX 10 pts)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`scripts/explain_trace.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/explain_trace.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
 - **Problem**: Track 2 judges evaluate whether an agent can explain why it reached a decision and what counterfactual evidence would change it. Current `--explain` displays the event timeline but lacks an executive "Verdict-Flip Card" and explicit dissent log.
 - **Action**:
@@ -157,6 +157,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
   2. Wire into `run.py --explain` output.
   3. Add automated test in `tests/test_api.py`: `test_explain_trace_renders_verdict_flip_card`.
 - **Acceptance Criteria**: `scripts/explain_trace.py --latest` prints structured Verdict-Flip Card with counterfactual triggers and dissent log; tested in `tests/test_api.py`.
+- **Verification**: Verified via `tests/test_api.py::test_explain_trace_renders_verdict_flip_card` and `tests/test_api.py::test_explain_trace_rich_and_plain_modes`. Verified live outputs via `python scripts/explain_trace.py --latest`, `python scripts/explain_trace.py --verdict-flip-only`, and `python run.py --cli --case golden --sample-mode --verdict-flip`. Verified API via `GET /trace/latest` and `GET /trace/verdict-flip`.
 
 ---
 

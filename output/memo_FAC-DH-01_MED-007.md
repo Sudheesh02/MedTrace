@@ -5,15 +5,15 @@
 ---
 
 ### 1. Document Control & Provenance Metadata
-- **Memorandum ID**: `MEMO-run-074ba54b`
-- **Generated Timestamp**: `2026-10-25 10:32:34 UTC`
+- **Memorandum ID**: `MEMO-run-255a4345`
+- **Generated Timestamp**: `2026-10-25 11:20:02 UTC`
 - **Target Facility ID**: `FAC-DH-01`
 - **Target Medicine ID**: `MED-007`
 - **Operational Status**: ✅ **AUTONOMOUS RECONCILIATION APPROVED (ZERO DEFICIT CONFIRMED)**
 - **Escalation Reason**: `N/A — High consensus & verified constraints`
 - **Model Provenance**: `rule-based-sample-mode` (LLM Active: `False`, Fallback Invoked: `True`)
 - **Audit Verification**: `Certified Zero-Hallucination by Skeptic Number Auditor`
-- **Trace Reference**: `logs\trace_run-074ba54b.jsonl`
+- **Trace Reference**: `logs\trace_run-255a4345.jsonl`
 
 ---
 
@@ -38,7 +38,7 @@ The MedTrace deterministic reconciliation engine audited physical counted stock,
   - Ledger drift variance of 50.0 units recorded.
   - Differential confirmation: Physical inventory audit and batch quality records isolate variance directly to facility ledger, refuting external transit delay.
   - Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine.
-  - World Model entity ent_inv_a1ad9831b61b (canon hash 58b201e1) corroborates usable inventory.
+  - World Model entity ent_inv_a1ad9831b61b (canon hash 14be539f) corroborates usable inventory.
   - **Confirming Data Query**: `SELECT counted_stock, date FROM zetaris.lightning.physical_audit WHERE facility_id = 'FAC-DH-01' AND medicine_id = 'MED-007' ORDER BY date DESC LIMIT 1`
 
 **Executive Clinical Summary**:

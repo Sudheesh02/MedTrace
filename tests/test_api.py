@@ -319,9 +319,10 @@ def test_metadata_json_and_docs_integrity():
     assert "115-test" not in sponsor_doc
     assert "116-test" not in sponsor_doc
     assert "117-test" not in sponsor_doc
-    assert "120-test pytest suite" in sponsor_doc
+    assert "120-test" not in sponsor_doc
+    assert "122-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "120/120 Automated Tests Verified" in sponsor_doc
+    assert "122/122 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -333,7 +334,8 @@ def test_metadata_json_and_docs_integrity():
     assert "115 automated tests" not in pre_existing_doc
     assert "116 automated tests" not in pre_existing_doc
     assert "117 automated tests" not in pre_existing_doc
-    assert "120 automated tests passing" in pre_existing_doc
+    assert "120 automated tests" not in pre_existing_doc
+    assert "122 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:
@@ -386,6 +388,136 @@ def test_explain_trace_sample_trace_fallback(capsys):
     assert "InvestigatorAgent" in captured
     assert "SkepticAgent & Number Auditor" in captured
     assert "ActionPlannerAgent" in captured
+
+
+def test_explain_trace_renders_verdict_flip_card(capsys, client):
+    """
+    Verify render_verdict_flip_card outputs structured winning verdict,
+    counterfactual triggers, dissent log, and cognitive memory impact.
+    Tests CLI, module functions, and API endpoints.
+    """
+    import subprocess
+    import sys
+    import json
+    from scripts.explain_trace import render_verdict_flip_card, build_verdict_flip_card
+
+    # 1. Test build_verdict_flip_card and render_verdict_flip_card on sample trace
+    sample_trace = "logs/sample_trace_FAC-DH-01_MED-007.jsonl"
+    with open(sample_trace, "r", encoding="utf-8") as f:
+        events = [json.loads(line) for line in f if line.strip()]
+
+    card = build_verdict_flip_card(events)
+    assert "winning_verdict" in card
+    assert "counterfactual_trigger" in card
+    assert "dissent_log" in card
+    assert "cognitive_memory_impact" in card
+
+    assert card["winning_verdict"]["facility_id"] == "FAC-DH-01"
+    assert card["winning_verdict"]["medicine_id"] == "MED-007"
+    assert "Phantom Stock Drift" in card["winning_verdict"]["hypothesis"]
+    assert card["winning_verdict"]["primary_action"] == "INVENTORY_AUDIT_ADJUSTMENT"
+    assert "reversal_condition" in card["counterfactual_trigger"]
+    assert "minimum_missing_evidence" in card["counterfactual_trigger"]
+    assert len(card["dissent_log"]["challenges"]) >= 1
+    assert len(card["dissent_log"]["auditor_checks"]) >= 4
+
+    render_verdict_flip_card(events, use_rich=False)
+    captured = capsys.readouterr().out
+    assert "EXECUTIVE VERDICT-FLIP CARD & DISSENT LOG" in captured
+    assert "WINNING VERDICT & ROOT CAUSE" in captured
+    assert "COUNTERFACTUAL REVERSAL TRIGGER" in captured
+    assert "DISSENT LOG & ADVERSARIAL SKEPTIC CRITIQUE" in captured
+    assert "COGNITIVE MEMORY IMPACT" in captured
+    assert "Phantom Stock Drift in Warehouse Ledger" in captured
+
+    # 2. Test golden quarantine trace
+    golden_trace = "logs/golden_trace_FAC-CHC-01_MED-001.jsonl"
+    with open(golden_trace, "r", encoding="utf-8") as f:
+        g_events = [json.loads(line) for line in f if line.strip()]
+    g_card = build_verdict_flip_card(g_events)
+    assert "Batch Quality Assurance Quarantine" in g_card["winning_verdict"]["hypothesis"]
+    assert g_card["winning_verdict"]["primary_action"] == "PEER_TRANSFER"
+    assert "CoA" in g_card["counterfactual_trigger"]["reversal_condition"] or "Certificate of Analysis" in g_card["counterfactual_trigger"]["reversal_condition"]
+
+    render_verdict_flip_card(g_events, use_rich=False)
+    g_captured = capsys.readouterr().out
+    assert "PEER_TRANSFER" in g_captured
+    assert "Batch Quality Assurance Quarantine" in g_captured
+
+    # 3. Test memory trace
+    mem_trace = "logs/trace_with_memory.jsonl"
+    with open(mem_trace, "r", encoding="utf-8") as f:
+        m_events = [json.loads(line) for line in f if line.strip()]
+    m_card = build_verdict_flip_card(m_events)
+    assert any("SUP-001" in fact or "Monsoon" in fact for fact in m_card["cognitive_memory_impact"]["memory_facts"])
+    assert "H-MEM" in m_card["cognitive_memory_impact"]["decision_impact"]
+
+    # 4. Test subprocess execution of scripts/explain_trace.py --latest
+    res_explain = subprocess.run(
+        [sys.executable, "scripts/explain_trace.py", "--latest", "--plain"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_explain.returncode == 0
+    assert "EXECUTIVE VERDICT-FLIP CARD & DISSENT LOG" in res_explain.stdout
+    assert "MEDTRACE MULTI-AGENT REASONING & AUDIT TIMELINE" in res_explain.stdout
+
+    # 5. Test subprocess execution with --verdict-flip-only
+    res_card_only = subprocess.run(
+        [sys.executable, "scripts/explain_trace.py", "--verdict-flip-only", "--plain"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_card_only.returncode == 0
+    assert "EXECUTIVE VERDICT-FLIP CARD & DISSENT LOG" in res_card_only.stdout
+    assert "MEDTRACE MULTI-AGENT REASONING & AUDIT TIMELINE" not in res_card_only.stdout
+
+    # 6. Test run.py with --verdict-flip
+    res_run_flip = subprocess.run(
+        [sys.executable, "run.py", "--cli", "--case", "golden", "--sample-mode", "--verdict-flip"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_run_flip.returncode == 0
+    assert "EXECUTIVE VERDICT-FLIP CARD & DISSENT LOG" in res_run_flip.stdout
+
+    # 7. Test FastAPI endpoints GET /trace/latest and GET /trace/verdict-flip
+    res_api_latest = client.get("/trace/latest")
+    assert res_api_latest.status_code == 200
+    latest_data = res_api_latest.json()
+    assert "verdict_flip_card" in latest_data
+    assert "winning_verdict" in latest_data["verdict_flip_card"]
+
+    res_api_flip = client.get("/trace/verdict-flip")
+    assert res_api_flip.status_code == 200
+    flip_data = res_api_flip.json()
+    assert flip_data["status"] == "success"
+    assert "verdict_flip_card" in flip_data
+    assert "counterfactual_trigger" in flip_data["verdict_flip_card"]
+
+
+def test_explain_trace_rich_and_plain_modes(capsys):
+    """Verify scripts/explain_trace.py renders cleanly in both rich and plain text modes."""
+    import json
+    from scripts.explain_trace import render_verdict_flip_card
+
+    sample_trace = "logs/sample_trace_FAC-DH-01_MED-007.jsonl"
+    with open(sample_trace, "r", encoding="utf-8") as f:
+        events = [json.loads(line) for line in f if line.strip()]
+
+    # Force plain text mode
+    render_verdict_flip_card(events, use_rich=False)
+    plain_out = capsys.readouterr().out
+    assert "EXECUTIVE VERDICT-FLIP CARD & DISSENT LOG" in plain_out
+    assert "WINNING VERDICT & ROOT CAUSE" in plain_out
+
+    # Force rich mode
+    render_verdict_flip_card(events, use_rich=True)
+    rich_out = capsys.readouterr().out
+    assert "WINNING VERDICT & ROOT CAUSE" in rich_out
 
 
 def test_export_action_pack_memorandum(tmp_path):

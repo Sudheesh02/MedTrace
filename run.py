@@ -9,6 +9,7 @@ Meets Technical Execution Requirements:
 
 import os
 import sys
+import json
 import time
 import argparse
 from dotenv import load_dotenv
@@ -172,7 +173,7 @@ def api_get_latest_trace():
     """Retrieves the latest multi-agent deliberation trace as structured events."""
     try:
         import json
-        from scripts.explain_trace import find_latest_trace
+        from scripts.explain_trace import find_latest_trace, build_verdict_flip_card
         trace_path = find_latest_trace()
         if not trace_path or not os.path.exists(trace_path):
             raise HTTPException(status_code=404, detail="No trace files found in logs/")
@@ -182,11 +183,37 @@ def api_get_latest_trace():
                 line = line.strip()
                 if line:
                     events.append(json.loads(line))
+        card = build_verdict_flip_card(events)
         return {
             "status": "success",
             "trace_file": trace_path,
             "events_count": len(events),
+            "verdict_flip_card": card,
             "events": events
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/trace/verdict-flip")
+def api_get_trace_verdict_flip():
+    """Retrieves the executive Verdict-Flip Card and counterfactual dissent log for the latest deliberation trace."""
+    try:
+        import json
+        from scripts.explain_trace import find_latest_trace, build_verdict_flip_card
+        trace_path = find_latest_trace()
+        if not trace_path or not os.path.exists(trace_path):
+            raise HTTPException(status_code=404, detail="No trace files found in logs/")
+        events = []
+        with open(trace_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    events.append(json.loads(line))
+        card = build_verdict_flip_card(events)
+        return {
+            "status": "success",
+            "trace_file": trace_path,
+            "verdict_flip_card": card
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -207,6 +234,7 @@ def main():
     parser.add_argument("--auto-triage", action="store_true", help="Proactively scan district and immediately audit top urgent bottleneck")
     parser.add_argument("--top-n", type=int, default=5, help="Number of urgent items to display in triage")
     parser.add_argument("--explain", action="store_true", help="Render executive multi-agent debate timeline after investigation")
+    parser.add_argument("--verdict-flip", action="store_true", help="Render executive verdict-flip and counterfactual card after investigation")
     parser.add_argument("--export-memo", action="store_true", help="Export printable Markdown procurement memorandum to output/")
     parser.add_argument("--save-golden", action="store_true", help="Explicitly update the committed canonical golden trace file")
     args = parser.parse_args()
@@ -315,6 +343,11 @@ def main():
         if args.explain:
             from scripts.explain_trace import render_trace
             render_trace(pack.trace_file)
+        elif getattr(args, "verdict_flip", False):
+            from scripts.explain_trace import render_verdict_flip_card
+            with open(pack.trace_file, "r", encoding="utf-8") as f:
+                trace_events = [json.loads(line) for line in f if line.strip()]
+            render_verdict_flip_card(trace_events)
         if args.export_memo:
             from scripts.export_action_pack import generate_memorandum
             memo_path = generate_memorandum(pack)

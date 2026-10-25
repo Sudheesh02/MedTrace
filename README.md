@@ -165,6 +165,9 @@ python run.py --triage --sample-mode --top-n 5
 # Visualize latest multi-agent debate trace log
 python scripts/explain_trace.py --latest
 
+# Render only executive Verdict-Flip Card (counterfactual triggers, dissent log, H-MEM delta)
+python scripts/explain_trace.py --verdict-flip-only
+
 # Record human officer feedback into Meterless H-MEM cross-session memory
 python run.py --record-decision --facility FAC-CHC-01 --medicine MED-001 --action-type PEER_TRANSFER --decision REJECTED --reason "Route flooded"
 ```
@@ -180,7 +183,7 @@ python run.py
 
 ### 8. Run Test Suite & Backtest Evaluation
 ```bash
-# Run unit & agent tests (120 tests across 7 test suites)
+# Run unit & agent tests (122 tests across 7 test suites)
 python -m pytest tests/
 
 # Run 180-day comparative multi-seed backtest
