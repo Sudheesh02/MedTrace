@@ -1277,3 +1277,40 @@
 - **Backlog Item 3 / Monitor Override**: Synchronize Curated Benchmark in `README.md` and `SPONSOR_TECH.md` under a rule-coverage / regression check heading (not as headline metric).
 - **Backlog Item 4 (P0)**: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
 - **Backlog Item 5 (P1)**: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
+
+
+---
+
+### Session: 2026-10-25 22:25 IST
+**Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
+**Phase**: Comprehensive Project Audit & Prioritized Overnight Backlog Formulation
+
+#### What Was Done
+1. **Exhaustive Senior Review & Rubric Gap Audit**:
+   - Reviewed [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.md), [MedTrace_Research_and_Execution_Plan.md](file:///C:/Users/Asus/Desktop/Open Agent/MedTrace_Research_and_Execution_Plan.md), and all hackathon specifications in `hackathon details/` ([16page.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/16page.md), [How to Win Hackathons!.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/How to Win Hackathons!.md), [Meterless_ Overview.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/Meterless_ Overview.md), [participant-setup-guide.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/participant-setup-guide.md), [zetaris-*.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/zetaris-sponsor-overview.md)).
+   - Audited the entire repository across 8 core dimensions: README claims vs real code, multi-agent debate loop, data layer, backtest evaluation, test suite, API/app, Dockerfile, and docs.
+   - Identified key gaps:
+     - **Curated Benchmark Documentation**: The expanded 25-scenario clinical benchmark (`output/curated_evaluation.md`) with 5 adversarial edge cases (89.5% Prec, 100% Rec, 94.5% F1 vs Baseline 50% Prec, 17.6% Rec) is completely missing from `README.md` and `SPONSOR_TECH.md`. Per Monitor directive, it must be documented as an honest rule-coverage regression suite while keeping the 180-day multi-tier backtest simulation replay (Seeds 1–4, 94.7% F1 on held-out seeds 3–4) as the headline metric.
+     - **README Target Language**: Lines 71-72 retain `(>85% target)` language; narrative needs reframing around audit accuracy and faithful explanations.
+     - **Live openFDA REST Adapter**: Phase 4.2 requires live web API data access; `DataStore` currently reads local JSON only. Live query with 5s timeout and cache-aside offline fallback needed.
+     - **Interactive Web UI Dashboard**: Phase 6.2 specifies 1 simple browser screen for risk board, trace review, and Approve/Reject button feedback.
+     - **Sponsor Conformance Suite**: Sponsor tests are scattered across multiple test files; a single consolidated `tests/test_sponsor_conformance.py` will give judges one-command verification.
+     - **Dockerfile Trace Whitelist**: `.dockerignore` excludes `logs/*.jsonl`, stripping tracked canonical traces from container images.
+2. **Prioritized Overnight Backlog Formulated ([`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open Agent/OVERNIGHT_BACKLOG.md))**:
+   - Preserved all Priority 0 sections and monitor correctives at the top.
+   - Retired completed stale items (Item 1 & Item 2) to the verified baseline section.
+   - Formulated exactly 12 prioritized, concrete, small items spanning P0 (Docs & Benchmark sync), P1 (Live openFDA, Web UI, Sponsor suite, Container whitelist, Trace docs), and P2 (Clean-clone gates, Dual packaging standards, Telemetry middleware, Monte Carlo stress-testing, OpenAPI mock generator).
+3. **Application Code Preserved**:
+   - 0 application code files modified in this audit step.
+4. **Baseline Test Suite Verification**:
+   - Executed full pytest suite (`python -m pytest tests -q`): **132 passed, 1 warning in 270.84s** (100% green across all 8 test suites; clean working tree).
+
+#### What Is Next
+- **Batch 1 (P0 — Docs & Evaluation Rigor)**:
+  - Backlog Item 1: Synchronize Curated Benchmark & Regression Suite into `README.md` & `SPONSOR_TECH.md` (honest rule-coverage framing; update test counts from 128 to 132).
+  - Backlog Item 2: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
+- **Batch 2 (P1 — Core Sponsor Tech & User Experience)**:
+  - Backlog Item 3: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
+  - Backlog Item 4: Implement interactive web UI dashboard (`app/ui.py` or FastAPI `/dashboard`).
+  - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+  - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.
