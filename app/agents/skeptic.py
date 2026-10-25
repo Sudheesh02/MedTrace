@@ -4,7 +4,7 @@ Challenges hypotheses, enforces multi-source validation, and verifies every sing
 """
 
 import re
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 from app.adapters.llm_client import LLMClient
 from app.models.schemas import Hypothesis, SkepticReview, ActionRecommendation, ActionPlanAudit, ActionType
 

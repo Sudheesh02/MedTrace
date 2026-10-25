@@ -93,17 +93,33 @@ class MedTraceOrchestrator:
 
         # 1. Reconciliation Step
         recon = self.reconciler.reconcile_item(facility_id, medicine_id)
+        det_recon = recon["deterministic_reconciliation"]
+        stock_eval = det_recon["stock_evaluation"]
+        demand_eval = det_recon.get("demand_evaluation", {})
+        trust_sf = det_recon["trust_shortfall"]
+        daily_cons = demand_eval.get("adjusted_daily_demand", demand_eval.get("base_daily_rate", 1.0))
+
         log_step("ReconcilerAgent", "RECONCILE_COMPLETE", {
             "discrepancies_found": len(recon["discrepancies"]),
-            "usable_stock": recon["deterministic_reconciliation"]["stock_evaluation"]["usable_stock"],
-            "shortfall": recon["deterministic_reconciliation"]["trust_shortfall"]["shortfall_units"]
+            "usable_stock": stock_eval["usable_stock"],
+            "shortfall": trust_sf["shortfall_units"],
+            "ledger_stock": stock_eval.get("ledger_stock", 0.0),
+            "quarantined_units": stock_eval.get("quarantined_stock", 0.0),
+            "expiring_units": stock_eval.get("expiring_stock", 0.0),
+            "audit_drift": stock_eval.get("audit_drift", 0.0),
+            "daily_consumption": daily_cons,
+            "days_of_cover_trust": det_recon.get("trust_cover_days", 0.0),
+            "days_of_cover_naive": det_recon.get("naive_cover_days", 0.0),
+            "discrepancies": [d.dict() if hasattr(d, "dict") else (d.model_dump() if hasattr(d, "model_dump") else d) for d in recon["discrepancies"]]
         })
 
         # 2. Build Grounded Context from World Model
         world_context = self.context_builder.build_structured_context(facility_id, medicine_id)
+        hmem_memories = self.hmem.get_relevant_memories(facility_id, medicine_id)
         log_step("WorldModelEngine", "CONTEXT_BUILT", {
             "canon_hash": world_context["canon_hash"],
-            "entities_present": list(world_context.keys())
+            "entities_present": list(world_context.keys()),
+            "hmem_beliefs": hmem_memories
         })
 
         # 3. Investigator <-> Skeptic Loop (Max 3 rounds)

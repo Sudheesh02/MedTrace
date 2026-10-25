@@ -4,6 +4,7 @@ Ensures unit and integration tests run offline with sample mode enabled by defau
 """
 
 import os
+import tempfile
 import pytest
 
 @pytest.fixture(autouse=True, scope="session")
@@ -11,9 +12,12 @@ def default_test_environment():
     """Forces SAMPLE_MODE=true and USE_ZETARIS=false across test sessions for complete isolation."""
     old_sample = os.environ.get("SAMPLE_MODE")
     old_zetaris = os.environ.get("USE_ZETARIS")
+    old_out = os.environ.get("MEDTRACE_OUTPUT_DIR")
 
+    test_out = tempfile.mkdtemp(prefix="medtrace_test_output_")
     os.environ["SAMPLE_MODE"] = "true"
     os.environ["USE_ZETARIS"] = "false"
+    os.environ["MEDTRACE_OUTPUT_DIR"] = test_out
 
     yield
 
@@ -26,3 +30,8 @@ def default_test_environment():
         os.environ["USE_ZETARIS"] = old_zetaris
     else:
         os.environ.pop("USE_ZETARIS", None)
+
+    if old_out is not None:
+        os.environ["MEDTRACE_OUTPUT_DIR"] = old_out
+    else:
+        os.environ.pop("MEDTRACE_OUTPUT_DIR", None)

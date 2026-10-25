@@ -94,7 +94,11 @@ def main():
     print(f"   - Trust-Adjusted Usable Stock: {pack.usable_stock:.1f} units ({pack.days_of_cover_trust:.1f}d true cover -> catastrophic deficit in {pack.days_of_cover_trust:.1f} days)")
     print(f"   - Winning Hypothesis: {pack.winning_hypothesis.title}")
     print(f"   - Root Cause: {pack.winning_hypothesis.cause}")
-    print(f"   - Adversarial Outcome: Skeptic challenged in Round 1 -> Investigator refined -> Skeptic approved in Round {pack.skeptic_rounds}")
+    if pack.skeptic_rounds > 1:
+        adv_outcome = f"Skeptic challenged in Round 1 -> Investigator refined -> Skeptic approved in Round {pack.skeptic_rounds}"
+    else:
+        adv_outcome = f"Skeptic approved hypothesis in Round 1 with zero ungrounded inconsistencies"
+    print(f"   - Adversarial Outcome: {adv_outcome}")
 
     # -------------------------------------------------------------
     # Step 3: Approval-Ready Action Pack Formulation
@@ -105,7 +109,12 @@ def main():
     print(f"   - Understated Cover Gap: {pack.understated_gap_percent:.1f}%")
     print(f"   - Stockout Prevented: {'YES [CRITICAL EARLY WARNING]' if pack.stockout_prevented else 'NO'}")
     print(f"   - Number Auditor Verification: {'PASSED [OK]' if pack.action_plan_audit.passed else 'FAILED'}")
-    print(f"   - Adversarial Debate Rounds: {pack.skeptic_rounds} rounds (Round 1 Challenge -> Round 2 Revision)")
+    rounds_str = (
+        f"{pack.skeptic_rounds} rounds (Round 1 Challenge -> Round 2 Revision)"
+        if pack.skeptic_rounds > 1 else
+        f"1 round (Immediate Verification & Parity)"
+    )
+    print(f"   - Adversarial Debate Rounds: {rounds_str}")
     print(f"   - Verified Recommendations ({pack.action_plan_audit.verified_recommendations_count} actions):")
     for i, act in enumerate(pack.recommendations[:3], 1):
         act_name = act.action_type.value if hasattr(act.action_type, "value") else str(act.action_type)

@@ -71,7 +71,13 @@ def generate_memorandum_text(pack_data: Union[ActionPack, Dict[str, Any]]) -> st
     top_risk = top_act.get("risk_assessment", "Standard logistics lead-time monitoring.")
 
     # Status badge
-    status_badge = "⚠️ **ESCALATED TO DISTRICT DRUG CONTROLLER**" if escalated else "✅ **AUTONOMOUS RECONCILIATION APPROVED (ZERO DEFICIT CONFIRMED)**"
+    shortfall_val = float(data.get("trust_shortfall", {}).get("shortfall_units", 0.0) if isinstance(data.get("trust_shortfall"), dict) else 0.0)
+    if escalated:
+        status_badge = "⚠️ **ESCALATED TO DISTRICT DRUG CONTROLLER**"
+    elif shortfall_val > 0:
+        status_badge = "✅ **AUTONOMOUS RECONCILIATION APPROVED (INTERVENTION ACTION PLAN CONFIRMED)**"
+    else:
+        status_badge = "✅ **AUTONOMOUS RECONCILIATION APPROVED (ZERO DEFICIT CONFIRMED)**"
 
     memo_md = f"""# DISTRICT HEALTH PROCUREMENT & INVENTORY RECONCILIATION MEMORANDUM
 **DISTRICT DRUG WAREHOUSE ADMINISTRATION & SUPPLY CHAIN GOVERNANCE**  
@@ -167,7 +173,7 @@ def generate_memorandum(pack_data: Union[ActionPack, Dict[str, Any]], output_pat
     memo_md = generate_memorandum_text(pack_data)
 
     if not output_path:
-        out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
+        out_dir = os.environ.get("MEDTRACE_OUTPUT_DIR") or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
         os.makedirs(out_dir, exist_ok=True)
         if isinstance(pack_data, ActionPack):
             fac_id = pack_data.facility_id

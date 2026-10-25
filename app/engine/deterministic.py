@@ -212,7 +212,7 @@ class DeterministicEngine:
             qty = float(b.get("quantity", 0))
             if b.get("quarantined", False):
                 quarantined_qty += qty
-            elif b.get("days_to_expiry", 999) < promised_delivery_days:
+            elif b.get("days_to_expiry", 999) <= (promised_delivery_days + historical_slip_days):
                 expiring_qty += qty
 
         # 3. Trust-adjusted stock

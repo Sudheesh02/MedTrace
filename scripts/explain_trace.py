@@ -61,9 +61,27 @@ def build_verdict_flip_card(events: List[Dict[str, Any]]) -> Dict[str, Any]:
     run_id = start_event.get("run_id", "N/A") if start_event else "N/A"
 
     recon_event = next((e for e in events if e.get("action") == "RECONCILE_COMPLETE"), None)
-    usable_stock = recon_event["details"].get("usable_stock", 0.0) if recon_event else 0.0
-    shortfall = recon_event["details"].get("shortfall", 0.0) if recon_event else 0.0
-    discrepancies_count = recon_event["details"].get("discrepancies_found", 0) if recon_event else 0
+    recon_details = recon_event.get("details", {}) if recon_event else {}
+    usable_stock = recon_details.get("usable_stock", 0.0)
+    shortfall = recon_details.get("shortfall", 0.0)
+    ledger_stock = recon_details.get("ledger_stock", 0.0)
+    quarantined_units = recon_details.get("quarantined_units", 0.0)
+    audit_drift = recon_details.get("audit_drift", 0.0)
+    daily_consumption = recon_details.get("daily_consumption", 0.0)
+    discrepancies = recon_details.get("discrepancies", [])
+    discrepancies_count = recon_details.get("discrepancies_found", len(discrepancies))
+
+    # Extract quantities dynamically from discrepancies if omitted in legacy traces
+    if quarantined_units == 0.0:
+        for d in discrepancies:
+            if isinstance(d, dict) and d.get("anomaly_type") == "QUARANTINED_BATCH":
+                quarantined_units = float(d.get("impact_units", 0.0))
+                break
+    if audit_drift == 0.0:
+        for d in discrepancies:
+            if isinstance(d, dict) and d.get("anomaly_type") == "GHOST_STOCK":
+                audit_drift = float(d.get("impact_units", 0.0))
+                break
 
     context_event = next((e for e in events if e.get("action") == "CONTEXT_BUILT"), None)
     canon_hash = context_event["details"].get("canon_hash", "verified") if context_event else "verified"
@@ -124,19 +142,23 @@ def build_verdict_flip_card(events: List[Dict[str, Any]]) -> Dict[str, Any]:
     lower_title = top_title.lower()
     if "quarantine" in lower_title or "recall" in lower_title:
         root_cause = "Regulatory QA Quarantine Hold & Product Recall on facility batch stock."
-        reversal_trigger = "Certificate of Analysis (CoA) lab re-test clears the 400 quarantined units (or QA regulatory recall is revoked)."
+        recovered_days = (quarantined_units / daily_consumption) if (quarantined_units > 0 and daily_consumption > 0) else 0.0
+        unit_str = f"the {quarantined_units:.0f} quarantined units" if quarantined_units > 0 else "quarantined lot units"
+        reversal_trigger = f"Certificate of Analysis (CoA) lab re-test clears {unit_str} (or QA regulatory recall is revoked)."
         reversal_verdict = "Verdict flips from 'Batch Quality Assurance Quarantine & Regulatory Recall' to 'Inventory Verified & Compliant'."
-        action_flip = f"Usable inventory recovers to full ledger balance (+400 units, +14.2 days cover); shortfall drops to 0.0 units; top action flips from {top_action} to MONITOR_BUFFER (routine buffer monitoring, saving emergency transfer costs)."
+        cover_str = f" (+{quarantined_units:.0f} units, +{recovered_days:.1f} days cover)" if (quarantined_units > 0 and recovered_days > 0) else (f" (+{quarantined_units:.0f} units)" if quarantined_units > 0 else "")
+        action_flip = f"Usable inventory recovers to full ledger balance{cover_str}; shortfall drops to 0.0 units; top action flips from {top_action} to MONITOR_BUFFER (routine buffer monitoring, saving emergency transfer costs)."
         missing_evidence = "CoA lab re-test certification documentation is missing from Zetaris batch registry."
     elif "uom" in lower_title or "multiplier" in lower_title or "pack" in lower_title:
         root_cause = "Packaging Unit-of-Measure Multiplier Mismatch (receipt logged in packs vs dispensing tablets)."
-        reversal_trigger = "Physical audit count confirms receiving shipment was unpacked and logged as individual dispensing tablets (>300 units unpacked)."
+        reversal_trigger = "Physical audit count confirms receiving shipment was unpacked and logged as individual dispensing units."
         reversal_verdict = "Verdict flips from 'Unit-of-Measure Multiplier Discrepancy' to 'Minor Administrative Variance'."
         action_flip = f"Reported inventory matches dispensing unit count; shortfall drops to 0.0 units; top action flips from {top_action} to MONITOR_BUFFER."
         missing_evidence = "Warehouse dock receiving receipt lacks line-item unpacking inspection signature."
     elif "phantom" in lower_title or "ghost" in lower_title or "drift" in lower_title:
         root_cause = "Phantom Stock Drift in warehouse ledger overstating verified physical shelf stock."
-        reversal_trigger = "Physical recount confirms missing units exist in unlogged holding bay, or delayed inter-facility receipt voucher surfaces."
+        drift_str = f"{audit_drift:.0f} missing units exist" if audit_drift > 0 else "missing units exist"
+        reversal_trigger = f"Physical recount confirms {drift_str} in unlogged holding bay, or delayed inter-facility receipt voucher surfaces."
         reversal_verdict = "Verdict flips from 'Phantom Stock Drift' to 'In-Transit Ledger Synchronization'."
         action_flip = f"Eliminates ledger debit adjustment; restores verified safety cover; top action flips from {top_action} to MONITOR_BUFFER."
         missing_evidence = "Physical recount audit log for secondary bay is unrecorded in Zetaris physical_audit table."
@@ -201,33 +223,34 @@ def build_verdict_flip_card(events: List[Dict[str, Any]]) -> Dict[str, Any]:
     # 1. Check structured hmem_beliefs in CONTEXT_BUILT or ACTIONS_RECOMMENDED
     context_details = context_event.get("details", {}) if context_event else {}
     hmem_beliefs = context_details.get("hmem_beliefs", {})
-    sup_delays = hmem_beliefs.get("supplier_delays", {})
-    rejected_pats = hmem_beliefs.get("rejected_patterns", [])
+    sup_delays = hmem_beliefs.get("supplier_delays", {}) if isinstance(hmem_beliefs, dict) else {}
+    rejected_pats = hmem_beliefs.get("rejected_patterns", []) if isinstance(hmem_beliefs, dict) else []
 
-    trace_text = json.dumps(events)
-    is_test_h3_memory = (
-        (facility_id == "FAC-PHC-01" and medicine_id == "MED-004" and shortfall > 0)
-        or "run-456b30c7" in trace_text
-        or "Monsoon bridge washout" in trace_text
-        or "H-MEM Grounded Delay" in trace_text
-    )
+    # If sup_delays wasn't in CONTEXT_BUILT (e.g. legacy traces), scan trace events dynamically for supplier delay annotations
+    if not sup_delays:
+        for ev in events:
+            ev_str = json.dumps(ev)
+            m_sup = re.search(r'H-MEM Grounded Delay:\s*(\w+)\s*\+(\d+(?:\.\d+)?)d delay:\s*([^)]+)', ev_str)
+            if m_sup:
+                s_id = m_sup.group(1)
+                s_days = float(m_sup.group(2))
+                s_reason = m_sup.group(3).strip()
+                sup_delays[s_id] = {"p90_delay_days": s_days, "reason": s_reason}
 
     if sup_delays:
         for sup_id, s_info in sup_delays.items():
             delay_days = s_info.get("p90_delay_days", 0.0) if isinstance(s_info, dict) else s_info
             reason = s_info.get("reason", "Empirical delay prior") if isinstance(s_info, dict) else "Empirical delay prior"
             memory_facts.append(f"Supplier Delay Prior: {sup_id} +{delay_days:.0f}d delay: {reason}")
-        memory_impact_narrative = (
-            f"H-MEM long-term belief retrieved: Active supplier delay priors in cognitive memory. "
-            f"Action Planner applied +0.25 feasibility penalty to EXPEDITE_PO and prioritized inter-facility PEER_TRANSFER."
-        )
-    elif is_test_h3_memory:
-        memory_facts.append("Supplier Delay Prior: SUP-001 +15d delay: Monsoon bridge washout on northern corridor")
-        memory_impact_narrative = (
-            "H-MEM long-term belief retrieved: Contracted supplier SUP-001 has empirical p90 delay of +15.0 days "
-            "('Monsoon bridge washout on northern corridor'). Action Planner applied +0.25 feasibility penalty to "
-            "EXPEDITE_PO and flipped top recommendation from MONITOR_BUFFER to urgent PEER_TRANSFER."
-        )
+        if top_action == "PEER_TRANSFER":
+            memory_impact_narrative = (
+                f"H-MEM long-term belief retrieved: Active supplier delay priors in cognitive memory. "
+                f"Action Planner applied +0.25 feasibility penalty to EXPEDITE_PO and prioritized inter-facility PEER_TRANSFER."
+            )
+        else:
+            memory_impact_narrative = (
+                f"H-MEM long-term belief retrieved: Active supplier delay priors in cognitive memory applied feasibility penalties."
+            )
     elif rejected_pats:
         pats_str = ", ".join(rejected_pats)
         memory_facts.append(f"Past Officer Rejection: Patterns rejected by clinical officers: {pats_str}")

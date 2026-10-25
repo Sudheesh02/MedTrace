@@ -320,9 +320,10 @@ def test_metadata_json_and_docs_integrity():
     assert "116-test" not in sponsor_doc
     assert "117-test" not in sponsor_doc
     assert "120-test" not in sponsor_doc
-    assert "122-test pytest suite" in sponsor_doc
+    assert "122-test" not in sponsor_doc
+    assert "124-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "122/122 Automated Tests Verified" in sponsor_doc
+    assert "124/124 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -335,7 +336,8 @@ def test_metadata_json_and_docs_integrity():
     assert "116 automated tests" not in pre_existing_doc
     assert "117 automated tests" not in pre_existing_doc
     assert "120 automated tests" not in pre_existing_doc
-    assert "122 automated tests passing" in pre_existing_doc
+    assert "122 automated tests" not in pre_existing_doc
+    assert "124 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:
@@ -576,7 +578,7 @@ def test_api_concurrency_and_state_isolation(client):
     assert orchestrator.data_store.use_zetaris == orig_use_zetaris
 
 
-def test_validate_clean_clone_script_execution():
+def test_validate_clean_clone_script_execution(tmp_path):
     """Verify scripts/validate_clean_clone.py executes cleanly and passes all offline checks."""
     import subprocess
     import sys
@@ -585,7 +587,7 @@ def test_validate_clean_clone_script_execution():
         [sys.executable, "scripts/validate_clean_clone.py"],
         capture_output=True,
         text=True,
-        env={**os.environ, "SAMPLE_MODE": "true", "USE_ZETARIS": "false"}
+        env={**os.environ, "SAMPLE_MODE": "true", "USE_ZETARIS": "false", "MEDTRACE_OUTPUT_DIR": str(tmp_path)}
     )
     assert res.returncode == 0, f"validate_clean_clone failed with stderr: {res.stderr}"
     assert "SUCCESS: Clean-clone environment and all quickstart entry points verified!" in res.stdout
@@ -783,5 +785,119 @@ def test_quick_demo_golden_case_execution(tmp_path):
     assert "Winning Hypothesis: Batch Quality Assurance Quarantine & Regulatory Recall" in res_cli.stdout
     assert "PEER_TRANSFER" in res_cli.stdout
 
+def test_verdict_flip_card_dynamic_computation_not_hardcoded():
+    """
+    Hallucination & Anti-Hardcoding Audit Test:
+    Verifies build_verdict_flip_card dynamically derives:
+    1. Quarantined units and recovered days of cover from varying inputs (not hardcoded to 400 units / 14.2 days).
+    2. Physical audit drift units (not hardcoded).
+    3. H-MEM cognitive beliefs with arbitrary supplier IDs and reasons (not hardcoded to SUP-001 or Monsoon).
+    Would fail if values were magic constants tuned to sample fixtures.
+    """
+    from scripts.explain_trace import build_verdict_flip_card
 
+    # Scenario A: 180 quarantined units, 12.0 daily consumption -> 15.0 days cover
+    events_a = [
+        {"action": "START_RUN", "details": {"facility_id": "FAC-TEST-01", "medicine_id": "MED-TEST-01"}},
+        {"action": "RECONCILE_COMPLETE", "details": {
+            "usable_stock": 24.0,
+            "shortfall": 120.0,
+            "ledger_stock": 204.0,
+            "quarantined_units": 180.0,
+            "audit_drift": 0.0,
+            "daily_consumption": 12.0,
+            "discrepancies": [{"anomaly_type": "QUARANTINED_BATCH", "impact_units": 180.0}]
+        }},
+        {"action": "CONTEXT_BUILT", "details": {"canon_hash": "hash_a", "entities_present": ["facility", "medicine"]}},
+        {"action": "HYPOTHESES_GENERATED", "details": {
+            "titles": ["Batch Quality Assurance Quarantine & Regulatory Recall", "Upstream Logistics Transit Delay", "Demand Surge"],
+            "likelihoods": {"H1-INTERNAL-AUDIT": 0.92, "H2-SUPPLIER-TRANSIT": 0.40, "H3-EXTERNAL-SURGE": 0.20}
+        }},
+        {"action": "ROUND_1_EVALUATION", "details": {
+            "accepted": True,
+            "confidence": 0.92,
+            "critique": "Approved winning hypothesis 'Batch Quality Assurance Quarantine & Regulatory Recall'."
+        }},
+        {"action": "ACTIONS_RECOMMENDED", "details": {"top_action": "PEER_TRANSFER"}}
+    ]
+
+    card_a = build_verdict_flip_card(events_a)
+    trigger_a = card_a["counterfactual_trigger"]["reversal_condition"]
+    action_a = card_a["counterfactual_trigger"]["action_flip"]
+
+    assert "180 quarantined units" in trigger_a
+    assert "+180 units" in action_a
+    assert "+15.0 days cover" in action_a
+    # Must NOT contain the old hardcoded magic numbers from the golden fixture
+    assert "400 quarantined units" not in trigger_a
+    assert "+14.2 days cover" not in action_a
+
+    # Scenario B: 320 quarantined units, 16.0 daily consumption -> 20.0 days cover
+    events_b = [
+        {"action": "START_RUN", "details": {"facility_id": "FAC-TEST-02", "medicine_id": "MED-TEST-02"}},
+        {"action": "RECONCILE_COMPLETE", "details": {
+            "usable_stock": 40.0,
+            "shortfall": 200.0,
+            "ledger_stock": 360.0,
+            "quarantined_units": 320.0,
+            "audit_drift": 0.0,
+            "daily_consumption": 16.0,
+            "discrepancies": [{"anomaly_type": "QUARANTINED_BATCH", "impact_units": 320.0}]
+        }},
+        {"action": "CONTEXT_BUILT", "details": {"canon_hash": "hash_b", "entities_present": ["facility", "medicine"]}},
+        {"action": "HYPOTHESES_GENERATED", "details": {
+            "titles": ["Batch Quality Assurance Quarantine & Regulatory Recall"],
+            "likelihoods": {"H1-INTERNAL-AUDIT": 0.95}
+        }},
+        {"action": "ROUND_1_EVALUATION", "details": {
+            "accepted": True,
+            "confidence": 0.95,
+            "critique": "Approved winning hypothesis 'Batch Quality Assurance Quarantine & Regulatory Recall'."
+        }},
+        {"action": "ACTIONS_RECOMMENDED", "details": {"top_action": "PEER_TRANSFER"}}
+    ]
+
+    card_b = build_verdict_flip_card(events_b)
+    trigger_b = card_b["counterfactual_trigger"]["reversal_condition"]
+    action_b = card_b["counterfactual_trigger"]["action_flip"]
+
+    assert "320 quarantined units" in trigger_b
+    assert "+320 units" in action_b
+    assert "+20.0 days cover" in action_b
+
+    # Scenario C: Dynamic H-MEM belief with custom supplier ID and reason
+    events_c = [
+        {"action": "START_RUN", "details": {"facility_id": "FAC-TEST-03", "medicine_id": "MED-TEST-03"}},
+        {"action": "RECONCILE_COMPLETE", "details": {"usable_stock": 10.0, "shortfall": 50.0, "discrepancies": []}},
+        {"action": "CONTEXT_BUILT", "details": {
+            "canon_hash": "hash_c",
+            "entities_present": ["facility", "medicine"],
+            "hmem_beliefs": {
+                "supplier_delays": {
+                    "SUP-DYNAMIC-88": {
+                        "p90_delay_days": 25.0,
+                        "reason": "Landslide blockage on mountain pass"
+                    }
+                }
+            }
+        }},
+        {"action": "HYPOTHESES_GENERATED", "details": {
+            "titles": ["Upstream Logistics Transit Delay"],
+            "likelihoods": {"H2-SUPPLIER-TRANSIT": 0.90}
+        }},
+        {"action": "ROUND_1_EVALUATION", "details": {
+            "accepted": True,
+            "confidence": 0.90,
+            "critique": "Approved winning hypothesis 'Upstream Logistics Transit Delay'."
+        }},
+        {"action": "ACTIONS_RECOMMENDED", "details": {"top_action": "PEER_TRANSFER"}}
+    ]
+
+    card_c = build_verdict_flip_card(events_c)
+    memory_facts_c = card_c["cognitive_memory_impact"]["memory_facts"]
+    assert len(memory_facts_c) >= 1
+    assert "SUP-DYNAMIC-88 +25d delay: Landslide blockage on mountain pass" in memory_facts_c[0]
+    # Verify no hardcoded legacy strings leak into dynamic scenario
+    assert "SUP-001" not in memory_facts_c[0]
+    assert "Monsoon bridge washout" not in memory_facts_c[0]
 
