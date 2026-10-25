@@ -3,9 +3,9 @@
   "evaluation_period_days": 180,
   "total_actual_stockouts": 27,
   "performance_benchmarks": {
-    "replay_duration_seconds": 3.15,
+    "replay_duration_seconds": 3.127,
     "total_transactions_evaluated": 25920,
-    "throughput_events_per_sec": 8228.0
+    "throughput_events_per_sec": 8289.2
   },
   "metrics": {
     "early_warning_lead_time_days": {
