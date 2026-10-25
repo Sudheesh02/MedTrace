@@ -23,7 +23,7 @@
       "f1_score_pct": 95.2
     },
     "action_sizing_error_pct": {
-      "naive_lmis": 62.0,
+      "naive_lmis": 0.0,
       "heuristic_rule_based": 0.0,
       "medtrace": 0.9
     },

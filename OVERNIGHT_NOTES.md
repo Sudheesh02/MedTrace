@@ -456,5 +456,35 @@
     - Executed `python -m pytest tests -q` — **78 passed, 1 warning in 52.94s** (100% passing rate across all 7 test suites).
 
 #### What Is Next
-- Prepare judge walkthrough talking points emphasizing zero-hallucinated math, true multi-agent debate loops with reactive recovery, and verified sponsor technology integration (Zetaris & Meterless).
-- Keep production branch `main` ready for final submission.
+- Implement Priority 0 Item 2: Fix uvicorn.run to "run:app", verify POST /run error handling and eliminate any global mutable orchestrator state.
+- Implement Priority 0 Item 3: Deepen LLM evaluation in hypothesis ranking and debate flip test.
+
+---
+
+### Session: 2026-10-25 09:25 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Priority 0 Item 1 & Corrective Backtest Sizing Horizon Implementation
+
+#### What Was Done
+1. **Loaded `.env` via `python-dotenv` across App Entry Points**:
+   - Added `from dotenv import load_dotenv; load_dotenv()` at top of `run.py` and in new package initializer [`app/__init__.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/__init__.py).
+2. **Removed 127.0.0.1-only Gate & Read `METERLESS_MODEL`**:
+   - In [`app/adapters/llm_client.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/llm_client.py), removed `and "127.0.0.1" in self.meterless_url` constraint so Nightshift functions over arbitrary container hostnames or remote networks.
+   - Actively read and assign `METERLESS_MODEL` from environment.
+3. **Trace Model Provenance & `llm_used` / `fallback` Flags**:
+   - Captured the exact model returned by the LLM API (`actual_model = getattr(res, "model", None) or self.model`) and logged it on every trace line.
+   - Added boolean `llm_used` and `fallback` flags to 100% of JSONL trace lines and [`ActionPack`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/models/schemas.py).
+4. **Enforced Loud Failure Outside Sample Mode**:
+   - Updated `LLMClient.generate`: when `SAMPLE_MODE=false`, unconfigured credentials or API connection failures raise `RuntimeError` immediately rather than silently returning canned text.
+5. **Fixed Action Sizing Horizon Parity & Eliminated Hardcoded Fallbacks**:
+   - In [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), unified Naive LMIS and MedTrace to share the identical 14.0-day replenishment horizon (`max(0.0, c * 14.0 - stock)`), differing only in whether they observe unadjusted ledger stock or audited trust stock.
+   - Removed hardcoded fallback constants (62.0/5.0/0.0) and pruned the circular row from [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md).
+6. **Engineered Comprehensive Automated Tests**:
+   - Added `test_llm_client_reads_meterless_model_and_removes_127_gate`, `test_llm_client_outside_sample_mode_fails_loudly`, and `test_traced_model_equals_response_model_and_flags_in_all_trace_lines` in [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py).
+   - Added `test_naive_and_medtrace_formulas_share_same_horizon` in [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py).
+7. **Verified Full Test Suite**:
+   - Executed `python -m pytest tests -q` — **82 passed, 1 warning in 55.09s** (100% passing rate).
+
+#### What Is Next
+- **Priority 0 Item 2**: Fix uvicorn.run to `"run:app"`; ensure `POST /run` returns standard 500 status on unexpected exceptions; remove global orchestrator state.
+- **Priority 0 Item 3**: Make the LLM matter: investigator ranks hypotheses from evidence pack as JSON, skeptic LLM raises challenges, Number Auditor rejects numbers not in evidence pack, test where debate flips the winner.

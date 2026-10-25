@@ -776,3 +776,137 @@ def test_explain_trace_visualizer_renders_cleanly(capsys):
     assert latest is not None
     assert os.path.exists(latest)
 
+
+def test_llm_client_reads_meterless_model_and_removes_127_gate(monkeypatch):
+    """
+    Verify:
+    1. Meterless Nightshift URL works for non-127.0.0.1 hosts (e.g., custom docker container or host).
+    2. METERLESS_MODEL environment variable is actually read and configured as the target model.
+    """
+    from app.adapters.llm_client import LLMClient
+
+    monkeypatch.setenv("METERLESS_BASE_URL", "http://nightshift-container:8088/v1")
+    monkeypatch.setenv("METERLESS_RUNTIME_TOKEN", "nightshift-token-1234")
+    monkeypatch.setenv("METERLESS_MODEL", "nightshift-custom-v1")
+    monkeypatch.setenv("SAMPLE_MODE", "false")
+
+    client = LLMClient()
+    assert client.provider == "meterless"
+    assert client.model == "nightshift-custom-v1"
+    assert client.client is not None
+    assert str(client.client.base_url).rstrip("/") == "http://nightshift-container:8088/v1"
+
+
+def test_llm_client_outside_sample_mode_fails_loudly(monkeypatch):
+    """
+    Verify that outside sample mode (SAMPLE_MODE=false), LLMClient fails loudly:
+    1. If no credentials are configured, raises RuntimeError.
+    2. If the API call fails, raises RuntimeError instead of returning canned text.
+    """
+    from unittest.mock import MagicMock
+    from app.adapters.llm_client import LLMClient
+
+    monkeypatch.setenv("SAMPLE_MODE", "false")
+    monkeypatch.delenv("METERLESS_RUNTIME_TOKEN", raising=False)
+    monkeypatch.delenv("MODEL_API_KEY", raising=False)
+
+    unconfigured_client = LLMClient()
+    assert unconfigured_client.client is None
+    with pytest.raises(RuntimeError) as exc_info:
+        unconfigured_client.generate(prompt="Investigate root cause")
+    assert "LLMClient has no configured provider" in str(exc_info.value)
+    assert "SAMPLE_MODE is false" in str(exc_info.value)
+
+    # Now configure a mock client that raises an exception during generation
+    monkeypatch.setenv("METERLESS_RUNTIME_TOKEN", "token-xyz")
+    failing_client = LLMClient()
+    mock_openai = MagicMock()
+    mock_openai.chat.completions.create.side_effect = ConnectionError("Nightshift daemon unreachable")
+    failing_client.client = mock_openai
+
+    with pytest.raises(RuntimeError) as exc_info2:
+        failing_client.generate(prompt="Investigate root cause")
+    assert "LLM API generation failed outside sample mode" in str(exc_info2.value)
+    assert "Nightshift daemon unreachable" in str(exc_info2.value)
+
+
+def test_traced_model_equals_response_model_and_flags_in_all_trace_lines(monkeypatch):
+    """
+    Verify:
+    1. When LLM returns an actual response with model='response-model-nemotron-v2',
+       the traced model equals the API response model.
+    2. llm_used=True and fallback=False are logged on all LLM trace events.
+    3. Every single line in the JSONL trace file contains 'model', 'llm_used', and 'fallback'.
+    4. ActionPack.model_used equals the response model, with pack.llm_used=True and pack.fallback=False.
+    5. In sample mode, trace entries record model='rule-based-sample-mode', llm_used=False, fallback=True.
+    """
+    from unittest.mock import MagicMock
+
+    # --- Part 1: Real API mock returning a specific response model ---
+    monkeypatch.setenv("SAMPLE_MODE", "false")
+    monkeypatch.setenv("METERLESS_RUNTIME_TOKEN", "mock-token")
+    monkeypatch.setenv("METERLESS_MODEL", "requested-model-alias")
+
+    mock_chat_completion = MagicMock()
+    mock_choice = MagicMock()
+    mock_choice.message.content = "Grounded multi-agent synthesis: Discrepancy confirmed with physical audit records."
+    mock_choice.message.reasoning_content = None
+    mock_chat_completion.choices = [mock_choice]
+    mock_chat_completion.model = "api-returned-nemotron-30b-v2.1"
+    mock_chat_completion.usage = MagicMock(model_dump=lambda: {"total_tokens": 120})
+
+    orch = MedTraceOrchestrator(use_zetaris=False)
+    orch.llm_client.client.chat.completions.create = MagicMock(return_value=mock_chat_completion)
+
+    pack = orch.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-007")
+
+    # Verify ActionPack metadata
+    assert pack.model_used == "api-returned-nemotron-30b-v2.1"
+    assert pack.llm_used is True
+    assert pack.fallback is False
+
+    # Inspect every line in the trace file
+    with open(pack.trace_file, "r", encoding="utf-8") as f:
+        events = [json.loads(line) for line in f if line.strip()]
+
+    assert len(events) >= 5
+    for e in events:
+        assert "model" in e, f"Event {e.get('action')} missing 'model'"
+        assert "llm_used" in e, f"Event {e.get('action')} missing 'llm_used'"
+        assert "fallback" in e, f"Event {e.get('action')} missing 'fallback'"
+        assert isinstance(e["llm_used"], bool)
+        assert isinstance(e["fallback"], bool)
+
+    # Check LLM-specific actions
+    llm_actions = [e for e in events if e.get("action") in ("HYPOTHESES_GENERATED", "ROUND_1_EVALUATION", "ACTIONS_RECOMMENDED")]
+    assert len(llm_actions) >= 3
+    for e in llm_actions:
+        assert e["model"] == "api-returned-nemotron-30b-v2.1"
+        assert e["llm_used"] is True
+        assert e["fallback"] is False
+
+    # Check non-LLM actions (reconciler, world model, audit)
+    non_llm_actions = [e for e in events if e.get("action") in ("START_RUN", "RECONCILE_COMPLETE", "CONTEXT_BUILT", "ACTION_PLAN_AUDITED")]
+    for e in non_llm_actions:
+        assert e["llm_used"] is False
+        assert e["fallback"] is False
+
+    # --- Part 2: Sample mode run ---
+    monkeypatch.setenv("SAMPLE_MODE", "true")
+    orch_sample = MedTraceOrchestrator(use_zetaris=False)
+    pack_sample = orch_sample.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-007")
+
+    assert pack_sample.model_used == "rule-based-sample-mode"
+    assert pack_sample.llm_used is False
+    assert pack_sample.fallback is True
+
+    with open(pack_sample.trace_file, "r", encoding="utf-8") as f:
+        sample_events = [json.loads(line) for line in f if line.strip()]
+
+    sample_llm_actions = [e for e in sample_events if e.get("action") in ("HYPOTHESES_GENERATED", "ROUND_1_EVALUATION", "ACTIONS_RECOMMENDED")]
+    for e in sample_llm_actions:
+        assert e["model"] == "rule-based-sample-mode"
+        assert e["llm_used"] is False
+        assert e["fallback"] is True
+
+

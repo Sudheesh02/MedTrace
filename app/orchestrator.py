@@ -52,14 +52,24 @@ class MedTraceOrchestrator:
         trace_file = os.path.join(self.logs_dir, f"trace_{run_id}.jsonl")
         trace_entries = []
 
-        def log_step(agent: str, action: str, details: Any):
+        def log_step(
+            agent: str,
+            action: str,
+            details: Any,
+            model: Optional[str] = None,
+            llm_used: bool = False,
+            fallback: bool = False
+        ):
+            chosen_model = model or getattr(self.llm_client, "last_model_used", self.llm_client.model)
             entry = {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "run_id": run_id,
                 "agent": agent,
                 "action": action,
                 "details": details,
-                "model": self.llm_client.model
+                "model": chosen_model,
+                "llm_used": bool(llm_used),
+                "fallback": bool(fallback)
             }
             trace_entries.append(entry)
             with open(trace_file, "a", encoding="utf-8") as f:
@@ -105,13 +115,16 @@ class MedTraceOrchestrator:
             inv_llm = getattr(self.investigator, "last_llm_response", None)
             inv_text = inv_llm.get("text", "") if isinstance(inv_llm, dict) else ""
             inv_usage = inv_llm.get("usage", {}) if isinstance(inv_llm, dict) else {}
+            inv_model = inv_llm.get("model", self.llm_client.model) if isinstance(inv_llm, dict) else self.llm_client.model
+            inv_used = inv_llm.get("llm_used", False) if isinstance(inv_llm, dict) else False
+            inv_fallback = inv_llm.get("fallback", False) if isinstance(inv_llm, dict) else False
             log_step("InvestigatorAgent", "HYPOTHESES_GENERATED", {
                 "hypotheses_count": len(hypotheses),
                 "titles": [h.title for h in hypotheses],
                 "likelihoods": {h.hypothesis_id: h.likelihood for h in hypotheses},
                 "llm_reasoning": inv_text,
                 "token_usage": inv_usage
-            })
+            }, model=inv_model, llm_used=inv_used, fallback=inv_fallback)
 
             # Skeptic & Number Auditor
             top_hyp, review = self.skeptic.review_and_audit(
@@ -122,6 +135,9 @@ class MedTraceOrchestrator:
             skep_llm = getattr(self.skeptic, "last_llm_response", None)
             skep_text = skep_llm.get("text", "") if isinstance(skep_llm, dict) else ""
             skep_usage = skep_llm.get("usage", {}) if isinstance(skep_llm, dict) else {}
+            skep_model = skep_llm.get("model", self.llm_client.model) if isinstance(skep_llm, dict) else self.llm_client.model
+            skep_used = skep_llm.get("llm_used", False) if isinstance(skep_llm, dict) else False
+            skep_fallback = skep_llm.get("fallback", False) if isinstance(skep_llm, dict) else False
             log_step("SkepticAgent", f"ROUND_{rounds}_EVALUATION", {
                 "accepted": review.accepted,
                 "confidence": review.confidence_score,
@@ -130,7 +146,7 @@ class MedTraceOrchestrator:
                 "flagged_inconsistencies": review.flagged_inconsistencies,
                 "llm_reasoning": skep_text,
                 "token_usage": skep_usage
-            })
+            }, model=skep_model, llm_used=skep_used, fallback=skep_fallback)
 
             if review.accepted:
                 winning_hyp = top_hyp
@@ -153,12 +169,15 @@ class MedTraceOrchestrator:
         plan_llm = getattr(self.action_planner, "last_llm_response", None)
         plan_text = plan_llm.get("text", "") if isinstance(plan_llm, dict) else ""
         plan_usage = plan_llm.get("usage", {}) if isinstance(plan_llm, dict) else {}
+        plan_model = plan_llm.get("model", self.llm_client.model) if isinstance(plan_llm, dict) else self.llm_client.model
+        plan_used = plan_llm.get("llm_used", False) if isinstance(plan_llm, dict) else False
+        plan_fallback = plan_llm.get("fallback", False) if isinstance(plan_llm, dict) else False
         log_step("ActionPlannerAgent", "ACTIONS_RECOMMENDED", {
             "recommendations_count": len(recommendations),
             "top_action": recommendations[0].action_type,
             "llm_reasoning": plan_text,
             "token_usage": plan_usage
-        })
+        }, model=plan_model, llm_used=plan_used, fallback=plan_fallback)
 
         # 5. Number Auditor Verification of Action Plan
         action_plan_audit = self.skeptic.audit_action_plan(
@@ -169,7 +188,7 @@ class MedTraceOrchestrator:
             "passed": action_plan_audit.passed,
             "verified_count": action_plan_audit.verified_recommendations_count,
             "flagged_inconsistencies": action_plan_audit.flagged_inconsistencies
-        })
+        }, llm_used=False, fallback=False)
 
         det_rec = recon["deterministic_reconciliation"]
         # Determine whether early warning intercepted an actual stockout risk
@@ -190,7 +209,15 @@ class MedTraceOrchestrator:
                 f"Multi-agent debate unconcluded after {rounds} rounds (Skeptic confidence: {conf_str} < 0.50). "
                 f"Action pack requires manual human officer verification."
             )
-            log_step("Orchestrator", "HUMAN_ESCALATION", {"reason": escalation_reason})
+            log_step("Orchestrator", "HUMAN_ESCALATION", {"reason": escalation_reason}, llm_used=False, fallback=False)
+
+        overall_model = getattr(self.llm_client, "last_model_used", self.llm_client.model)
+        overall_llm_used = getattr(self.llm_client, "last_llm_used", False)
+        overall_fallback = getattr(self.llm_client, "last_fallback", False)
+        if isinstance(skep_llm, dict) and skep_llm.get("model"):
+            overall_model = skep_llm["model"]
+            overall_llm_used = skep_llm.get("llm_used", False)
+            overall_fallback = skep_llm.get("fallback", False)
 
         pack = ActionPack(
             run_id=run_id,
@@ -208,10 +235,13 @@ class MedTraceOrchestrator:
             trace_file=trace_file,
             action_plan_audit=action_plan_audit,
             escalated_to_human=escalated_to_human,
-            escalation_reason=escalation_reason
+            escalation_reason=escalation_reason,
+            model_used=overall_model,
+            llm_used=overall_llm_used,
+            fallback=overall_fallback
         )
 
-        log_step("Orchestrator", "RUN_COMPLETE", {"run_id": run_id, "status": "SUCCESS"})
+        log_step("Orchestrator", "RUN_COMPLETE", {"run_id": run_id, "status": "SUCCESS"}, llm_used=False, fallback=False)
         return pack
 
     def record_decision(

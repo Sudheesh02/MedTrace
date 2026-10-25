@@ -146,6 +146,7 @@ class TriagePlannerAgent:
             {[f"{x['facility_name']} - {x['generic_name']} (Cover: {x['trust_cover_days']}d, Shortfall: {x['shortfall_units']} units, Risk: {x['urgency_tier']})" for x in top_critical[:3]]}
             """
             llm_res = self.llm_client.generate(prompt=prompt, system_prompt="You are a clinical supply chain triage officer.")
+            self.last_llm_response = llm_res
             qualitative_synthesis = llm_res.get("text")
 
         return {

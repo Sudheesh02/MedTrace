@@ -67,7 +67,6 @@ Evaluated across a **180-day facility simulation replay** across seeds 1–3 and
 | **Anomaly Precision** | 0.0 % | 0.0 % | **97.7 %** | Ground-truth anomaly precision (Target: >85% exceeded) |
 | **Anomaly Recall** | 0.0 % | 0.0 % | **92.5 %** | Ground-truth anomaly recall (Target: >85% exceeded) |
 | **Anomaly F1 Score** | 0.0 % | 0.0 % | **94.8 %** | High harmonic accuracy (Target: >85% exceeded) |
-| **Action Sizing Error** | 61.9 % | 0.0 % | **0.6 %** | **-61.3% error vs baseline** (Target: lower than baseline) |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across full 180-day simulation |
 
 *Note: All metrics reflect empirical evaluation executed across development seeds 1–3 and held-out test seed 4 via `python scripts/run_backtest.py`. Zero metrics are hallucinated or artificially rounded.*

@@ -16,23 +16,34 @@ class LLMClient:
         # Priority 1: Meterless Nightshift if reachable
         self.meterless_url = os.environ.get("METERLESS_BASE_URL", "http://127.0.0.1:8088/v1")
         self.meterless_token = os.environ.get("METERLESS_RUNTIME_TOKEN", "")
+        self.meterless_model = os.environ.get("METERLESS_MODEL", "")
         
         # Priority 2: Direct NVIDIA Nemotron endpoint
         self.nvidia_key = os.environ.get("MODEL_API_KEY", "")
         self.nvidia_url = os.environ.get("MODEL_BASE_URL", "https://integrate.api.nvidia.com/v1")
-        self.model = os.environ.get("NEMOTRON_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b")
+        self.nvidia_model = os.environ.get("NEMOTRON_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b")
         
+        self.model = self.nvidia_model
+        self.provider = "none"
         self.client = None
+        self.last_model_used = "rule-based-sample-mode" if self.sample_mode else self.model
+        self.last_llm_used = False
+        self.last_fallback = self.sample_mode
         self._init_client()
 
     def _init_client(self):
-        if self.meterless_token and "127.0.0.1" in self.meterless_url:
+        if self.meterless_token:
+            # Meterless Nightshift OpenAI-compatible gateway (gate removed: works for localhost, 127.0.0.1, or remote hosts)
+            self.provider = "meterless"
+            self.model = self.meterless_model or self.nvidia_model or "meterless/auto"
             self.client = OpenAI(
                 base_url=self.meterless_url,
                 api_key=self.meterless_token,
                 default_headers={"meterless-app": "medtrace", "meterless-scope": "user"}
             )
-        elif self.nvidia_key and self.nvidia_key.startswith("nvapi-"):
+        elif self.nvidia_key:
+            self.provider = "nvidia"
+            self.model = self.nvidia_model
             self.client = OpenAI(
                 base_url=self.nvidia_url,
                 api_key=self.nvidia_key
@@ -46,10 +57,17 @@ class LLMClient:
         temperature: float = 0.2
     ) -> Dict[str, Any]:
         """
-        Executes a prompt. If sample mode is active or client is offline, returns deterministic structured fallback.
+        Executes a prompt. If sample mode is active, returns deterministic structured fallback.
+        Outside sample mode, fails loudly if unconfigured or if API call fails.
         """
-        if self.sample_mode or not self.client:
+        if self.sample_mode:
             return self._sample_fallback(prompt, system_prompt)
+
+        if not self.client:
+            raise RuntimeError(
+                "LLMClient has no configured provider (missing METERLESS_RUNTIME_TOKEN or MODEL_API_KEY) "
+                "and SAMPLE_MODE is false. Configure your API credentials or set SAMPLE_MODE=true."
+            )
 
         messages = []
         if system_prompt:
@@ -65,16 +83,21 @@ class LLMClient:
                 timeout=45
             )
             choice = res.choices[0].message
-            content = choice.content or choice.reasoning_content or ""
+            content = choice.content or getattr(choice, "reasoning_content", None) or ""
+            actual_model = getattr(res, "model", None) or self.model
+            self.last_model_used = actual_model
+            self.last_llm_used = True
+            self.last_fallback = False
             return {
                 "text": content,
-                "model": self.model,
+                "model": actual_model,
                 "usage": res.usage.model_dump() if res.usage else {},
-                "fallback": False
+                "fallback": False,
+                "llm_used": True
             }
         except Exception as e:
-            # Graceful degradation to sample mode fallback
-            return self._sample_fallback(prompt, system_prompt, error_msg=str(e))
+            # Outside sample mode, fail loudly instead of returning canned text
+            raise RuntimeError(f"LLM API generation failed outside sample mode: {e}") from e
 
     def _sample_fallback(self, prompt: str, system_prompt: Optional[str] = None, error_msg: Optional[str] = None) -> Dict[str, Any]:
         """Rule-based offline generator ensuring judges can run end-to-end without credentials."""
@@ -106,14 +129,19 @@ class LLMClient:
 
         prompt_tokens = len(prompt.split())
         completion_tokens = len(fallback_text.split())
+        fallback_model = "rule-based-sample-mode"
+        self.last_model_used = fallback_model
+        self.last_llm_used = False
+        self.last_fallback = True
         return {
             "text": fallback_text,
-            "model": "rule-based-sample-mode",
+            "model": fallback_model,
             "usage": {
                 "prompt_tokens": prompt_tokens,
                 "completion_tokens": completion_tokens,
                 "total_tokens": prompt_tokens + completion_tokens
             },
             "fallback": True,
+            "llm_used": False,
             "fallback_reason": error_msg or "SAMPLE_MODE_ACTIVE"
         }

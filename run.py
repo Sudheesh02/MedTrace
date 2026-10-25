@@ -11,6 +11,11 @@ import os
 import sys
 import time
 import argparse
+from dotenv import load_dotenv
+
+# Load environment variables prior to package initialization
+load_dotenv()
+
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel

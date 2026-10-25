@@ -202,11 +202,11 @@ class BacktestEngine:
 
                 # 1. Model 1: Naive LMIS
                 # Assumes ledger is 100% correct.
-                # Alerts when ledger_stock / consumption < 7 days
+                # Alerts when ledger_stock / consumption < 7 days; orders to standard 14-day replenishment horizon
                 naive_doc = ledger_stock / consumption
                 if naive_doc < 7.0 and pair_key not in naive_alerts:
                     naive_alerts[pair_key] = day_idx
-                    naive_recommendations[pair_key] = (day_idx, max(0.0, consumption * 7.0 - ledger_stock), consumption)
+                    naive_recommendations[pair_key] = (day_idx, max(0.0, consumption * 14.0 - ledger_stock), consumption)
                     # Check if false reorder: true stock > 30 days
                     true_val = true_stock_map.get(dt, {}).get(fac, {}).get(med, ledger_stock)
                     if true_val > (consumption * 30):
@@ -491,18 +491,25 @@ class BacktestEngine:
                 drift = max(0.0, led_s - float(app_auds[-1].get("counted_stock", led_s)))
             trust_s = max(0.0, led_s - q_qty - drift)
 
-            true_req = max(1.0, c * 14.0 - true_s)
-            naive_rec = max(0.0, c * 7.0 - led_s)
-            heur_rec = max(0.0, c * 14.0 - led_s)
-            med_rec = max(0.0, c * 14.0 - trust_s)
+            # All three methods share the identical target replenishment horizon (14.0 days),
+            # differing only in the stock estimate they observe:
+            # - True Required: observes physical true stock
+            # - Naive & Heuristic: observe unadjusted ledger stock
+            # - MedTrace: observes audited trust stock (ledger - quarantine - audit drift)
+            REPLENISHMENT_HORIZON_DAYS = 14.0
+            true_req = max(1.0, c * REPLENISHMENT_HORIZON_DAYS - true_s)
+            naive_rec = max(0.0, c * REPLENISHMENT_HORIZON_DAYS - led_s)
+            heur_rec = max(0.0, c * REPLENISHMENT_HORIZON_DAYS - led_s)
+            med_rec = max(0.0, c * REPLENISHMENT_HORIZON_DAYS - trust_s)
 
             naive_sizing_errors.append(abs(naive_rec - true_req) / true_req * 100.0)
             heuristic_sizing_errors.append(abs(heur_rec - true_req) / true_req * 100.0)
             medtrace_sizing_errors.append(abs(med_rec - true_req) / true_req * 100.0)
 
-        avg_naive_sizing_err = float(np.mean(naive_sizing_errors)) if naive_sizing_errors else 62.0
-        avg_heur_sizing_err = float(np.mean(heuristic_sizing_errors)) if heuristic_sizing_errors else 5.0
-        avg_med_sizing_err = float(np.mean(medtrace_sizing_errors)) if medtrace_sizing_errors else 0.0
+        # Remove hardcoded fallbacks; compute empirical mean across stockouts without synthetic constants
+        avg_naive_sizing_err = float(np.mean(naive_sizing_errors)) if len(naive_sizing_errors) > 0 else 0.0
+        avg_heur_sizing_err = float(np.mean(heuristic_sizing_errors)) if len(heuristic_sizing_errors) > 0 else 0.0
+        avg_med_sizing_err = float(np.mean(medtrace_sizing_errors)) if len(medtrace_sizing_errors) > 0 else 0.0
 
         return {
             "seed": seed,

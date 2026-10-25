@@ -87,3 +87,6 @@ class ActionPack(BaseModel):
     action_plan_audit: Optional[Any] = None
     escalated_to_human: bool = False
     escalation_reason: Optional[str] = None
+    model_used: Optional[str] = None
+    llm_used: bool = False
+    fallback: bool = False
