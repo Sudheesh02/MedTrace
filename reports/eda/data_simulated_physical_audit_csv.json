@@ -1,6 +1,6 @@
 {
   "file_path": "data/simulated/physical_audit.csv",
-  "file_size_bytes": 37269,
+  "file_size_bytes": 37258,
   "rows": 432,
   "columns_count": 7,
   "columns": [
@@ -46,23 +46,23 @@
       "numeric_stats": {
         "count": 432,
         "min": 0.0,
-        "max": 56149.0,
-        "mean": 2523.41,
-        "std": 5765.75,
-        "median": 519.5,
+        "max": 54368.0,
+        "mean": 2523.49,
+        "std": 5763.48,
+        "median": 515.0,
         "quantiles": {
-          "p25": 243.25,
-          "p50": 519.5,
-          "p75": 1775.75,
-          "p90": 6499.0,
-          "p95": 13773.9
+          "p25": 224.75,
+          "p50": 515.0,
+          "p75": 1682.75,
+          "p90": 6555.2,
+          "p95": 12914.8
         },
         "outliers_iqr": {
-          "count": 64,
-          "pct": 14.81,
+          "count": 67,
+          "pct": 15.51,
           "bounds": [
-            -2055.5,
-            4074.5
+            -1962.25,
+            3869.75
           ]
         },
         "outliers_zscore": {

@@ -12,12 +12,12 @@ All models evaluated under identical **14.0-day replenishment alert horizon** (`
 | Evaluation Metric | Naive LMIS | Heuristic Rule-Based | MedTrace | Gain / Advantage |
 | :--- | :---: | :---: | :---: | :---: |
 | **Shared Alert Horizon** | 14.0 days | 14.0 days | **14.0 days** | Identical baseline parity |
-| **Clean Stock Lead Time** | 58.4 days | 58.4 days | **58.5 days** | Baseline parity on uncorrupted stock |
+| **Clean Stock Lead Time** | 74.2 days | 74.2 days | **74.2 days** | Baseline parity on uncorrupted stock |
 | **Stockout Recall** | 100.0% | 100.0% | **100.0%** | 100% intercept across all true stockouts |
-| **Ground-Truth Anomaly Precision** | 100.0% | 100.0% | **93.5%** | Planted failure mode precision |
-| **Ground-Truth Anomaly Recall** | 10.0% | 10.0% | **95.0%** | Planted failure mode recall (>85% target) |
-| **Ground-Truth Anomaly F1 Score** | 18.2% | 18.2% | **93.9%** | Planted failure mode F1 (>85% target) |
-| **Held-Out Test F1 (Seeds 3–4)** | 18.2% | 18.2% | **95.0%** | Unseen simulation generalization |
+| **Ground-Truth Anomaly Precision** | 100.0% | 100.0% | **97.5%** | Planted failure mode precision |
+| **Ground-Truth Anomaly Recall** | 10.0% | 10.0% | **90.0%** | Planted failure mode recall (>85% target) |
+| **Ground-Truth Anomaly F1 Score** | 18.2% | 18.2% | **93.5%** | Planted failure mode F1 (>85% target) |
+| **Held-Out Test F1 (Seeds 3–4)** | 18.2% | 18.2% | **94.7%** | Unseen simulation generalization |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180 days |
 
 ---
@@ -26,10 +26,10 @@ All models evaluated under identical **14.0-day replenishment alert horizon** (`
 
 | Simulation Seed | Evaluation Role | Total Actual Stockouts | Anomaly Precision | Anomaly Recall | Anomaly F1 Score |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| Seed 1 | Tuning / Development | 30 | 83.3% | 100.0% | **90.9%** |
-| Seed 2 | Tuning / Development | 25 | 100.0% | 90.0% | **94.7%** |
-| Seed 3 | Held-Out Test | 27 | 100.0% | 90.0% | **94.7%** |
-| Seed 4 | Held-Out Test | 16 | 90.9% | 100.0% | **95.2%** |
+| Seed 1 | Tuning / Development | 23 | 100.0% | 90.0% | **94.7%** |
+| Seed 2 | Tuning / Development | 19 | 90.0% | 90.0% | **90.0%** |
+| Seed 3 | Held-Out Test | 26 | 100.0% | 90.0% | **94.7%** |
+| Seed 4 | Held-Out Test | 14 | 100.0% | 90.0% | **94.7%** |
 
 ---
 
@@ -39,10 +39,10 @@ Evaluation engine computational throughput measured across 180 simulated days (~
 
 | Simulation Seed | Transactions Replayed | Replay Duration | Processing Throughput |
 | :---: | :---: | :---: | :---: |
-| Seed 1 | 25,920 | 3.24s | 8,009.7 events/sec |
-| Seed 2 | 25,920 | 3.19s | 8,115.5 events/sec |
-| Seed 3 | 25,920 | 3.12s | 8,320.6 events/sec |
-| Seed 4 | 25,920 | 3.27s | 7,926.6 events/sec |
+| Seed 1 | 25,920 | 3.21s | 8,069.7 events/sec |
+| Seed 2 | 25,920 | 3.29s | 7,871.2 events/sec |
+| Seed 3 | 25,920 | 3.17s | 8,185.6 events/sec |
+| Seed 4 | 25,920 | 3.26s | 7,949.3 events/sec |
 
 ---
 
@@ -50,4 +50,4 @@ Evaluation engine computational throughput measured across 180 simulated days (~
 
 1. **Parity Alert Threshold**: All three models trigger reorder alerts at exactly `consumption * 14.0 days`. Naive LMIS and Heuristic are not artificially penalized with higher or lower thresholds.
 2. **Zero LLM Arithmetic**: All stock reconciliations, Monte Carlo ETA simulations, and order quantities are computed with deterministic symbolic algorithms (`DeterministicEngine`).
-3. **Held-Out Generalization**: Algorithm parameters were tuned exclusively on Seeds 1–2 and evaluated without modification on held-out Seeds 3–4, demonstrating **95.0% F1 generalization** on unseen facility networks.
+3. **Held-Out Generalization**: Algorithm parameters were tuned exclusively on Seeds 1–2 and evaluated without modification on held-out Seeds 3–4, demonstrating **94.7% F1 generalization** on unseen facility networks.

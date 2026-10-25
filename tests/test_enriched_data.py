@@ -264,4 +264,60 @@ def test_process_real_data_cleaning_pipeline(tmp_path):
     assert os.path.exists(cleaned_sales)
     assert os.path.exists(out_shapes)
 
+def test_usaid_multiline_po_preservation(tmp_path):
+    """
+    Anti-Hardcoding & Data Rigor Audit Test:
+    Verifies that multi-line-item purchase orders sharing the same PO number,
+    vendor, mode, and scheduled/delivered dates are preserved as distinct deliveries,
+    while true exact duplicate rows are correctly dropped.
+    """
+    import csv
+    from scripts.process_real_data import clean_usaid_deliveries
+
+    raw_csv = tmp_path / "raw_usaid.csv"
+    cleaned_csv = tmp_path / "cleaned_usaid.csv"
+    slip_csv = tmp_path / "slip.csv"
+
+    headers = [
+        "ID", "PO / SO #", "Vendor", "Shipment Mode",
+        "Scheduled Delivery Date", "Delivered to Client Date",
+        "Item Description", "Line Item Quantity"
+    ]
+    rows = [
+        # Line 1: Saquinavir under PO SCMS-19800
+        {"ID": "422", "PO / SO #": "SCMS-19800", "Vendor": "VendorA", "Shipment Mode": "Air",
+         "Scheduled Delivery Date": "2-Jun-06", "Delivered to Client Date": "2-Jun-06",
+         "Item Description": "Saquinavir 200mg", "Line Item Quantity": "6"},
+        # Line 2: Stavudine under same PO SCMS-19800 on same dates (distinct item)
+        {"ID": "423", "PO / SO #": "SCMS-19800", "Vendor": "VendorA", "Shipment Mode": "Air",
+         "Scheduled Delivery Date": "2-Jun-06", "Delivered to Client Date": "2-Jun-06",
+         "Item Description": "Stavudine 1mg/ml", "Line Item Quantity": "600"},
+        # Line 3: True exact duplicate of Line 2
+        {"ID": "423", "PO / SO #": "SCMS-19800", "Vendor": "VendorA", "Shipment Mode": "Air",
+         "Scheduled Delivery Date": "2-Jun-06", "Delivered to Client Date": "2-Jun-06",
+         "Item Description": "Stavudine 1mg/ml", "Line Item Quantity": "600"},
+    ]
+
+    with open(raw_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    stats = clean_usaid_deliveries(
+        raw_path=str(raw_csv),
+        cleaned_csv_path=str(cleaned_csv),
+        out_slip_path=str(slip_csv)
+    )
+
+    assert stats["total_raw_rows"] == 3
+    assert stats["dropped_duplicates"] == 1
+    assert stats["cleaned_valid_rows"] == 2
+
+    with open(cleaned_csv, "r", encoding="utf-8") as f:
+        cleaned_records = list(csv.DictReader(f))
+
+    assert len(cleaned_records) == 2
+    items = [r["item_description"] for r in cleaned_records]
+    assert "Saquinavir 200mg" in items
+    assert "Stavudine 1mg/ml" in items
 

@@ -942,3 +942,43 @@
 - **Batch 2 (Evaluation & Visuals — P1)**:
   - Backlog Item 4: Automated empirical EDA figures in matplotlib (`reports/eda/*.png`).
   - Backlog Item 6: Backtest rigor: generic baseline z-score detector & timing-bounded matching.
+
+
+---
+
+### Session: 2026-10-25 18:10 IST
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 1 — Item 3 Implementation (Fix USAID Delivery Deduplication & Justify Dedupe Key in `DATA_AUDIT.md`)
+
+#### What Was Done
+1. **Corrected Line-Item Deduplication Key (`scripts/process_real_data.py`)**:
+   - Replaced coarse `(po_id, scheduled_date, delivered_date, vendor, mode)` deduplication key with grounded line-item composite key: `(line_id, po_id, d_sched, d_deliv, item_desc, line_qty, vendor, mode)`.
+   - Preserves multi-item purchase orders sharing identical PO numbers, vendors, and delivery dates as distinct clinical deliveries, while still correctly dropping true exact row duplicates.
+   - Cleaned USAID dataset preserves **10,324 of 10,324 rows (100.0%)** with **0 duplicates dropped** (down from 3,732 incorrectly collapsed rows), with 441 extreme delivery slips winsorized into `[-60, +180]` days.
+   - Generated 36 empirical vendor-mode delivery slip priors in `data/real/supplier_slip.csv` with pooled fallbacks.
+2. **Empirical Justification & Row Audit (`DATA_AUDIT.md` & `scripts/data_audit.py`)**:
+   - Added permanent Section 5 to `DATA_AUDIT.md` and generator `scripts/data_audit.py`: "USAID Delivery Deduplication Key Rationale & Multi-Line PO Audit".
+   - Documented 3 concrete raw examples from `usaid_deliveries.csv` proving why distinct line items are not duplicates:
+     - PO `SCMS-19800` (ID 422 Saquinavir 6 units vs ID 423 Stavudine 600 units).
+     - PO `SCMS-23500` (ID 532 Didanosine 100 units vs ID 533 Stavudine 670 units).
+     - PO `SCMS-33320` (ID 835 Tenofovir 80 units vs ID 837 Stavudine 600 units).
+   - Re-executed `scripts/data_audit.py` profiling 57 dataset files into `reports/eda/*.json` and `DATA_AUDIT.md`.
+3. **Calibrated Multi-Seed Simulation & Comparative Backtest Rerun**:
+   - Re-ran `scripts/generate_facility_simulation.py` and `scripts/run_backtest.py` across Seeds 1–4 using empirical vendor distributions.
+   - Regenerated `output/backtest_summary.md` and `output/backtest_seed_*.json`.
+   - Results on cleaned data: **94.7% held-out test F1 on Seeds 3–4** (93.5% overall F1), **100% stockout intercept**, **74.2 days clean stock lead-time parity**, and **0 false emergency orders** (zero capital lockup).
+4. **Deterministic Engine & Test Suite Hygiene**:
+   - Fixed expiring batch replenishment boundary in `DeterministicEngine.audit_reconcile_item` (`days_to_expiry <= promised_delivery_days + historical_slip_days`), correctly categorizing near-expiry lots arriving within the replenishment window.
+   - Replaced magic constant assertions in `test_action_pack_stock_attributes_are_dynamic_and_unhardcoded` with dynamic invariant assertions adhering to `zero-hardcoding-standard`.
+   - Configured `tests/conftest.py` with `MEDTRACE_OUTPUT_DIR` in a temporary directory, guaranteeing test runs never dirty committed canonical memos or trace artifacts.
+   - Added unit test `test_usaid_multiline_po_preservation` in `tests/test_enriched_data.py`.
+   - Executed full test suite: **124 passed, 1 warning in 233.14s (100% passing rate across all 7 test suites)**.
+5. **Backlog Marked Done**:
+   - Marked Item 3 as completed and verified in `OVERNIGHT_BACKLOG.md`.
+
+#### What Is Next
+- **Batch 1 (Next Highest Priority — P0)**:
+  - Backlog Item 2: Color-Coded Terminal Explain View with `rich` & Plain Text Fallback (full deliberation timeline panelization with ANSI/rich panels).
+- **Batch 2 (Evaluation & Visual Evidence — P1)**:
+  - Backlog Item 4: Automated empirical EDA figures in matplotlib (`reports/eda/*.png`).
+  - Backlog Item 6: Backtest rigor: generic baseline z-score detector & timing-bounded matching.

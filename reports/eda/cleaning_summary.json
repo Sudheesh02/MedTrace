@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-10-25T15:08:52.902259",
+  "timestamp": "2026-10-25T17:41:43.717531",
   "usaid_deliveries": {
     "dataset": "USAID Deliveries",
     "total_raw_rows": 10324,
     "dropped_missing_dates": 0,
-    "dropped_duplicates": 3732,
-    "winsorized_extreme_slips": 215,
-    "cleaned_valid_rows": 6592,
-    "vendor_mode_priors_count": 34
+    "dropped_duplicates": 0,
+    "winsorized_extreme_slips": 441,
+    "cleaned_valid_rows": 10324,
+    "vendor_mode_priors_count": 36
   },
   "pharma_sales": {
     "dataset": "Pharma Sales Daily",

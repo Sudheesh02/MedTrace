@@ -1,7 +1,7 @@
 {
   "file_path": "data/simulated_seed_3/deliveries.csv",
-  "file_size_bytes": 72908,
-  "rows": 1181,
+  "file_size_bytes": 75325,
+  "rows": 1220,
   "columns_count": 7,
   "columns": [
     "delivery_id",
@@ -49,30 +49,30 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 1181,
+        "count": 1220,
         "min": 18.0,
         "max": 11600.0,
-        "mean": 814.42,
-        "std": 1505.03,
-        "median": 189.0,
+        "mean": 861.65,
+        "std": 1685.59,
+        "median": 182.0,
         "quantiles": {
-          "p25": 92.0,
-          "p50": 189.0,
-          "p75": 616.0,
-          "p90": 2625.0,
-          "p95": 4400.0
+          "p25": 90.0,
+          "p50": 182.0,
+          "p75": 633.5,
+          "p90": 2579.4,
+          "p95": 4800.0
         },
         "outliers_iqr": {
-          "count": 194,
-          "pct": 16.43,
+          "count": 208,
+          "pct": 17.05,
           "bounds": [
-            -694.0,
-            1402.0
+            -725.25,
+            1448.75
           ]
         },
         "outliers_zscore": {
-          "count": 31,
-          "pct": 2.62
+          "count": 30,
+          "pct": 2.46
         },
         "zero_inflation": {
           "zero_count": 0,

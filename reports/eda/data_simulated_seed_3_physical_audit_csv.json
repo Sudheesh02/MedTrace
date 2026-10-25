@@ -1,6 +1,6 @@
 {
   "file_path": "data/simulated_seed_3/physical_audit.csv",
-  "file_size_bytes": 37266,
+  "file_size_bytes": 37257,
   "rows": 432,
   "columns_count": 7,
   "columns": [
@@ -45,29 +45,29 @@
       "null_pct": 0.0,
       "numeric_stats": {
         "count": 432,
-        "min": 12.0,
-        "max": 48275.0,
-        "mean": 2478.27,
-        "std": 5448.49,
-        "median": 547.0,
+        "min": 8.0,
+        "max": 45046.0,
+        "mean": 2495.43,
+        "std": 5705.96,
+        "median": 520.5,
         "quantiles": {
-          "p25": 235.0,
-          "p50": 547.0,
-          "p75": 1798.5,
-          "p90": 6671.4,
-          "p95": 13177.25
+          "p25": 234.75,
+          "p50": 520.5,
+          "p75": 1626.0,
+          "p90": 6513.3,
+          "p95": 13056.25
         },
         "outliers_iqr": {
-          "count": 64,
-          "pct": 14.81,
+          "count": 65,
+          "pct": 15.05,
           "bounds": [
-            -2110.25,
-            4143.75
+            -1852.12,
+            3712.88
           ]
         },
         "outliers_zscore": {
-          "count": 11,
-          "pct": 2.55
+          "count": 13,
+          "pct": 3.01
         },
         "zero_inflation": {
           "zero_count": 0,

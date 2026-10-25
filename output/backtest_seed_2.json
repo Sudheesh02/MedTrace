@@ -1,19 +1,19 @@
 {
   "seed": 2,
   "evaluation_period_days": 180,
-  "total_actual_stockouts": 25,
+  "total_actual_stockouts": 19,
   "performance_benchmarks": {
-    "replay_duration_seconds": 3.194,
+    "replay_duration_seconds": 3.293,
     "total_transactions_evaluated": 25920,
-    "throughput_events_per_sec": 8115.5
+    "throughput_events_per_sec": 7871.2
   },
   "metrics": {
     "early_warning_lead_time_days": {
       "alert_threshold_days": 14.0,
-      "naive_lmis": 69.0,
-      "heuristic_rule_based": 69.0,
-      "medtrace": 69.44,
-      "lead_time_advantage_days": 0.44
+      "naive_lmis": 95.74,
+      "heuristic_rule_based": 95.74,
+      "medtrace": 95.74,
+      "lead_time_advantage_days": 0.0
     },
     "stockout_recall_pct": {
       "naive_lmis": 100.0,
@@ -21,18 +21,28 @@
       "medtrace": 100.0
     },
     "anomaly_detection": {
+      "evaluation_scope": "rule_coverage_planted_anomalies",
       "ground_truth_anomalies_count": 10,
-      "detected_anomalies_count": 9,
+      "detected_anomalies_count": 10,
       "true_positives": 9,
-      "precision_pct": 100.0,
+      "false_positives": 1,
+      "false_negatives": 1,
+      "precision_pct": 90.0,
       "recall_pct": 90.0,
-      "f1_score_pct": 94.7,
+      "f1_score_pct": 90.0,
       "naive_lmis_f1": 18.2,
       "heuristic_f1": 18.2,
+      "timing_evaluation": {
+        "window_days": 7,
+        "timed_true_positives": 8,
+        "median_detection_delay_days": 0.0
+      },
       "baseline_comparisons": {
         "naive_lmis": {
           "detected_count": 1,
           "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 9,
           "precision_pct": 100.0,
           "recall_pct": 10.0,
           "f1_score_pct": 18.2
@@ -40,6 +50,8 @@
         "heuristic_rule_based": {
           "detected_count": 1,
           "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 9,
           "precision_pct": 100.0,
           "recall_pct": 10.0,
           "f1_score_pct": 18.2

@@ -1,6 +1,6 @@
 {
   "file_path": "data/simulated_seed_4/ledger_daily.csv",
-  "file_size_bytes": 1166451,
+  "file_size_bytes": 1166267,
   "rows": 25920,
   "columns_count": 5,
   "columns": [
@@ -39,32 +39,32 @@
       "numeric_stats": {
         "count": 25920,
         "min": 0.0,
-        "max": 55834.0,
-        "mean": 2434.12,
-        "std": 5706.01,
-        "median": 480.0,
+        "max": 62558.0,
+        "mean": 2263.31,
+        "std": 5452.74,
+        "median": 481.5,
         "quantiles": {
-          "p25": 191.0,
-          "p50": 480.0,
-          "p75": 1502.25,
-          "p90": 6544.1,
-          "p95": 13604.15
+          "p25": 192.0,
+          "p50": 481.5,
+          "p75": 1491.25,
+          "p90": 5809.2,
+          "p95": 11897.15
         },
         "outliers_iqr": {
-          "count": 3945,
-          "pct": 15.22,
+          "count": 3809,
+          "pct": 14.7,
           "bounds": [
-            -1775.88,
-            3469.12
+            -1756.88,
+            3440.12
           ]
         },
         "outliers_zscore": {
-          "count": 710,
-          "pct": 2.74
+          "count": 571,
+          "pct": 2.2
         },
         "zero_inflation": {
-          "zero_count": 20,
-          "zero_pct": 0.08
+          "zero_count": 16,
+          "zero_pct": 0.06
         }
       }
     },

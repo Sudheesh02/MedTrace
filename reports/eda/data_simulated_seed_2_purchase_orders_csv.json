@@ -1,7 +1,7 @@
 {
   "file_path": "data/simulated_seed_2/purchase_orders.csv",
-  "file_size_bytes": 110076,
-  "rows": 1346,
+  "file_size_bytes": 112339,
+  "rows": 1373,
   "columns_count": 9,
   "columns": [
     "po_id",
@@ -42,30 +42,30 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 1346,
+        "count": 1373,
         "min": 18.0,
         "max": 11600.0,
-        "mean": 806.36,
-        "std": 1468.4,
-        "median": 189.0,
+        "mean": 839.72,
+        "std": 1508.9,
+        "median": 200.0,
         "quantiles": {
-          "p25": 97.0,
-          "p50": 189.0,
-          "p75": 720.0,
-          "p90": 2400.0,
-          "p95": 3887.5
+          "p25": 104.0,
+          "p50": 200.0,
+          "p75": 740.0,
+          "p90": 2600.0,
+          "p95": 3900.0
         },
         "outliers_iqr": {
-          "count": 204,
-          "pct": 15.16,
+          "count": 214,
+          "pct": 15.59,
           "bounds": [
-            -837.5,
-            1654.5
+            -850.0,
+            1694.0
           ]
         },
         "outliers_zscore": {
-          "count": 37,
-          "pct": 2.75
+          "count": 34,
+          "pct": 2.48
         },
         "zero_inflation": {
           "zero_count": 0,

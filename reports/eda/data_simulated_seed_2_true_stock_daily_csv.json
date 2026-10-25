@@ -1,6 +1,6 @@
 {
   "file_path": "data/simulated_seed_2/true_stock_daily.csv",
-  "file_size_bytes": 1166556,
+  "file_size_bytes": 1165696,
   "rows": 25920,
   "columns_count": 5,
   "columns": [
@@ -39,32 +39,32 @@
       "numeric_stats": {
         "count": 25920,
         "min": 0.0,
-        "max": 48544.0,
-        "mean": 2364.23,
-        "std": 5540.74,
-        "median": 480.0,
+        "max": 70840.0,
+        "mean": 2259.02,
+        "std": 5608.02,
+        "median": 457.0,
         "quantiles": {
-          "p25": 195.0,
-          "p50": 480.0,
-          "p75": 1510.25,
-          "p90": 6176.0,
-          "p95": 12262.05
+          "p25": 190.0,
+          "p50": 457.0,
+          "p75": 1385.5,
+          "p90": 5840.2,
+          "p95": 11689.15
         },
         "outliers_iqr": {
-          "count": 3840,
-          "pct": 14.81,
+          "count": 3906,
+          "pct": 15.07,
           "bounds": [
-            -1777.88,
-            3483.12
+            -1603.25,
+            3178.75
           ]
         },
         "outliers_zscore": {
-          "count": 732,
-          "pct": 2.82
+          "count": 605,
+          "pct": 2.33
         },
         "zero_inflation": {
-          "zero_count": 37,
-          "zero_pct": 0.14
+          "zero_count": 24,
+          "zero_pct": 0.09
         }
       }
     },

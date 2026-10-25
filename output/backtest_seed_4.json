@@ -1,18 +1,18 @@
 {
   "seed": 4,
   "evaluation_period_days": 180,
-  "total_actual_stockouts": 16,
+  "total_actual_stockouts": 14,
   "performance_benchmarks": {
-    "replay_duration_seconds": 3.27,
+    "replay_duration_seconds": 3.261,
     "total_transactions_evaluated": 25920,
-    "throughput_events_per_sec": 7926.6
+    "throughput_events_per_sec": 7949.3
   },
   "metrics": {
     "early_warning_lead_time_days": {
       "alert_threshold_days": 14.0,
-      "naive_lmis": 69.12,
-      "heuristic_rule_based": 69.12,
-      "medtrace": 69.12,
+      "naive_lmis": 81.71,
+      "heuristic_rule_based": 81.71,
+      "medtrace": 81.71,
       "lead_time_advantage_days": 0.0
     },
     "stockout_recall_pct": {
@@ -21,18 +21,28 @@
       "medtrace": 100.0
     },
     "anomaly_detection": {
+      "evaluation_scope": "rule_coverage_planted_anomalies",
       "ground_truth_anomalies_count": 10,
-      "detected_anomalies_count": 11,
-      "true_positives": 10,
-      "precision_pct": 90.9,
-      "recall_pct": 100.0,
-      "f1_score_pct": 95.2,
+      "detected_anomalies_count": 9,
+      "true_positives": 9,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision_pct": 100.0,
+      "recall_pct": 90.0,
+      "f1_score_pct": 94.7,
       "naive_lmis_f1": 18.2,
       "heuristic_f1": 18.2,
+      "timing_evaluation": {
+        "window_days": 7,
+        "timed_true_positives": 8,
+        "median_detection_delay_days": 0.0
+      },
       "baseline_comparisons": {
         "naive_lmis": {
           "detected_count": 1,
           "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 9,
           "precision_pct": 100.0,
           "recall_pct": 10.0,
           "f1_score_pct": 18.2
@@ -40,6 +50,8 @@
         "heuristic_rule_based": {
           "detected_count": 1,
           "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 9,
           "precision_pct": 100.0,
           "recall_pct": 10.0,
           "f1_score_pct": 18.2

@@ -1,0 +1,204 @@
+{
+  "file_path": "data/real/raw/cleaned_usaid_deliveries.csv",
+  "file_size_bytes": 1311182,
+  "rows": 10324,
+  "columns_count": 10,
+  "columns": [
+    "line_id",
+    "po_id",
+    "vendor",
+    "shipment_mode",
+    "item_description",
+    "line_quantity",
+    "scheduled_date",
+    "delivered_date",
+    "raw_slip_days",
+    "clamped_slip_days"
+  ],
+  "duplicates_count": 0,
+  "duplicates_pct": 0.0,
+  "columns_detail": {
+    "line_id": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 1.0,
+        "max": 86823.0,
+        "mean": 51098.97,
+        "std": 31942.79,
+        "median": 57540.5,
+        "quantiles": {
+          "p25": 12795.75,
+          "p50": 57540.5,
+          "p75": 83648.25,
+          "p90": 85541.7,
+          "p95": 86167.85
+        },
+        "outliers_iqr": {
+          "count": 0,
+          "pct": 0.0,
+          "bounds": [
+            -93483.0,
+            189927.0
+          ]
+        },
+        "outliers_zscore": {
+          "count": 0,
+          "pct": 0.0
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "po_id": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "vendor": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "shipment_mode": {
+      "dtype": "string",
+      "null_count": 360,
+      "null_pct": 3.49
+    },
+    "item_description": {
+      "dtype": "string",
+      "null_count": 0,
+      "null_pct": 0.0
+    },
+    "line_quantity": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": 1.0,
+        "max": 619999.0,
+        "mean": 18332.53,
+        "std": 40033.36,
+        "median": 3000.0,
+        "quantiles": {
+          "p25": 408.0,
+          "p50": 3000.0,
+          "p75": 17039.75,
+          "p90": 53267.0,
+          "p95": 90951.55
+        },
+        "outliers_iqr": {
+          "count": 1371,
+          "pct": 13.28,
+          "bounds": [
+            -24539.62,
+            41987.38
+          ]
+        },
+        "outliers_zscore": {
+          "count": 217,
+          "pct": 2.1
+        },
+        "zero_inflation": {
+          "zero_count": 0,
+          "zero_pct": 0.0
+        }
+      }
+    },
+    "scheduled_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2006-05-02",
+        "max": "2015-12-31"
+      }
+    },
+    "delivered_date": {
+      "dtype": "date",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2006-05-02",
+        "max": "2015-09-14"
+      }
+    },
+    "raw_slip_days": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": -372.0,
+        "max": 192.0,
+        "mean": -6.02,
+        "std": 27.23,
+        "median": 0.0,
+        "quantiles": {
+          "p25": -3.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p90": 3.0,
+          "p95": 14.0
+        },
+        "outliers_iqr": {
+          "count": 3127,
+          "pct": 30.29,
+          "bounds": [
+            -7.5,
+            4.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 284,
+          "pct": 2.75
+        },
+        "zero_inflation": {
+          "zero_count": 6324,
+          "zero_pct": 61.26
+        }
+      }
+    },
+    "clamped_slip_days": {
+      "dtype": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "numeric_stats": {
+        "count": 10324,
+        "min": -60.0,
+        "max": 180.0,
+        "mean": -4.28,
+        "std": 19.99,
+        "median": 0.0,
+        "quantiles": {
+          "p25": -3.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p90": 3.0,
+          "p95": 14.0
+        },
+        "outliers_iqr": {
+          "count": 3127,
+          "pct": 30.29,
+          "bounds": [
+            -7.5,
+            4.5
+          ]
+        },
+        "outliers_zscore": {
+          "count": 105,
+          "pct": 1.02
+        },
+        "zero_inflation": {
+          "zero_count": 6324,
+          "zero_pct": 61.26
+        }
+      }
+    }
+  }
+}

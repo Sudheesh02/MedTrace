@@ -1,6 +1,6 @@
 {
   "file_path": "data/simulated_seed_4/consumption_daily.csv",
-  "file_size_bytes": 1120765,
+  "file_size_bytes": 1120781,
   "rows": 25920,
   "columns_count": 5,
   "columns": [
@@ -40,31 +40,31 @@
         "count": 25920,
         "min": 0.0,
         "max": 459.0,
-        "mean": 30.81,
-        "std": 60.84,
+        "mean": 30.82,
+        "std": 60.76,
         "median": 7.0,
         "quantiles": {
           "p25": 3.0,
           "p50": 7.0,
           "p75": 23.0,
-          "p90": 96.1,
-          "p95": 161.0
+          "p90": 97.0,
+          "p95": 162.0
         },
         "outliers_iqr": {
-          "count": 4159,
-          "pct": 16.05,
+          "count": 4199,
+          "pct": 16.2,
           "bounds": [
             -27.0,
             53.0
           ]
         },
         "outliers_zscore": {
-          "count": 768,
-          "pct": 2.96
+          "count": 735,
+          "pct": 2.84
         },
         "zero_inflation": {
-          "zero_count": 547,
-          "zero_pct": 2.11
+          "zero_count": 528,
+          "zero_pct": 2.04
         }
       }
     },

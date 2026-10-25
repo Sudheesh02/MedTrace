@@ -80,7 +80,10 @@ def clean_usaid_deliveries(
             deliv_str = row.get("Delivered to Client Date")
             vendor = (row.get("Vendor") or "Unknown").strip()
             mode = (row.get("Shipment Mode") or "Air").strip()
-            po_id = (row.get("PO / SO #") or row.get("ID") or f"ROW-{total_raw}").strip()
+            po_id = (row.get("PO / SO #") or row.get("ASN/DN #") or "").strip()
+            line_id = (row.get("ID") or f"ROW-{total_raw}").strip()
+            item_desc = (row.get("Item Description") or "").strip()
+            line_qty = (row.get("Line Item Quantity") or "").strip()
 
             d_sched = parse_date(sched_str)
             d_deliv = parse_date(deliv_str)
@@ -89,7 +92,9 @@ def clean_usaid_deliveries(
                 missing_dates += 1
                 continue
 
-            dedup_key = (po_id, d_sched.strftime("%Y-%m-%d"), d_deliv.strftime("%Y-%m-%d"), vendor, mode)
+            # Grounded deduplication key: includes line item ID, PO, dates, product description, and quantity.
+            # Prevents collapsing distinct product line items within the same multi-item purchase order.
+            dedup_key = (line_id, po_id, d_sched.strftime("%Y-%m-%d"), d_deliv.strftime("%Y-%m-%d"), item_desc, line_qty, vendor, mode)
             if dedup_key in seen_keys:
                 duplicates += 1
                 continue
@@ -102,9 +107,12 @@ def clean_usaid_deliveries(
                 winsorized_count += 1
 
             cleaned_row = {
+                "line_id": line_id,
                 "po_id": po_id,
                 "vendor": vendor,
                 "shipment_mode": mode,
+                "item_description": item_desc,
+                "line_quantity": line_qty,
                 "scheduled_date": d_sched.strftime("%Y-%m-%d"),
                 "delivered_date": d_deliv.strftime("%Y-%m-%d"),
                 "raw_slip_days": raw_slip,

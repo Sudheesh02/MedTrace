@@ -1,7 +1,7 @@
 {
   "file_path": "data/simulated_seed_4/purchase_orders.csv",
-  "file_size_bytes": 105913,
-  "rows": 1295,
+  "file_size_bytes": 107255,
+  "rows": 1311,
   "columns_count": 9,
   "columns": [
     "po_id",
@@ -42,30 +42,30 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 1295,
+        "count": 1311,
         "min": 18.0,
         "max": 11200.0,
-        "mean": 819.23,
-        "std": 1520.64,
-        "median": 189.0,
+        "mean": 884.37,
+        "std": 1600.41,
+        "median": 200.0,
         "quantiles": {
-          "p25": 95.0,
-          "p50": 189.0,
-          "p75": 720.0,
-          "p90": 2400.0,
-          "p95": 4050.0
+          "p25": 100.0,
+          "p50": 200.0,
+          "p75": 756.0,
+          "p90": 2900.0,
+          "p95": 4375.0
         },
         "outliers_iqr": {
-          "count": 191,
-          "pct": 14.75,
+          "count": 209,
+          "pct": 15.94,
           "bounds": [
-            -842.5,
-            1657.5
+            -884.0,
+            1740.0
           ]
         },
         "outliers_zscore": {
-          "count": 38,
-          "pct": 2.93
+          "count": 36,
+          "pct": 2.75
         },
         "zero_inflation": {
           "zero_count": 0,
@@ -88,7 +88,7 @@
       "null_pct": 0.0,
       "date_range": {
         "min": "2026-05-10",
-        "max": "2026-11-01"
+        "max": "2026-10-31"
       }
     },
     "status": {

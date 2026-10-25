@@ -1,7 +1,7 @@
 {
   "file_path": "data/real/supplier_slip.csv",
-  "file_size_bytes": 1831,
-  "rows": 34,
+  "file_size_bytes": 1931,
+  "rows": 36,
   "columns_count": 8,
   "columns": [
     "vendor",
@@ -24,37 +24,37 @@
     "shipment_mode": {
       "dtype": "string",
       "null_count": 2,
-      "null_pct": 5.88
+      "null_pct": 5.56
     },
     "n_records": {
       "dtype": "integer",
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 34,
-        "min": 15.0,
-        "max": 2467.0,
-        "mean": 284.06,
-        "std": 504.03,
-        "median": 68.5,
+        "count": 36,
+        "min": 17.0,
+        "max": 10324.0,
+        "mean": 567.56,
+        "std": 1726.74,
+        "median": 84.0,
         "quantiles": {
-          "p25": 33.75,
-          "p50": 68.5,
-          "p75": 322.25,
-          "p90": 560.4,
-          "p95": 1116.7
+          "p25": 35.5,
+          "p50": 84.0,
+          "p75": 330.0,
+          "p90": 692.5,
+          "p95": 2068.75
         },
         "outliers_iqr": {
-          "count": 2,
-          "pct": 5.88,
+          "count": 3,
+          "pct": 8.33,
           "bounds": [
-            -399.0,
-            755.0
+            -406.25,
+            771.75
           ]
         },
         "outliers_zscore": {
           "count": 1,
-          "pct": 2.94
+          "pct": 2.78
         },
         "zero_inflation": {
           "zero_count": 0,
@@ -67,34 +67,34 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 34,
-        "min": -12.57,
-        "max": 9.91,
-        "mean": 0.22,
-        "std": 3.59,
+        "count": 36,
+        "min": -56.09,
+        "max": 9.17,
+        "mean": -2.22,
+        "std": 10.15,
         "median": 0.0,
         "quantiles": {
-          "p25": -0.1,
+          "p25": -1.28,
           "p50": 0.0,
-          "p75": 0.99,
-          "p90": 2.72,
-          "p95": 5.09
+          "p75": 0.9,
+          "p90": 2.79,
+          "p95": 4.45
         },
         "outliers_iqr": {
-          "count": 9,
-          "pct": 26.47,
+          "count": 8,
+          "pct": 22.22,
           "bounds": [
-            -1.73,
-            2.63
+            -4.53,
+            4.15
           ]
         },
         "outliers_zscore": {
           "count": 1,
-          "pct": 2.94
+          "pct": 2.78
         },
         "zero_inflation": {
-          "zero_count": 9,
-          "zero_pct": 26.47
+          "zero_count": 8,
+          "zero_pct": 22.22
         }
       }
     },
@@ -103,11 +103,11 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 34,
-        "min": -13.0,
+        "count": 36,
+        "min": -60.0,
         "max": 0.0,
-        "mean": -0.41,
-        "std": 2.2,
+        "mean": -2.11,
+        "std": 10.02,
         "median": 0.0,
         "quantiles": {
           "p25": 0.0,
@@ -117,8 +117,8 @@
           "p95": 0.0
         },
         "outliers_iqr": {
-          "count": 2,
-          "pct": 5.88,
+          "count": 3,
+          "pct": 8.33,
           "bounds": [
             0.0,
             0.0
@@ -126,11 +126,11 @@
         },
         "outliers_zscore": {
           "count": 1,
-          "pct": 2.94
+          "pct": 2.78
         },
         "zero_inflation": {
-          "zero_count": 32,
-          "zero_pct": 94.12
+          "zero_count": 33,
+          "zero_pct": 91.67
         }
       }
     },
@@ -139,22 +139,22 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 34,
-        "min": 0.0,
+        "count": 36,
+        "min": -60.0,
         "max": 43.0,
-        "mean": 3.32,
-        "std": 9.24,
+        "mean": 1.56,
+        "std": 13.75,
         "median": 0.0,
         "quantiles": {
           "p25": 0.0,
           "p50": 0.0,
           "p75": 0.0,
-          "p90": 7.7,
-          "p95": 20.65
+          "p90": 7.5,
+          "p95": 18.75
         },
         "outliers_iqr": {
-          "count": 7,
-          "pct": 20.59,
+          "count": 9,
+          "pct": 25.0,
           "bounds": [
             0.0,
             0.0
@@ -162,11 +162,11 @@
         },
         "outliers_zscore": {
           "count": 2,
-          "pct": 5.88
+          "pct": 5.56
         },
         "zero_inflation": {
           "zero_count": 27,
-          "zero_pct": 79.41
+          "zero_pct": 75.0
         }
       }
     },
@@ -175,15 +175,15 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 34,
+        "count": 36,
         "min": -60.0,
         "max": 0.0,
-        "mean": -19.09,
-        "std": 23.41,
-        "median": -6.5,
+        "mean": -27.53,
+        "std": 27.6,
+        "median": -11.5,
         "quantiles": {
-          "p25": -43.0,
-          "p50": -6.5,
+          "p25": -60.0,
+          "p50": -11.5,
           "p75": 0.0,
           "p90": 0.0,
           "p95": 0.0
@@ -192,8 +192,8 @@
           "count": 0,
           "pct": 0.0,
           "bounds": [
-            -107.5,
-            64.5
+            -150.0,
+            90.0
           ]
         },
         "outliers_zscore": {
@@ -201,8 +201,8 @@
           "pct": 0.0
         },
         "zero_inflation": {
-          "zero_count": 14,
-          "zero_pct": 41.18
+          "zero_count": 12,
+          "zero_pct": 33.33
         }
       }
     },
@@ -211,25 +211,25 @@
       "null_count": 0,
       "null_pct": 0.0,
       "numeric_stats": {
-        "count": 34,
+        "count": 36,
         "min": 0.0,
-        "max": 165.0,
-        "mean": 46.26,
-        "std": 47.89,
-        "median": 32.5,
+        "max": 180.0,
+        "mean": 53.06,
+        "std": 54.73,
+        "median": 35.5,
         "quantiles": {
-          "p25": 0.75,
-          "p50": 32.5,
-          "p75": 78.0,
-          "p90": 112.7,
-          "p95": 135.05
+          "p25": 2.25,
+          "p50": 35.5,
+          "p75": 97.25,
+          "p90": 127.0,
+          "p95": 168.75
         },
         "outliers_iqr": {
           "count": 0,
           "pct": 0.0,
           "bounds": [
-            -115.12,
-            193.88
+            -140.25,
+            239.75
           ]
         },
         "outliers_zscore": {
@@ -238,7 +238,7 @@
         },
         "zero_inflation": {
           "zero_count": 9,
-          "zero_pct": 26.47
+          "zero_pct": 25.0
         }
       }
     }
