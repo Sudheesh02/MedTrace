@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { ArrowRight, CircleCheck, CircleX, Gavel, MousePointerClick, Play, Search, UserRoundCheck, Swords } from 'lucide-react';
-import { ErrorBox, Loading, TierBadge, num, pretty, when } from './ui.js';
+import { ArrowLeft, ArrowRight, CircleCheck, CircleX, Gavel, MousePointerClick, Play, Search, UserRoundCheck, Swords } from 'lucide-react';
+import { DetailSkeleton, ErrorBox, TierBadge, num, pretty, when } from './ui.js';
 
 function Metrics({ item }) {
   const cells = [
@@ -149,7 +149,7 @@ function ActionPlan({ pack, run, item, memo }) {
   );
 }
 
-export default function Detail({ item, api, backend, onRan }) {
+export default function Detail({ item, api, backend, snapshot, onRan, onBack }) {
   const [running, setRunning] = useState(false);
   const [sample, setSample] = useState(true);
   const [msg, setMsg] = useState(null);
@@ -191,17 +191,20 @@ export default function Detail({ item, api, backend, onRan }) {
       <section className="panel" aria-label="Detail">
         <div className="dhead">
           <div>
+            <button className="ghost backbtn" onClick={onBack}><ArrowLeft className="ic" />All alerts</button>
             <h2>{item.generic_name} <TierBadge tier={item.urgency_tier} /></h2>
             <div className="sub" style={{ marginTop: 3 }}>{item.facility_name} <span className="mono">{item.facility_id} / {item.medicine_id}</span></div>
           </div>
           <div className="row">
-            {backend?.reachable ? (
+            {snapshot ? (
+              <span className="badge b-info" title="This deployment ships stored runs only; the analysis backend is not part of it.">Stored demo runs (snapshot)</span>
+            ) : backend?.reachable ? (
               <>
                 <label className="small row" style={{ gap: 5 }}><input type="checkbox" checked={sample} onChange={(e) => setSample(e.target.checked)} /> sample mode (no LLM)</label>
                 <button className="primary" onClick={run} disabled={running}><Play className="ic" />{running ? 'Running...' : 'Run analysis'}</button>
               </>
             ) : (
-              <span className="badge b-mute" title={backend?.error || ''}>Backend offline - showing stored runs only</span>
+              <span className="badge b-mute" title={backend?.error || ''}>Backend offline: showing stored runs</span>
             )}
           </div>
         </div>
@@ -212,7 +215,7 @@ export default function Detail({ item, api, backend, onRan }) {
         </div>
       </section>
 
-      {api.status === 'loading' && !d ? <section className="panel"><Loading what="Loading run" /></section> : null}
+      {api.status === 'loading' && !d ? <DetailSkeleton /> : null}
       {api.status === 'error' ? <ErrorBox title="Could not load run details" error={api.error} /> : null}
       {d?.ok ? (
         <>
@@ -222,12 +225,12 @@ export default function Detail({ item, api, backend, onRan }) {
               {run_ ? (
                 <>
                   <div className="small muted" style={{ marginBottom: 10 }}>
-                    Trace <span className="mono">{run_.file}</span> (run {run_.run_id}, {when(run_.started_at)}; {d.stored_runs} stored run(s) for this pair). {d.trace_note}
+                    Showing the latest stored trace <span className="mono">{run_.file}</span> (run {run_.run_id}, {when(run_.started_at)}). {d.stored_runs > 1 ? `${num(d.stored_runs, 0)} traces are stored for this pair; older ones are not shown.` : ""} {d.trace_note && !/^Latest stored trace/.test(d.trace_note) ? d.trace_note : null}
                   </div>
                   <Verdicts run={run_} />
                 </>
               ) : (
-                <div className="note small" style={{ marginTop: 0 }}>No stored run for this pair. {backend?.reachable ? 'Click "Run analysis" to create one.' : 'Start the backend (python run.py) to run an analysis.'}</div>
+                <div className="note small" style={{ marginTop: 0 }}>No stored run for this pair. {snapshot ? 'The snapshot ships the latest stored run per investigated pair only.' : backend?.reachable ? 'Click "Run analysis" to create one.' : 'Start the backend (python run.py) to run an analysis.'}</div>
               )}
             </div>
           </section>

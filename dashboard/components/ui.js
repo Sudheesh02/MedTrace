@@ -39,7 +39,14 @@ export const Loading = ({ what = 'Loading' }) => (
 );
 
 export const ListSkeleton = () => (
-  <div style={{ padding: 12 }}>{[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="skel" />)}</div>
+  <div style={{ padding: 12 }} aria-busy="true" aria-label="Loading alerts">{[0, 1, 2, 3, 4, 5].map((i) => <div key={i} className="skel" />)}</div>
+);
+
+export const DetailSkeleton = () => (
+  <div className="stack" aria-busy="true" aria-label="Loading detail">
+    <div className="panel" style={{ padding: 16 }}><div className="skel line w40" /><div className="skel line w60" /><div className="skel block" /></div>
+    <div className="panel" style={{ padding: 16 }}><div className="skel line w40" /><div className="skel block tall" /></div>
+  </div>
 );
 
 export const ErrorBox = ({ title, error, children }) => (
@@ -56,4 +63,13 @@ export const TierBadge = ({ tier }) => {
 
 export const pretty = (s) => String(s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 export const num = (v, d = 1) => (v === null || v === undefined || Number.isNaN(Number(v)) ? '-' : Number(v).toLocaleString(undefined, { maximumFractionDigits: d }));
+export const ago = (iso) => {
+  if (!iso) return 'unknown time';
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (!Number.isFinite(s)) return 'unknown time';
+  if (s < 90) return 'just now';
+  if (s < 5400) return Math.round(s / 60) + ' min ago';
+  if (s < 129600) return Math.round(s / 3600) + ' h ago';
+  return Math.round(s / 86400) + ' d ago';
+};
 export const when = (iso) => (iso ? new Date(iso).toLocaleString() : '-');

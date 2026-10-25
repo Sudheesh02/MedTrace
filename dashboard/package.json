@@ -7,7 +7,9 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:bundle": "node scripts/smoke.mjs --isolated",
+    "bundle-data": "node scripts/bundle-data.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.61.0",

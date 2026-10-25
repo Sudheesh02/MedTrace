@@ -1,8 +1,10 @@
 import { execFile } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
-import { REPO_ROOT } from './paths.js';
+import { DATA_MODE, REPO_ROOT, dir } from './paths.js';
 import { backendHealth, backendJson } from './backend.js';
-import { indexTraces, loadRun } from './traces.js';
+import { indexTraces, loadRun, summarizeTrace } from './traces.js';
+import { packPairs } from './packs.js';
 
 let cache = { at: 0, value: null };
 
@@ -63,20 +65,65 @@ function viaTraces() {
   return { items };
 }
 
+/** Thresholds are read from the real engine source so the UI legend cannot drift from the code. */
+export function readRules() {
+  try {
+    const src = fs.readFileSync(path.join(REPO_ROOT, 'app', 'agents', 'triage_planner.py'), 'utf8');
+    const crit = /trust_cover\s*<\s*([\d.]+)\s*or\s*shortfall_units\s*>\s*([\d.]+)/.exec(src);
+    const warn = /elif\s+trust_cover\s*<\s*([\d.]+)\s*or\s*discrepancy_count\s*>\s*([\d.]+)/.exec(src);
+    if (crit && warn) return { critical_cover_days: Number(crit[1]), critical_shortfall_over: Number(crit[2]), warning_cover_days: Number(warn[1]), warning_discrepancies_over: Number(warn[2]), source: 'app/agents/triage_planner.py' };
+  } catch {
+    /* fall through */
+  }
+  return null;
+}
+
 function decorate(items) {
   const idx = indexTraces();
+  const packs = packPairs();
   return items.map((it) => {
     const k = `${it.facility_id}/${it.medicine_id}`;
     const latest = idx.latestByPair[k];
-    return { ...it, stored_runs: idx.countByPair[k] || 0, latest_run_at: latest?.ts ?? null };
+    const sum = latest ? summarizeTrace(latest.file) : null;
+    return {
+      ...it,
+      stored_runs: idx.countByPair[k] || 0,
+      latest_run_at: latest?.ts ?? null,
+      latest_run: sum ? { models: sum.models, llm_used: sum.llm_used, accepted: sum.accepted, confidence: sum.confidence, rounds: sum.rounds, escalated: sum.escalated } : null,
+      has_pack: !!packs[k],
+      pack_actions: packs[k]?.actions ?? null,
+    };
   });
 }
 
+function viaBundle() {
+  const snap = JSON.parse(fs.readFileSync(dir('triage.json'), 'utf8'));
+  return {
+    source: 'bundle',
+    source_label: 'Stored demo runs (snapshot)',
+    items: snap.items,
+    total_evaluated: snap.items.length,
+    rules: snap.rules || null,
+    snapshot_at: snap.generated_at || null,
+  };
+}
 export async function getAlerts({ force = false } = {}) {
   if (!force && cache.value && Date.now() - cache.at < 30000) return cache.value;
   const attempts = [];
-  const health = await backendHealth();
   let result = null;
+  if (DATA_MODE === 'bundle') {
+    try {
+      result = viaBundle();
+    } catch (e) {
+      return { ok: false, error: 'Demo data bundle unreadable: ' + e.message, attempts, items: [], mode: 'bundle' };
+    }
+    const items = decorate(result.items);
+    const counts = items.reduce((a, i) => ((a[i.urgency_tier] = (a[i.urgency_tier] || 0) + 1), a), {});
+    const value = { ok: true, mode: 'bundle', ...result, items, counts, attempts, backend: { reachable: false, mode: 'bundle' }, generated_at: result.snapshot_at || new Date().toISOString() };
+    cache = { at: Date.now(), value };
+    return value;
+  }
+  const health = await backendHealth();
 
   if (health.reachable) {
     try {
@@ -100,7 +147,7 @@ export async function getAlerts({ force = false } = {}) {
       const snap = await viaPython();
       result = {
         source: 'python-snapshot',
-        source_label: `TriagePlannerAgent over local ${snap.sim_dir} (${snap.facilities} facilities x ${snap.medicines} medicines)`,
+        source_label: 'Local triage engine snapshot',
         items: snap.items,
         total_evaluated: snap.items.length,
       };
@@ -126,7 +173,7 @@ export async function getAlerts({ force = false } = {}) {
   }
   const items = decorate(result.items);
   const counts = items.reduce((a, i) => ((a[i.urgency_tier] = (a[i.urgency_tier] || 0) + 1), a), {});
-  const value = { ok: true, ...result, items, counts, attempts, backend: health, generated_at: new Date().toISOString() };
+  const value = { ok: true, mode: 'repo', rules: readRules(), ...result, items, counts, attempts, backend: health, generated_at: new Date().toISOString() };
   cache = { at: Date.now(), value };
   return value;
 }

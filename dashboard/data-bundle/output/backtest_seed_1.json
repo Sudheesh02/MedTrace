@@ -1,0 +1,104 @@
+{
+  "seed": 1,
+  "evaluation_period_days": 180,
+  "total_actual_stockouts": 23,
+  "performance_benchmarks": {
+    "replay_duration_seconds": 3.947,
+    "total_transactions_evaluated": 25920,
+    "throughput_events_per_sec": 6566.3
+  },
+  "metrics": {
+    "early_warning_lead_time_days": {
+      "alert_threshold_days": 14.0,
+      "naive_lmis": 73.22,
+      "heuristic_rule_based": 73.22,
+      "medtrace": 73.22,
+      "lead_time_advantage_days": 0.0
+    },
+    "stockout_recall_pct": {
+      "naive_lmis": 100.0,
+      "heuristic_rule_based": 100.0,
+      "medtrace": 100.0
+    },
+    "anomaly_detection": {
+      "evaluation_scope": "rule_coverage_planted_anomalies",
+      "ground_truth_anomalies_count": 10,
+      "detected_anomalies_count": 9,
+      "true_positives": 9,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision_pct": 100.0,
+      "recall_pct": 90.0,
+      "f1_score_pct": 94.7,
+      "naive_lmis_f1": 25.0,
+      "heuristic_f1": 25.0,
+      "raw_counts": {
+        "true_positives": 9,
+        "false_positives": 0,
+        "false_negatives": 1
+      },
+      "timing_evaluation": {
+        "window_days": 7,
+        "timed_true_positives": 8,
+        "median_detection_delay_days": 0.0
+      },
+      "type_agnostic_comparisons": {
+        "medtrace": {
+          "detected_pairs_count": 9,
+          "true_positives": 9,
+          "false_positives": 0,
+          "false_negatives": 1,
+          "precision_pct": 100.0,
+          "recall_pct": 90.0,
+          "f1_score_pct": 94.7,
+          "median_delay_days": -1.0
+        },
+        "naive_lmis": {
+          "detected_pairs_count": 6,
+          "true_positives": 2,
+          "false_positives": 3,
+          "false_negatives": 8,
+          "precision_pct": 40.0,
+          "recall_pct": 20.0,
+          "f1_score_pct": 26.7,
+          "median_delay_days": 2.5
+        },
+        "heuristic_rule_based": {
+          "detected_pairs_count": 6,
+          "true_positives": 2,
+          "false_positives": 3,
+          "false_negatives": 8,
+          "precision_pct": 40.0,
+          "recall_pct": 20.0,
+          "f1_score_pct": 26.7,
+          "median_delay_days": 2.5
+        }
+      },
+      "baseline_comparisons": {
+        "naive_lmis": {
+          "detected_count": 6,
+          "true_positives": 2,
+          "false_positives": 4,
+          "false_negatives": 8,
+          "precision_pct": 33.3,
+          "recall_pct": 20.0,
+          "f1_score_pct": 25.0
+        },
+        "heuristic_rule_based": {
+          "detected_count": 6,
+          "true_positives": 2,
+          "false_positives": 4,
+          "false_negatives": 8,
+          "precision_pct": 33.3,
+          "recall_pct": 20.0,
+          "f1_score_pct": 25.0
+        }
+      }
+    },
+    "capital_lockup_false_reorders": {
+      "naive_lmis": 0,
+      "heuristic_rule_based": 0,
+      "medtrace": 0
+    }
+  }
+}

@@ -41,3 +41,24 @@ export function findMemo(facility, medicine) {
     return null;
   }
 }
+let packIdx = { at: 0, value: null };
+/** Pairs that have a stored full action pack (dashboard run cache or output_examples/). key -> {run_id, source} */
+export function packPairs() {
+  if (packIdx.value && Date.now() - packIdx.at < 20000) return packIdx.value;
+  const map = {};
+  const candidates = [...jsonFiles(RUN_CACHE_DIR), ...jsonFiles(dir('output_examples'))];
+  for (const f of candidates) {
+    try {
+      const body = JSON.parse(fs.readFileSync(f, 'utf8'));
+      const out = body.output || body;
+      if (!out?.facility_id || !out?.medicine_id || !Array.isArray(out?.recommendations)) continue;
+      const k = `${out.facility_id}/${out.medicine_id}`;
+      const mtime = fs.statSync(f).mtimeMs;
+      if (!map[k] || mtime > map[k].mtime) map[k] = { mtime, run_id: body.run_id || out.run_id || null, actions: out.recommendations.length, escalated: !!out.escalated_to_human };
+    } catch {
+      /* skip */
+    }
+  }
+  packIdx = { at: Date.now(), value: map };
+  return map;
+}

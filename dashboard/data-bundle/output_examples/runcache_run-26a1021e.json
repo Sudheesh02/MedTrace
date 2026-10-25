@@ -1,0 +1,139 @@
+{
+  "run_id": "run-26a1021e",
+  "status": "success",
+  "execution_time_seconds": 0.06,
+  "output": {
+    "run_id": "run-26a1021e",
+    "facility_id": "FAC-PHC-01",
+    "medicine_id": "MED-004",
+    "stockout_prevented": true,
+    "days_of_cover_trust": 0,
+    "days_of_cover_naive": 45.87,
+    "understated_gap_percent": 100,
+    "p_stockout_risk": 1,
+    "investigation_summary": "Skeptic approved revised hypothesis 'Upstream Supplier Lead Time Slippage' (Round 2). Differential elimination confirmed against 'Epidemiological Outbreak & Consumption Demand Surge' (separation Delta=0.35). Audited numbers verified: Usable Stock = 0.0 units, Shortfall = 58.89 units across 13.0 gap days. Corroborating evidence: 5 items checked.",
+    "winning_hypothesis": {
+      "hypothesis_id": "H2-SUPPLIER-TRANSIT",
+      "title": "Upstream Supplier Lead Time Slippage",
+      "cause": "Supplier SUP-001 delivery slip of +8.0 days threatens delivery window.",
+      "likelihood": 0.95,
+      "supporting_evidence": [
+        "Promised delivery expected at Day 5, but vendor slip adds +8.0 days.",
+        "Leaves a trust-adjusted shortfall of 58.89 units across 13.0 gap days.",
+        "Supplier SUP-001 delivery slip of +8.0 days threatens delivery window.",
+        "Differential confirmation: Open PO status and empirical supplier slip distribution confirm replenishment failure originates upstream.",
+        "World Model topology verifies supply-chain relations: FOR_MEDICINE, HOLDS_INVENTORY."
+      ],
+      "refuting_evidence": [
+        "Supplier confirms expedited dispatch with guaranteed logistics priority."
+      ],
+      "confirming_query": "SELECT vendor, shipment_mode, mean_slip_days, p90_days FROM MEDTRACE_LH.supplier_slip LIMIT 5"
+    },
+    "recommendations": [
+      {
+        "action_id": "ACT-TRF-FAC-PHC-01-MED-004",
+        "action_type": "PEER_TRANSFER",
+        "facility_id": "FAC-PHC-01",
+        "medicine_id": "MED-004",
+        "recommended_units": 58.89,
+        "estimated_cost_usd": 1.06,
+        "source_facility_id": "FAC-WH-02",
+        "supplier_id": null,
+        "feasibility_score": 0.9,
+        "justification": "Transfer 58.89 units from peer warehouse FAC-WH-02 (usable surplus 15651 units, lead time 24h, est transit fee $1.06) to cover 13.0-day gap.",
+        "number_provenance": {
+          "shortfall_units": 58.89,
+          "gap_days": 13,
+          "peer_surplus": 15651,
+          "unit_price_usd": 0.12,
+          "estimated_cost_usd": 1.06
+        }
+      },
+      {
+        "action_id": "ACT-EXP-FAC-PHC-01-MED-004",
+        "action_type": "EXPEDITE_PO",
+        "facility_id": "FAC-PHC-01",
+        "medicine_id": "MED-004",
+        "recommended_units": 58.89,
+        "estimated_cost_usd": 7.77,
+        "source_facility_id": null,
+        "supplier_id": "SUP-001",
+        "feasibility_score": 0.75,
+        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-001 (est order cost $7.77) to compress delivery slip and cover 13.0-day gap.",
+        "number_provenance": {
+          "shortfall_units": 58.89,
+          "gap_days": 13,
+          "unit_price_usd": 0.12,
+          "estimated_cost_usd": 7.77
+        }
+      },
+      {
+        "action_id": "ACT-EMERG-FAC-PHC-01-MED-004",
+        "action_type": "EMERGENCY_PURCHASE",
+        "facility_id": "FAC-PHC-01",
+        "medicine_id": "MED-004",
+        "recommended_units": 58.89,
+        "estimated_cost_usd": 17.67,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.6,
+        "justification": "Authorise district emergency local procurement quota of 58.89 units (est spot cost $17.67 at emergency premium) if transfer or supplier dispatch cannot arrive within 48h.",
+        "number_provenance": {
+          "shortfall_units": 58.89,
+          "gap_days": 13,
+          "unit_price_usd": 0.12,
+          "estimated_cost_usd": 17.67
+        }
+      }
+    ],
+    "skeptic_rounds": 2,
+    "trace_file": "logs\\trace_run-26a1021e.jsonl",
+    "action_plan_audit": {
+      "audited": true,
+      "passed": true,
+      "verified_recommendations_count": 3,
+      "flagged_inconsistencies": []
+    },
+    "escalated_to_human": false,
+    "escalation_reason": null,
+    "model_used": "rule-based-sample-mode",
+    "llm_used": false,
+    "fallback": true,
+    "ledger_stock": 154,
+    "usable_stock": 0,
+    "quarantined_stock": 0,
+    "audit_drift": 0,
+    "expiring_stock": 180
+  },
+  "agents": [
+    {
+      "name": "TriagePlanner",
+      "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"
+    },
+    {
+      "name": "Reconciler",
+      "role": "Audits ledger vs physical audit vs batch expiry"
+    },
+    {
+      "name": "WorldModel",
+      "role": "Maintains shared canonical grounded entities & relations"
+    },
+    {
+      "name": "Investigator",
+      "role": "Generates >= 3 competing hypotheses with evidence queries"
+    },
+    {
+      "name": "Skeptic & Number Auditor",
+      "role": "Challenging assertions & verifying deterministic arithmetic"
+    },
+    {
+      "name": "ActionPlanner",
+      "role": "Ranks transfers, PO expedites, and emergency orders"
+    },
+    {
+      "name": "HMEM",
+      "role": "Cross-session memory of officer approvals/overrides"
+    }
+  ],
+  "trace_file": "logs\\trace_run-26a1021e.jsonl"
+}

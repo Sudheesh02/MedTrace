@@ -1,0 +1,2 @@
+# The deployable demo snapshot must be committed even though the repo ignores *.jsonl traces.
+!data-bundle/**/*.jsonl

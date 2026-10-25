@@ -1,4 +1,4 @@
-import { API_BASE } from './paths.js';
+import { API_BASE, DATA_MODE } from './paths.js';
 
 async function timedFetch(url, opts = {}, ms = 1500) {
   const ctl = new AbortController();
@@ -12,6 +12,7 @@ async function timedFetch(url, opts = {}, ms = 1500) {
 
 /** Is the FastAPI backend (python run.py) reachable? Returns its /health payload or {reachable:false}. */
 export async function backendHealth() {
+  if (DATA_MODE === 'bundle') return { reachable: false, url: null, mode: 'bundle', error: 'snapshot mode (no backend)' };
   try {
     const res = await timedFetch(`${API_BASE}/health`, {}, 1500);
     if (!res.ok) return { reachable: false, url: API_BASE, error: `HTTP ${res.status}` };

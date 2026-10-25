@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { dir } from './paths.js';
+import { dir, DATA_MODE } from './paths.js';
 import { cleanText, hadReasoningLeak } from './text.js';
 
 const SAFE_NAME = /^[A-Za-z0-9._-]+\.jsonl$/;
@@ -26,6 +26,16 @@ let indexCache = { at: 0, value: null };
 /** Index of every trace file (first line only): file -> {facility, medicine, ts}. Cached 20s. */
 export function indexTraces() {
   if (indexCache.value && Date.now() - indexCache.at < 20000) return indexCache.value;
+  if (DATA_MODE === 'bundle') {
+    // The bundle keeps only the latest trace per pair; the true counts were recorded when it was built.
+    try {
+      const j = JSON.parse(fs.readFileSync(dir('index.json'), 'utf8'));
+      indexCache = { at: Date.now(), value: { entries: Object.values(j.latestByPair || {}), latestByPair: j.latestByPair || {}, countByPair: j.countByPair || {}, total: j.total_traces ?? 0 } };
+    } catch {
+      indexCache = { at: Date.now(), value: { entries: [], latestByPair: {}, countByPair: {}, total: 0 } };
+    }
+    return indexCache.value;
+  }
   const logs = dir('logs');
   const entries = [];
   let names = [];
@@ -211,4 +221,26 @@ export function parseRun(events, file) {
 
 export function loadRun(file) {
   return parseRun(readTraceEvents(file), file);
+}
+const summaryCache = new Map();
+/** Compact facts about one stored trace (for list badges): models, whether an LLM answered, Skeptic outcome. */
+export function summarizeTrace(file) {
+  if (summaryCache.has(file)) return summaryCache.get(file);
+  let s = null;
+  try {
+    const run = loadRun(file);
+    s = {
+      models: run.models,
+      llm_used: run.steps.some((x) => x.llm_used === true),
+      accepted: run.final_skeptic ? !!run.final_skeptic.accepted : null,
+      confidence: run.final_skeptic?.confidence ?? null,
+      rounds: run.rounds.length,
+      escalated: !!run.escalation,
+      complete: !!run.complete,
+    };
+  } catch {
+    s = null;
+  }
+  summaryCache.set(file, s);
+  return s;
 }

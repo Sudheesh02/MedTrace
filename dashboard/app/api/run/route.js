@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { backendHealth, backendJson } from '../../../lib/backend.js';
-import { RUN_CACHE_DIR } from '../../../lib/paths.js';
+import { DATA_MODE, RUN_CACHE_DIR } from '../../../lib/paths.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +18,7 @@ export async function POST(request) {
   if (!ID.test(facility_id || '') || !ID.test(medicine_id || '')) {
     return Response.json({ ok: false, error: 'facility_id and medicine_id required' }, { status: 400 });
   }
+  if (DATA_MODE === 'bundle') return Response.json({ ok: false, error: 'Run analysis is not available in snapshot mode (stored demo runs only).' }, { status: 503 });
   const health = await backendHealth();
   if (!health.reachable) {
     return Response.json({ ok: false, error: `Backend not reachable at ${health.url} (${health.error}). Start it with "python run.py".` }, { status: 503 });

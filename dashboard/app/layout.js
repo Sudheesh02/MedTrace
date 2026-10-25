@@ -1,8 +1,17 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'MedTrace Dashboard',
-  description: 'Alerts, Investigator vs Skeptic verdicts, traces and memory evidence from MedTrace runs.',
+  title: 'MedTrace | Stock-integrity triage for essential medicines',
+  description: 'Alerts, Investigator vs Skeptic verdicts, decision traces and memory evidence from MedTrace runs. Inventory data is simulated.',
+  applicationName: 'MedTrace',
+  icons: { icon: '/icon.svg', apple: '/icon.svg' },
+};
+
+export const viewport = {
+  themeColor: '#090d12',
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }) {
