@@ -31,7 +31,7 @@ services:
     profiles: ["full-stack"]
     environment:
       POSTGRES_USER: medtrace_admin
-      POSTGRES_PASSWORD: medtrace_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
       POSTGRES_DB: medtrace_warehouse
     ports:
       - "5432:5432"
