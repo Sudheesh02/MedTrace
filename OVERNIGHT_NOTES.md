@@ -1097,3 +1097,53 @@
 - **Item 7 (P1)**: Implement live openFDA REST API adapter with offline cache-aside in `DataStore`.
 - **Item 8 (P1)**: Create lightweight interactive Streamlit dashboard (`app/ui.py`).
 - **Item 9 (P1)**: Author consolidated `tests/test_sponsor_conformance.py`.
+
+---
+
+### Session: 2026-10-25 20:20 IST
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 2 — Curated Multi-Agent Benchmark Suite (Priority 0c Item 5 & Backlog Item 5)
+
+#### What Was Done
+1. **Engineered 20 Hand-Crafted Clinical Scenarios (`app/backtest/curated_benchmark.py`)**:
+   - Authored `CuratedScenario` model and 20 comprehensive, clinically realistic hospital scenarios covering 6 distinct operational failure modes:
+     - 5 Clean / Normal Controls (`CASE-01` to `CASE-05`): adequate stock (30–35d cover), zero drift, valid batches, on-time supplier.
+     - 4 Phantom Drift Scenarios (`CASE-06` to `CASE-09`): physical shelf audit reveals severe inventory shrinkage (120–250 units drift), including sub-threshold drift (120 units).
+     - 3 Quarantined Batch Scenarios (`CASE-10` to `CASE-12`): batch registry contains regulatory recall / particulate contamination hold (150–400 units quarantined), dropping usable cover to 3.7–10d while naive ledger appears safe.
+     - 3 Chronic Supplier Slip Scenarios (`CASE-13` to `CASE-15`): scheduled POs threatened by empirical p90 delivery delays (+11 to +14 days), creating 7–11 day stockout gaps that naive LMIS misses.
+     - 3 Dispatched PO Transit Loss Scenarios (`CASE-16` to `CASE-18`): purchase orders marked `DISPATCHED` 18–22 days ago with zero delivery receipts logged (lost road freight / transit breakdown).
+     - 2 Unit-of-Measure Multiplier Scenarios (`CASE-19` to `CASE-20`): 10x pack multiplier logging errors (10 tablets/box logged as units vs tablets).
+2. **Built End-to-End Multi-Agent Evaluation Harness (`CuratedScenarioDataStore`)**:
+   - Created in-memory scenario adapter `CuratedScenarioDataStore(DataStore)` enabling the actual production multi-agent pipeline (`ReconcilerAgent` -> `WorldModelEngine` -> `InvestigatorAgent` <-> `SkepticAgent` & Number Auditor -> `ActionPlannerAgent`) to execute natively with 100% production fidelity.
+   - Refactored `MedTraceOrchestrator` to accept an optional `data_store` for seamless dependency injection.
+   - Enhanced `SkepticAgent` Number Auditor to recognize verified discrepancy impact units, UOM pack quantities, and World Model conflict values as grounded evidence, achieving 0.0% false inconsistency flags on legitimate multi-source audit data.
+   - Fixed boolean string evaluation for batch quarantine status in `DeterministicEngine` (`is_quar = (b.get("quarantined") is True) or (str(b.get("quarantined", "")).strip().lower() in ("true", "1"))`).
+3. **Engineered CLI Runner & Comprehensive Markdown Report (`scripts/run_curated_eval.py`, `output/curated_evaluation.md`)**:
+   - Authored standalone CLI runner with `--output-dir`, `--format`, and `--quiet` flags.
+   - Generates executive Markdown evaluation report (`output/curated_evaluation.md`) featuring:
+     - Clear Synthetic Benchmark Declaration and clinical problem statement.
+     - Executive comparative benchmark table:
+       - **Anomaly Precision**: MedTrace **100.0%** (15/15) vs Rules Baseline **60.0%** (+40.0% advantage).
+       - **Anomaly Recall**: MedTrace **100.0%** (15/15) vs Rules Baseline **20.0%** (3/15) (+80.0% advantage).
+       - **Anomaly F1 Score**: MedTrace **100.0%** vs Rules Baseline **30.0%** (+70.0% advantage).
+       - **Correct Abstention Rate on Clean Cases**: **100.0%** (5/5 clean controls correctly abstained with zero false emergency reorders; `MONITOR_BUFFER` formulated).
+       - **Unsupported Number Claim Rate**: MedTrace **0.0%** (0 hallucinated numbers; 100% audited by Number Auditor).
+     - Category-wise breakdown proving rules baseline fails on 100% of quarantined batches (0/3), supplier slips (0/3), and transit losses (0/3).
+     - Scenario-by-scenario deliberation, audit, and action recommendation table.
+4. **Integrated Clean-Clone Validator Gate (`scripts/validate_clean_clone.py`)**:
+   - Added Gate: `Curated Multi-Agent Benchmark Evaluation (scripts/run_curated_eval.py)`. All 9 validation gates passing cleanly.
+5. **Comprehensive Automated Test Suite (`tests/test_backtest.py`)**:
+   - Added `test_curated_benchmark_evaluation_execution` asserting scenario count (20), mathematical performance identities, category breakdown invariants, 100% correct abstention on clean stock, 0% unsupported claims, and CLI execution.
+6. **Documentation & Test Count Synchronization**:
+   - Updated total passing test count from 127 to 128 across `README.md`, `SPONSOR_TECH.md`, `PRE_EXISTING_COMPONENTS.md`, and `tests/test_api.py`.
+7. **Backlog & Monitor Tracking (`OVERNIGHT_BACKLOG.md`)**:
+   - Marked Item 5 and Priority 0c Item 5 as completed `[x] [DONE]`.
+8. **Full Test Suite Verification**:
+   - Executed full test suite (`python -m pytest tests -q`): **128 passed, 1 warning in 261.44s** (100% green across all 7 test suites). Zero git working tree dirtied.
+
+#### What Is Next
+- **Item 7 (Next Highest Priority — P1)**: Author real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py` (`fetch_live_openfda_shortages(medicine_name)` with 5s timeout and fallback).
+- **Item 8 (P1)**: Create lightweight interactive Streamlit dashboard (`app/ui.py`) supporting triage inspection, debate review, and interactive officer decision recording.
+- **Item 9 (P1)**: Author consolidated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+- **Item 10 (P2)**: Dockerfile & `.dockerignore` trace inclusion for tracked sample traces.
+- **Item 11 (P2)**: Reframe README narrative around audit accuracy and explanation faithfulness.

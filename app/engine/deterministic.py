@@ -210,7 +210,8 @@ class DeterministicEngine:
         expiring_qty = 0.0
         for b in batches:
             qty = float(b.get("quantity", 0))
-            if b.get("quarantined", False):
+            is_quar = (b.get("quarantined") is True) or (str(b.get("quarantined", "")).strip().lower() in ("true", "1"))
+            if is_quar:
                 quarantined_qty += qty
             elif b.get("days_to_expiry", 999) <= (promised_delivery_days + historical_slip_days):
                 expiring_qty += qty

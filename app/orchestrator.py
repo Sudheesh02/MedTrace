@@ -22,11 +22,17 @@ from app.agents.triage_planner import TriagePlannerAgent
 from app.models.schemas import ActionPack
 
 class MedTraceOrchestrator:
-    def __init__(self, use_zetaris: bool = False, logs_dir: str = "logs", hmem: Optional[HMemEngine] = None):
+    def __init__(
+        self,
+        use_zetaris: bool = False,
+        logs_dir: str = "logs",
+        hmem: Optional[HMemEngine] = None,
+        data_store: Optional[DataStore] = None
+    ):
         self.logs_dir = logs_dir
         os.makedirs(self.logs_dir, exist_ok=True)
 
-        self.data_store = DataStore(use_zetaris=use_zetaris)
+        self.data_store = data_store or DataStore(use_zetaris=use_zetaris)
         self.llm_client = LLMClient()
         
         # Meterless Engines

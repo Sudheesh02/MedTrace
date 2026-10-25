@@ -231,3 +231,78 @@ def test_type_agnostic_and_timed_anomaly_scoring_invariants():
     assert res1["total_actual_stockouts"] != res2["total_actual_stockouts"]
 
 
+
+
+def test_curated_benchmark_evaluation_execution(tmp_path):
+    """
+    Priority 0c Item 5 & Backlog Item 5:
+    Curated Multi-Agent Benchmark Suite (20 Hand-Crafted Clinical Scenarios).
+    Verifies:
+    1. Full multi-agent loop evaluation across 20 clinical scenarios (5 Clean, 4 Drift, 3 Quarantined, 3 Slip, 3 Transit, 2 UOM).
+    2. MedTrace achieves 100% Correct Abstention on clean cases (5/5) with 0 false emergency purchases.
+    3. MedTrace achieves 0.0% Unsupported Claim Rate via Number Auditor validation.
+    4. MedTrace Anomaly Recall (100.0%) and F1 (100.0%) decisively outperform rules baseline (20.0% recall, 30.0% F1).
+    5. scripts/run_curated_eval.py CLI executes cleanly and generates output/curated_evaluation.md.
+    """
+    from app.backtest.curated_benchmark import CuratedBenchmark, CURATED_SCENARIOS
+    import subprocess
+    import sys
+
+    # 1. In-process benchmark execution
+    benchmark = CuratedBenchmark(logs_dir=str(tmp_path / "logs"))
+    assert len(benchmark.scenarios) == 20
+
+    results = benchmark.run_benchmark()
+    assert results["total_scenarios"] == 20
+
+    mm = results["medtrace_metrics"]
+    bm = results["baseline_metrics"]
+
+    # Precision, Recall, and F1 invariants
+    assert mm["precision_pct"] == 100.0
+    assert mm["recall_pct"] == 100.0
+    assert mm["f1_score_pct"] == 100.0
+    assert mm["correct_abstention_pct"] == 100.0
+    assert mm["correct_abstentions"] == 5
+    assert mm["unsupported_claim_rate_pct"] == 0.0
+    assert mm["unsupported_number_claims_count"] == 0
+
+    # Rules baseline comparison: baseline misses hidden supplier slips, quarantined lots, and transit loss
+    assert bm["recall_pct"] <= 40.0
+    assert mm["recall_pct"] > bm["recall_pct"]
+    assert mm["f1_score_pct"] > bm["f1_score_pct"]
+
+    # Category-wise coverage
+    cats = results["category_breakdown"]
+    assert cats["CLEAN_STOCK"]["medtrace_detected"] == 5
+    assert cats["PHANTOM_DRIFT"]["medtrace_detected"] == 4
+    assert cats["QUARANTINED_BATCH"]["medtrace_detected"] == 3
+    assert cats["CHRONIC_SUPPLIER_SLIP"]["medtrace_detected"] == 3
+    assert cats["PO_TRANSIT_LOSS"]["medtrace_detected"] == 3
+    assert cats["UOM_MISMATCH"]["medtrace_detected"] == 2
+
+    # Baseline failures on silent supply disruptions
+    assert cats["QUARANTINED_BATCH"]["baseline_detected"] == 0
+    assert cats["CHRONIC_SUPPLIER_SLIP"]["baseline_detected"] == 0
+    assert cats["PO_TRANSIT_LOSS"]["baseline_detected"] == 0
+
+    # 2. CLI script execution verification
+    cli_out_dir = str(tmp_path / "cli_eval")
+    cmd_res = subprocess.run(
+        [sys.executable, "scripts/run_curated_eval.py", "--output-dir", cli_out_dir],
+        capture_output=True,
+        text=True
+    )
+    assert cmd_res.returncode == 0, f"run_curated_eval failed: {cmd_res.stderr}"
+    assert "MEDTRACE: CURATED MULTI-AGENT CLINICAL BENCHMARK SUITE" in cmd_res.stdout
+    assert "Execution completed: 20 scenarios evaluated" in cmd_res.stdout
+
+    report_path = os.path.join(cli_out_dir, "curated_evaluation.md")
+    assert os.path.exists(report_path)
+    with open(report_path, "r", encoding="utf-8") as f:
+        report_text = f.read()
+
+    assert "# MedTrace Curated Multi-Agent Benchmark Evaluation Report" in report_text
+    assert "Synthetic Benchmark Declaration" in report_text
+    assert "Correct Abstention Rate (Clean Cases)" in report_text
+    assert "Zero-Hallucination Number Auditor Verification Invariants" in report_text

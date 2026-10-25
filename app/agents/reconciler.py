@@ -135,6 +135,7 @@ class ReconcilerAgent:
         recon_result["contracted_supplier"] = contracted_supplier
         recon_result["historical_slip_days"] = historical_slip_days
         recon_result["supplier_delay_source"] = supplier_delay_source
+        recon_result["uom_info"] = uom_info
 
         # 5. Extract discrepancies
         discrepancies: List[Discrepancy] = []
@@ -285,6 +286,8 @@ class ReconcilerAgent:
                 medicine_id=medicine_id,
                 agent_id="reconciler"
             )
+
+        recon_result["discrepancies"] = [d.model_dump() for d in discrepancies]
 
         return {
             "facility_id": facility_id,

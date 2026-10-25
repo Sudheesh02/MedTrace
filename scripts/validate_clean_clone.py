@@ -95,6 +95,11 @@ def main():
             ""
         ),
         (
+            [sys.executable, "scripts/run_curated_eval.py", "--quiet"],
+            "Curated Multi-Agent Benchmark Evaluation (scripts/run_curated_eval.py)",
+            ""
+        ),
+        (
             [sys.executable, "-m", "pytest", "tests/test_enriched_data.py", "tests/test_data_store.py", "-q"],
             "Fast Pytest Verification (Enriched Data & DataStore)",
             "passed"

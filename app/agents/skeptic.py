@@ -75,6 +75,32 @@ class SkepticAgent:
             grounded_numbers.add(round(float(demand_eval.get("base_daily_rate", 0.0)), 1))
             grounded_numbers.add(round(float(demand_eval.get("adjusted_daily_demand", 0.0)), 1))
 
+        # Ground numbers from deterministic discrepancies
+        for disc in deterministic_recon.get("discrepancies", []):
+            if isinstance(disc, dict) and "impact_units" in disc:
+                grounded_numbers.add(round(float(disc["impact_units"]), 1))
+
+        # Ground numbers from UOM normalization
+        uom_rec = deterministic_recon.get("uom_info") or {}
+        if isinstance(uom_rec, dict):
+            for k in ("reported_quantity", "normalized_quantity", "pack_size_units"):
+                if k in uom_rec and uom_rec[k] is not None:
+                    try:
+                        grounded_numbers.add(round(float(uom_rec[k]), 1))
+                    except (ValueError, TypeError):
+                        pass
+
+        # Ground numbers from World Model conflict details
+        if world_context and "conflicts" in world_context:
+            for conf in world_context["conflicts"]:
+                if isinstance(conf, dict):
+                    details = conf.get("details", {})
+                    if isinstance(details, dict) and "impact_units" in details:
+                        try:
+                            grounded_numbers.add(round(float(details["impact_units"]), 1))
+                        except (ValueError, TypeError):
+                            pass
+
         text_to_audit = f"{top_hyp.cause} {' '.join(top_hyp.supporting_evidence)}"
         claimed_quantities = re.findall(r"(\d+(?:\.\d+)?)\s*(?:units?|tablets?|packs?|physical units)", text_to_audit, re.IGNORECASE)
         for q_str in claimed_quantities:
