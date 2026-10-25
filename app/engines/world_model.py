@@ -142,11 +142,13 @@ class ContextBuilderService:
         fac_entity = self.store.get_entity(facility_id) or {}
         med_entity = self.store.get_entity(medicine_id) or {}
         edges = self.store.get_edges_for(inv_id)
+        conflicts = self.store.get_conflicts(facility_id)
 
         return {
             "facility": fac_entity,
             "medicine": med_entity,
             "inventory_state": inv_entity,
             "relationships": edges,
+            "conflicts": conflicts,
             "canon_hash": hashlib.md5(json.dumps(inv_entity, sort_keys=True).encode("utf-8")).hexdigest()
         }

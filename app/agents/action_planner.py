@@ -22,7 +22,8 @@ class ActionPlannerAgent:
         facility_id: str,
         medicine_id: str,
         hypothesis: Hypothesis,
-        deterministic_recon: Dict[str, Any]
+        deterministic_recon: Dict[str, Any],
+        escalated_to_human: bool = False
     ) -> List[ActionRecommendation]:
         shortfall = deterministic_recon["trust_shortfall"]["shortfall_units"]
         gap_days = deterministic_recon["trust_shortfall"]["gap_days"]
@@ -243,6 +244,14 @@ class ActionPlannerAgent:
                 "estimated_cost_usd": emerg_cost
             }
         ))
+
+        # Responsible AI: If debate was escalated to human, adjust feasibility & annotate justifications
+        if escalated_to_human:
+            for rec in recommendations:
+                rec.feasibility_score = round(max(0.10, rec.feasibility_score - 0.25), 2)
+                rec.justification = (
+                    f"[ESCALATED TO CONTROLLER] Requires manual clinical review before dispatch authorization: {rec.justification}"
+                )
 
         # Sort recommendations by feasibility score descending
         recommendations.sort(key=lambda r: r.feasibility_score, reverse=True)

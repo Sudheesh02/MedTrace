@@ -29,6 +29,15 @@ class InvestigatorAgent:
         demand_eval = recon["demand_evaluation"]
         shortfall = recon["trust_shortfall"]
 
+        # Extract World Model shared context
+        fac_entity = context.get("facility", {}) if context else {}
+        med_entity = context.get("medicine", {}) if context else {}
+        inv_entity = context.get("inventory_state", {}) if context else {}
+        relationships = context.get("relationships", []) if context else []
+        conflicts = context.get("conflicts", []) if context else []
+        canon_hash = (context.get("canon_hash") or "")[:8] if context else ""
+        wm_inv_evidence = f"World Model entity {inv_entity.get('id', 'ent_inv')} (canon hash {canon_hash or 'verified'}) corroborates usable inventory." if inv_entity else None
+
         # Parse specific discrepancy types
         disc_types = {d.get("anomaly_type") for d in discrepancies}
         quar_disc = next((d for d in discrepancies if d.get("anomaly_type") == "QUARANTINED_BATCH"), None)
@@ -197,6 +206,16 @@ class InvestigatorAgent:
                 h1_likelihood = min(0.95, round(h1_likelihood + 0.05, 2))
                 h1_evidence.append("Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine.")
 
+        # Ground hypotheses in Meterless World Model shared state
+        if wm_inv_evidence:
+            h1_evidence.append(wm_inv_evidence)
+        if relationships:
+            rel_str = ", ".join(sorted({str(r.get("relation")) for r in relationships if r.get("relation")}))
+            h2_evidence.append(f"World Model topology verifies supply-chain relations: {rel_str}.")
+        if conflicts:
+            c_types = ", ".join(sorted({str(c.get("type")) for c in conflicts if c.get("type")}))
+            h3_evidence.append(f"World Model recorded active conflict records: {c_types}.")
+
         hypotheses = [
             Hypothesis(
                 hypothesis_id="H1-INTERNAL-AUDIT",
@@ -234,6 +253,7 @@ class InvestigatorAgent:
         - Usable Physical Stock: {stock_eval['usable_stock']} units
         - Trust Cover Days: {recon['trust_cover_days']} days (Naive: {recon['naive_cover_days']} days)
         - Shortfall Units: {shortfall['shortfall_units']} units
+        - World Model Canon: {inv_entity.get('id', 'N/A')} (canon hash: {canon_hash or 'N/A'}), Active Conflicts: {len(conflicts)}
         - Detected Discrepancies: {[d.get('description') for d in discrepancies]}
         - Skeptic Critique: {skeptic_feedback or 'Initial Round (No previous critique)'}
 

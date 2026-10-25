@@ -1231,4 +1231,138 @@ def test_skeptic_action_plan_audit_rejects_negative_costs():
     assert any("cannot be negative" in inc for inc in audit_invalid.flagged_inconsistencies)
 
 
+def test_investigator_and_skeptic_grounded_in_world_model_context():
+    """Verify InvestigatorAgent and SkepticAgent actively inspect and enforce Meterless World Model shared state."""
+    from app.engines.world_model import WorldStoreService, IngestPipelineService, ContextBuilderService
+    from app.agents.investigator import InvestigatorAgent
+    from app.agents.skeptic import SkepticAgent
+    from app.adapters.llm_client import LLMClient
+    from app.models.schemas import Hypothesis
+
+    store = WorldStoreService()
+    ingest = IngestPipelineService(store)
+    builder = ContextBuilderService(store)
+
+    # Ingest facility and item with registered conflict
+    ingest.ingest_facility_item(
+        facility={"facility_id": "FAC-TEST-01", "name": "Test Hospital", "level": "DH"},
+        medicine={"medicine_id": "MED-TEST-01", "generic_name": "Amoxicillin"},
+        stock_info={"usable_stock": 250.0, "ledger_stock": 350.0, "trust_cover_days": 8.5}
+    )
+    ingest.record_discrepancy_conflict(
+        discrepancy={"anomaly_type": "GHOST_STOCK", "description": "Ledger overstates true stock by 100 units"},
+        facility_id="FAC-TEST-01",
+        medicine_id="MED-TEST-01"
+    )
+
+    ctx = builder.build_structured_context("FAC-TEST-01", "MED-TEST-01")
+    assert "conflicts" in ctx
+    assert len(ctx["conflicts"]) == 1
+    assert ctx["canon_hash"] is not None
+
+    investigator = InvestigatorAgent(LLMClient())
+    recon_data = {
+        "facility_id": "FAC-TEST-01",
+        "medicine_id": "MED-TEST-01",
+        "generic_name": "Amoxicillin",
+        "discrepancies": [{"anomaly_type": "GHOST_STOCK", "description": "Audit drift 100 units"}],
+        "deterministic_reconciliation": {
+            "stock_evaluation": {
+                "ledger_stock": 350.0,
+                "usable_stock": 250.0,
+                "audit_drift": 100.0,
+                "quarantined_stock": 0.0,
+                "expiring_stock": 0.0
+            },
+            "demand_evaluation": {"base_daily_rate": 20.0, "adjusted_daily_demand": 20.0},
+            "trust_shortfall": {"shortfall_units": 0.0, "gap_days": 0.0, "delivery_day": 6.0},
+            "trust_cover_days": 12.5,
+            "naive_cover_days": 17.5,
+            "anomalies_detected": {
+                "ghost_stock": True,
+                "quarantined_batches": False,
+                "expiring_batches": False,
+                "supplier_delay_risk": False,
+                "demand_spike": False,
+                "global_shortage": False,
+                "uom_mismatch": False
+            }
+        }
+    }
+
+    hypotheses = investigator.investigate(recon_data, ctx)
+    assert len(hypotheses) == 3
+    # Verify H1 supporting evidence includes World Model entity grounding
+    h1 = next(h for h in hypotheses if h.hypothesis_id == "H1-INTERNAL-AUDIT")
+    assert any("World Model" in ev for ev in h1.supporting_evidence)
+
+    # Test Skeptic Number Auditor catches World Model contradictions
+    skeptic = SkepticAgent(LLMClient())
+    # Contradicting context: World Model usable_stock = 999.0 while deterministic_recon = 250.0
+    contradicting_ctx = {
+        **ctx,
+        "inventory_state": {**ctx["inventory_state"], "usable_stock": 999.0}
+    }
+    _, review_contra = skeptic.review_and_audit(
+        hypotheses=hypotheses,
+        deterministic_recon=recon_data["deterministic_reconciliation"],
+        round_number=1,
+        world_context=contradicting_ctx
+    )
+    assert review_contra.audited_numbers_valid is False
+    assert any("World Model canonical stock" in inc for inc in review_contra.flagged_inconsistencies)
+
+
+def test_orchestrator_case_insensitive_and_whitespace_normalization():
+    """Verify that facility and medicine ID inputs are automatically case-folded and stripped."""
+    orchestrator = MedTraceOrchestrator(use_zetaris=False)
+
+    # Pass lowercase with trailing/leading spaces
+    pack = orchestrator.run_investigation(
+        facility_id="  fac-dh-01  ",
+        medicine_id=" med-007 "
+    )
+    assert pack.facility_id == "FAC-DH-01"
+    assert pack.medicine_id == "MED-007"
+    assert pack.winning_hypothesis is not None
+
+
+def test_action_planner_adapts_to_human_escalation():
+    """
+    Verify that when an investigation is escalated to a human officer,
+    ActionPlannerAgent penalizes autonomous feasibility and prepends controller warnings.
+    """
+    from app.agents.action_planner import ActionPlannerAgent
+    from app.engines.hmem import HMemEngine
+    from app.adapters.llm_client import LLMClient
+    from app.models.schemas import Hypothesis
+
+    planner = ActionPlannerAgent(LLMClient(), HMemEngine())
+    hyp = Hypothesis(
+        hypothesis_id="H1-UNCERTAIN",
+        title="Unconfirmed Supply Chain Shortfall",
+        cause="Competing unverified claims",
+        likelihood=0.45,
+        supporting_evidence=["Single source report"],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+    recon = {
+        "trust_shortfall": {"shortfall_units": 100.0, "gap_days": 4.0},
+        "stock_evaluation": {"ledger_stock": 200.0, "usable_stock": 50.0, "audit_drift": 0.0, "quarantined_stock": 0.0, "expiring_stock": 0.0},
+        "trust_cover_days": 2.0
+    }
+
+    # Standard non-escalated plan
+    recs_standard = planner.plan_actions("FAC-CHC-01", "MED-001", hyp, recon, escalated_to_human=False)
+    # Escalated plan
+    recs_escalated = planner.plan_actions("FAC-CHC-01", "MED-001", hyp, recon, escalated_to_human=True)
+
+    assert len(recs_standard) == len(recs_escalated)
+    for std, esc in zip(recs_standard, recs_escalated):
+        assert esc.feasibility_score < std.feasibility_score or esc.feasibility_score == 0.10
+        assert "[ESCALATED TO CONTROLLER]" in esc.justification
+
+
+
 

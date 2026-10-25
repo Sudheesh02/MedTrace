@@ -75,7 +75,13 @@ class MedTraceOrchestrator:
             with open(trace_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, default=str) + "\n")
 
+        facility_id = str(facility_id).strip().upper()
+        medicine_id = str(medicine_id).strip().upper()
+
         # Input validation: ensure requested facility and medicine exist
+        facility_id = str(facility_id).strip().upper()
+        medicine_id = str(medicine_id).strip().upper()
+
         valid_facs = {f["facility_id"] for f in self.data_store.get_facilities()}
         valid_meds = {m["medicine_id"] for m in self.data_store.get_medicines()}
         if valid_facs and facility_id not in valid_facs:
@@ -130,7 +136,8 @@ class MedTraceOrchestrator:
             top_hyp, review = self.skeptic.review_and_audit(
                 hypotheses=hypotheses,
                 deterministic_recon=recon["deterministic_reconciliation"],
-                round_number=rounds
+                round_number=rounds,
+                world_context=world_context
             )
             skep_llm = getattr(self.skeptic, "last_llm_response", None)
             skep_text = skep_llm.get("text", "") if isinstance(skep_llm, dict) else ""
@@ -159,12 +166,25 @@ class MedTraceOrchestrator:
             winning_hyp = hypotheses[0]
             skeptic_review = review
 
+        # Execution Plan Phase 3.6: Escalate to human if debate unconcluded or confidence below threshold
+        escalated_to_human = False
+        escalation_reason = None
+        if not (skeptic_review and skeptic_review.accepted) or (winning_hyp and winning_hyp.likelihood < 0.50):
+            escalated_to_human = True
+            conf_str = f"{skeptic_review.confidence_score:.2f}" if skeptic_review else "N/A"
+            escalation_reason = (
+                f"Multi-agent debate unconcluded after {rounds} rounds (Skeptic confidence: {conf_str} < 0.50). "
+                f"Action pack requires manual human officer verification."
+            )
+            log_step("Orchestrator", "HUMAN_ESCALATION", {"reason": escalation_reason}, llm_used=False, fallback=False)
+
         # 4. Action Planner
         recommendations = self.action_planner.plan_actions(
             facility_id=facility_id,
             medicine_id=medicine_id,
             hypothesis=winning_hyp,
-            deterministic_recon=recon["deterministic_reconciliation"]
+            deterministic_recon=recon["deterministic_reconciliation"],
+            escalated_to_human=escalated_to_human
         )
         plan_llm = getattr(self.action_planner, "last_llm_response", None)
         plan_text = plan_llm.get("text", "") if isinstance(plan_llm, dict) else ""
@@ -198,18 +218,6 @@ class MedTraceOrchestrator:
             or det_rec["understated_gap_percent"] > 0
         )
         p_stockout = det_rec.get("monte_carlo_delivery", {}).get("p_stockout_before_arrival", 0.0)
-
-        # Execution Plan Phase 3.6: Escalate to human if debate unconcluded or confidence below threshold
-        escalated_to_human = False
-        escalation_reason = None
-        if not (skeptic_review and skeptic_review.accepted) or (winning_hyp and winning_hyp.likelihood < 0.50):
-            escalated_to_human = True
-            conf_str = f"{skeptic_review.confidence_score:.2f}" if skeptic_review else "N/A"
-            escalation_reason = (
-                f"Multi-agent debate unconcluded after {rounds} rounds (Skeptic confidence: {conf_str} < 0.50). "
-                f"Action pack requires manual human officer verification."
-            )
-            log_step("Orchestrator", "HUMAN_ESCALATION", {"reason": escalation_reason}, llm_used=False, fallback=False)
 
         overall_model = getattr(self.llm_client, "last_model_used", self.llm_client.model)
         overall_llm_used = getattr(self.llm_client, "last_llm_used", False)
@@ -256,6 +264,9 @@ class MedTraceOrchestrator:
         Records an officer's approval or rejection decision into Meterless H-MEM.
         Enforces entity existence validation and updates long-term preferences.
         """
+        facility_id = str(facility_id).strip().upper()
+        medicine_id = str(medicine_id).strip().upper()
+
         valid_facs = {f["facility_id"] for f in self.data_store.get_facilities()}
         valid_meds = {m["medicine_id"] for m in self.data_store.get_medicines()}
         if valid_facs and facility_id not in valid_facs:
@@ -293,4 +304,6 @@ class MedTraceOrchestrator:
         """
         Executes proactive district-wide inventory triage scanning via TriagePlannerAgent.
         """
+        if facility_id:
+            facility_id = str(facility_id).strip().upper()
         return self.triage_planner.scan_district(facility_id=facility_id, top_n=top_n)

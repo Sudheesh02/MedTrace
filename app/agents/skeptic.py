@@ -16,11 +16,12 @@ class SkepticAgent:
         self,
         hypotheses: List[Hypothesis],
         deterministic_recon: Dict[str, Any],
-        round_number: int = 1
+        round_number: int = 1,
+        world_context: Optional[Dict[str, Any]] = None
     ) -> Tuple[Hypothesis, SkepticReview]:
         """
         Scrutinizes hypotheses and executes Number Auditor check.
-        Enforces mathematical invariants, differential diagnosis, and multi-source corroboration rules.
+        Enforces mathematical invariants, differential diagnosis, World Model alignment, and multi-source corroboration rules.
         """
         if not hypotheses:
             raise ValueError("No hypotheses provided to SkepticAgent.")
@@ -84,6 +85,17 @@ class SkepticAgent:
                     f"is not grounded in the deterministic evidence pack."
                 )
                 numbers_valid = False
+
+        # Mathematical Invariant 4: Meterless World Model Canonical State Alignment
+        if world_context:
+            inv_entity = world_context.get("inventory_state", {})
+            if inv_entity and "usable_stock" in inv_entity:
+                inv_stock = float(inv_entity["usable_stock"])
+                if abs(inv_stock - stock_eval["usable_stock"]) > 0.01:
+                    inconsistencies.append(
+                        f"World Model canonical stock ({inv_stock} units) deviates from deterministic ground truth ({stock_eval['usable_stock']} units)."
+                    )
+                    numbers_valid = False
 
         # 2. Adversarial Challenge & Differential Elimination (Execution Plan Phase 3.4)
         # In Round 1, challenge if:
