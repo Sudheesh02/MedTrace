@@ -37,6 +37,10 @@ To preserve total transparency, all synthetic modeling assumptions, heuristic pa
    - *Real Input*: Empirical delivery delay distributions computed from 10,324 historical USAID GHSC-PSM shipments (`supplier_slip.csv`), grouping by vendor and logistics transit mode (`mean`, `p50`, `p90`, `min`, `max`).
    - *Calibrated Assumption*: Real vendor slip percentiles are mapped to simulated suppliers, and delivery arrival uncertainty is modeled in `DeterministicEngine` via Monte Carlo sampling across empirical slip bounds $[0.0, 0.5 \times p90, 1.0 \times p90, 1.5 \times p90]$.
 
+4. **Empirical Direct Purchase Order Lead-Time Distribution Calibration**:
+   - *Real Input*: Direct purchase orders shipped from manufacturers to client facilities (`Fulfill Via = 'Direct Drop'`) in USAID delivery history (`usaid_deliveries.csv`), comprising 4,920 consignments (47.7% of all procurement records) and 4,587 valid order-to-delivery date pairs.
+   - *Empirical Quantiles*: Order-to-Delivery Lead Time has Median (P50) = 92.0 days, Interquartile Range (IQR) = 93.0 days (P25: 50.0d → P75: 143.0d), Mean = 105.80 days (Std: 79.28d), P90 = 208.0 days, P95 = 270.7 days, Range: [0 .. 616] days. Scheduled delivery date slip has Mean = +0.78 days, Median = 0.0 days, IQR = 0.0 days (P90 = 0.0d, P95 = 1.0d, Range: [-57 .. 150] days).
+
 ---
 
 ## 3. Table Schemas & Labeling

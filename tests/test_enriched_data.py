@@ -426,3 +426,61 @@ def test_generate_eda_charts_fails_loudly_when_backtest_missing_or_corrupt(tmp_p
 
 
 
+
+
+def test_direct_po_lead_time_distribution_estimator(tmp_path):
+    """
+    Monitor Item B & Zero-Hardcoding Audit:
+    1. Verifies that compute_direct_po_lead_times dynamically computes lead-time quantiles
+       and IQR on real USAID direct purchase orders without hardcoding.
+    2. Verifies dynamic computation on synthetic variable input files to prove it asserts
+       behavior rather than constants (fails if values are hardcoded).
+    """
+    import csv
+    from scripts.data_audit import compute_direct_po_lead_times
+
+    # 1. Real data empirical verification
+    real_stats = compute_direct_po_lead_times("data/real/raw/usaid_deliveries.csv")
+    assert real_stats["total_direct_drop_orders"] == 4920
+    assert real_stats["valid_lead_time_records"] == 4587
+    lt_stats = real_stats["order_to_delivery_lead_time_days"]
+    assert lt_stats["p25"] == 50.0
+    assert lt_stats["median_p50"] == 92.0
+    assert lt_stats["p75"] == 143.0
+    assert lt_stats["iqr"] == 93.0
+    assert lt_stats["iqr"] == round(lt_stats["p75"] - lt_stats["p25"], 1)
+    assert lt_stats["min"] <= lt_stats["p25"] <= lt_stats["median_p50"] <= lt_stats["p75"] <= lt_stats["p90"] <= lt_stats["max"]
+
+    # 2. Dynamic behavior test: vary inputs with synthetic CSV
+    custom_csv = tmp_path / "custom_direct_pos.csv"
+    headers = [
+        "ID", "Fulfill Via", "PO Sent to Vendor Date",
+        "Scheduled Delivery Date", "Delivered to Client Date"
+    ]
+    rows = [
+        {"ID": "1", "Fulfill Via": "Direct Drop", "PO Sent to Vendor Date": "2026-01-01", "Scheduled Delivery Date": "2026-01-10", "Delivered to Client Date": "2026-01-11"}, # lt=10, slip=1
+        {"ID": "2", "Fulfill Via": "Direct Drop", "PO Sent to Vendor Date": "2026-01-01", "Scheduled Delivery Date": "2026-01-20", "Delivered to Client Date": "2026-01-21"}, # lt=20, slip=1
+        {"ID": "3", "Fulfill Via": "Direct Drop", "PO Sent to Vendor Date": "2026-01-01", "Scheduled Delivery Date": "2026-01-30", "Delivered to Client Date": "2026-01-31"}, # lt=30, slip=1
+        {"ID": "4", "Fulfill Via": "Direct Drop", "PO Sent to Vendor Date": "2026-01-01", "Scheduled Delivery Date": "2026-02-09", "Delivered to Client Date": "2026-02-10"}, # lt=40, slip=1
+        {"ID": "5", "Fulfill Via": "Direct Drop", "PO Sent to Vendor Date": "2026-01-01", "Scheduled Delivery Date": "2026-02-19", "Delivered to Client Date": "2026-02-20"}, # lt=50, slip=1
+        {"ID": "6", "Fulfill Via": "From RDC", "PO Sent to Vendor Date": "2026-01-01", "Scheduled Delivery Date": "2026-02-19", "Delivered to Client Date": "2026-02-20"},    # Ignored: RDC
+        {"ID": "7", "Fulfill Via": "Direct Drop", "PO Sent to Vendor Date": "Date Not Captured", "Scheduled Delivery Date": "2026-02-19", "Delivered to Client Date": "2026-02-20"}, # Missing PO date
+    ]
+    with open(custom_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    custom_stats = compute_direct_po_lead_times(str(custom_csv))
+    assert custom_stats["total_direct_drop_orders"] == 6
+    assert custom_stats["missing_po_sent_date"] == 1
+    assert custom_stats["valid_lead_time_records"] == 5
+    c_lt = custom_stats["order_to_delivery_lead_time_days"]
+    assert c_lt["n"] == 5
+    assert c_lt["min"] == 10
+    assert c_lt["max"] == 50
+    assert c_lt["mean"] == 30.0
+    assert c_lt["median_p50"] == 30.0
+    assert c_lt["p25"] == 20.0
+    assert c_lt["p75"] == 40.0
+    assert c_lt["iqr"] == 20.0

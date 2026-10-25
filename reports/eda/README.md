@@ -31,6 +31,17 @@ All visualizations are generated programmatically via [`scripts/generate_eda_cha
    - **Air Charter ($n=639$)**: Emergency deployment mode with dedicated routing, achieving $p_{50} = 0.0$ days and $p_{90} = 5.0$ days.
 4. **Winsorization Boundary**: Extreme outliers were winsorized to the clinical plausibility window $[-60, +180]$ days (441 consignments, 4.27% of dataset), preventing multi-year recording typos from distorting empirical variance.
 
+### Direct Purchase Order (Direct Drop) Lead-Time Distribution Calibration
+- **Consignments Analyzed**: 4,920 records (47.7% of all procurement shipments; 4,587 valid order-to-delivery date pairs; 328 historical records had uncaptured PO release dates).
+- **Order-to-Delivery Lead Time Distribution**:
+  - **Mean Lead Time**: 105.80 days (Std: 79.28 days)
+  - **Interquartile Range (IQR)**: **93.0 days** (Q1: 50.0 days → Q3: 143.0 days)
+  - **Median (P50)**: **92.0 days**
+  - **90th Percentile (P90)**: **208.0 days** | **95th Percentile (P95)**: **270.7 days**
+  - **Range**: [0 .. 616] days
+- **Scheduled-to-Delivered Slip Distribution** (n=4,727): Mean = +0.78 days, Median = 0.0 days, IQR = 0.0 days (P90 = 0.0d, P95 = 1.0d, Range [-57 .. 150] days).
+- **Methodological Insight**: While scheduled delivery dates are largely met on paper (P50 slip = 0.0d), the underlying manufacturer fulfillment lead time spans an IQR of 93.0 days, demonstrating why static replenishment buffers fail during upstream supply freezes.
+
 ### Impact on MedTrace
 - **Dynamic Vendor Beliefs**: In `app/engines/world_model.py` and `app/agents/reconciler.py`, supplier slip is modeled not as a constant lead time, but as an empirical probability distribution derived directly from `data/real/supplier_slip.csv`.
 - **H-MEM Calibration**: Meterless cognitive memory records observed supplier slip events and dynamically shifts the replenishment threshold when chronic delay ($p_{90} > \text{Days of Cover}$) threatens stock continuity.

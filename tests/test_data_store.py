@@ -387,3 +387,43 @@ def test_data_store_zetaris_rest_url_dual_endpoint(monkeypatch):
 
 
 
+
+
+def test_data_store_query_methods_enforce_sql_injection_defense():
+    """
+    Council Gate A:
+    Verify that calling data accessor methods with SQL injection strings
+    (containing quotes, semicolons, comments) raises ValueError before query execution.
+    """
+    store = DataStore(use_zetaris=True)
+
+    injection_attempts = [
+        ("FAC-01' OR '1'='1", "MED-001"),
+        ("FAC-01; DROP TABLE batches;--", "MED-001"),
+        ("FAC-01", "MED' UNION SELECT * FROM users--"),
+        ("FAC-01' --", "MED-001")
+    ]
+
+    for fac_id, med_id in injection_attempts:
+        with pytest.raises(ValueError, match="Invalid characters in SQL identifier"):
+            store.get_latest_ledger(fac_id, med_id)
+
+        with pytest.raises(ValueError, match="Invalid characters in SQL identifier"):
+            store.get_batches(fac_id, med_id)
+
+        with pytest.raises(ValueError, match="Invalid characters in SQL identifier"):
+            store.get_purchase_orders(fac_id, med_id)
+
+        with pytest.raises(ValueError, match="Invalid characters in SQL identifier"):
+            store.get_recent_consumption(fac_id, med_id)
+
+        with pytest.raises(ValueError, match="Invalid characters in SQL identifier"):
+            store.get_latest_physical_audit(fac_id, med_id)
+
+    # Test date injection
+    with pytest.raises(ValueError, match="Invalid date format"):
+        store.get_ledger_on_date("FAC-DH-01", "MED-001", "2026-05-01' OR '1'='1")
+
+    # Test vendor injection in get_supplier_slip_priors
+    with pytest.raises(ValueError, match="Invalid characters in vendor name"):
+        store.get_supplier_slip_priors("SCMS' OR '1'='1")

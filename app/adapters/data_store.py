@@ -209,6 +209,10 @@ class DataStore:
         return self._read_csv(os.path.join(self.sim_dir, "suppliers.csv"))
 
     def get_batches(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None, as_of_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
+        if facility_id:
+            self._sanitize_id(facility_id)
+        if medicine_id:
+            self._sanitize_id(medicine_id)
         if self.use_zetaris:
             where_clauses = []
             if facility_id:
@@ -251,6 +255,8 @@ class DataStore:
         return filtered
 
     def get_latest_ledger(self, facility_id: str, medicine_id: str) -> Optional[Dict[str, Any]]:
+        self._sanitize_id(facility_id)
+        self._sanitize_id(medicine_id)
         if self.use_zetaris:
             res = self._query_zetaris(
                 f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
@@ -267,6 +273,11 @@ class DataStore:
         return None
 
     def get_ledger_on_date(self, facility_id: str, medicine_id: str, date_str: str) -> Optional[Dict[str, Any]]:
+        self._sanitize_id(facility_id)
+        self._sanitize_id(medicine_id)
+        import re
+        if date_str and not re.match(r"^\d{4}-\d{2}-\d{2}$", str(date_str)):
+            raise ValueError(f"Invalid date format for SQL query: {date_str}")
         if self.use_zetaris:
             res = self._query_zetaris(
                 f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' AND date = '{date_str}' LIMIT 1"
@@ -284,6 +295,8 @@ class DataStore:
         return None
 
     def get_latest_physical_audit(self, facility_id: str, medicine_id: str) -> Optional[Dict[str, Any]]:
+        self._sanitize_id(facility_id)
+        self._sanitize_id(medicine_id)
         if self.use_zetaris:
             res = self._query_zetaris(
                 f"SELECT * FROM zetaris.lightning.physical_audit WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
@@ -300,6 +313,10 @@ class DataStore:
         return None
 
     def get_recent_consumption(self, facility_id: str, medicine_id: str, days: int = 14) -> List[Dict[str, Any]]:
+        self._sanitize_id(facility_id)
+        self._sanitize_id(medicine_id)
+        if not isinstance(days, int) or days <= 0:
+            raise ValueError(f"Invalid days parameter for SQL query: {days}")
         if self.use_zetaris:
             res = self._query_zetaris(
                 f"SELECT * FROM zetaris.lightning.consumption_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT {days}"
@@ -319,6 +336,8 @@ class DataStore:
         return result
 
     def get_purchase_orders(self, facility_id: str, medicine_id: str) -> List[Dict[str, Any]]:
+        self._sanitize_id(facility_id)
+        self._sanitize_id(medicine_id)
         if self.use_zetaris:
             res = self._query_zetaris(
                 f"SELECT * FROM zetaris.lightning.purchase_orders WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}'"
@@ -329,6 +348,10 @@ class DataStore:
         return [dict(r) for r in rows]
 
     def get_deliveries(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        if facility_id:
+            self._sanitize_id(facility_id)
+        if medicine_id:
+            self._sanitize_id(medicine_id)
         if self.use_zetaris:
             where_clauses = []
             if facility_id:
@@ -359,6 +382,10 @@ class DataStore:
         return filtered
 
     def get_transfers(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        if facility_id:
+            self._sanitize_id(facility_id)
+        if medicine_id:
+            self._sanitize_id(medicine_id)
         if self.use_zetaris:
             where_clauses = []
             if facility_id:
@@ -383,6 +410,9 @@ class DataStore:
         return filtered
 
     def get_supplier_slip_priors(self, vendor: Optional[str] = None) -> List[Dict[str, Any]]:
+        if vendor:
+            if "'" in vendor or ";" in vendor or "--" in vendor:
+                raise ValueError(f"Invalid characters in vendor name: {vendor}")
         if self.use_zetaris:
             where_sql = f" WHERE vendor = '{vendor}'" if vendor else ""
             res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.supplier_slip{where_sql}")

@@ -125,27 +125,47 @@
     "PQ First Sent to Client Date": {
       "dtype": "string",
       "null_count": 205,
-      "null_pct": 1.99
+      "null_pct": 1.99,
+      "date_range": {
+        "min": "2009-01-04",
+        "max": "2015-07-07"
+      }
     },
     "PO Sent to Vendor Date": {
       "dtype": "string",
       "null_count": 328,
-      "null_pct": 3.18
+      "null_pct": 3.18,
+      "date_range": {
+        "min": "2006-04-19",
+        "max": "2015-08-24"
+      }
     },
     "Scheduled Delivery Date": {
-      "dtype": "string",
+      "dtype": "date",
       "null_count": 0,
-      "null_pct": 0.0
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2006-05-02",
+        "max": "2015-12-31"
+      }
     },
     "Delivered to Client Date": {
-      "dtype": "string",
+      "dtype": "date",
       "null_count": 0,
-      "null_pct": 0.0
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2006-05-02",
+        "max": "2015-09-14"
+      }
     },
     "Delivery Recorded Date": {
-      "dtype": "string",
+      "dtype": "date",
       "null_count": 0,
-      "null_pct": 0.0
+      "null_pct": 0.0,
+      "date_range": {
+        "min": "2006-05-02",
+        "max": "2015-09-14"
+      }
     },
     "Product Group": {
       "dtype": "string",

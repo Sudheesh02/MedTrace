@@ -1348,3 +1348,42 @@
   - Backlog Item 4: Implement interactive web UI dashboard (`app/ui.py` or FastAPI `/dashboard`).
   - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
   - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.
+
+### Session: 2026-10-25 23:25 IST
+**Role**: Senior Staff AI Engineer & Lead Auditor  
+**Phase**: Hallucination & Hardcoding Audit, Lead-Time Calibration, Anti-Injection Hardening, and Number Auditor Expansion (Monitor 22:55 Correctives & Council Items A–D)
+
+#### What Was Done
+1. **Number Auditor Expansion (Monitor Item D)**:
+   - Extended Number Auditor in [`app/agents/skeptic.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/skeptic.py) to extract and audit quantitative claims across clinical dosage forms (`capsules`, `vials`, `strips`, `boxes`, `ampoules`, `bottles`, `doses`, `blisters`, `cartons`) and contextual bare quantities (`shortfall of X`, `counted X`, `loss of X`, `discrepancy of X`, `quarantine of X`, `missing X`, `shrinkage of X`), while rigorously excluding temporal durations (`14 days`), percentages (`35%`), and dates (`2026-05-01`).
+   - Documented Zero-Hardcoding exception justification directly above the regex pattern citing natural language parsing requirements for LLM hypotheses.
+   - Added comprehensive dynamic test [`test_number_auditor_detects_dosage_forms_and_contextual_bare_quantities`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py) verifying invariant rejection on invented quantities across varying drift and shortfall fixtures.
+
+2. **Empirical Direct PO Lead-Time Distribution Calibration (Monitor Item B)**:
+   - Implemented `compute_direct_po_lead_times` in [`scripts/data_audit.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/data_audit.py) to calculate exact Order-to-Delivery and Scheduled-to-Delivered quantiles from 4,920 USAID direct purchase orders (`Fulfill Via = 'Direct Drop'`; 4,587 valid date pairs).
+   - Fixed date parsing in `data_audit.py` to support USAID `%d-%b-%y` formats, correctly identifying date types and date ranges in `data_real_raw_usaid_deliveries_csv.json`.
+   - Empirically computed statistics: Order-to-Delivery Mean = 105.80d (Std: 79.28d), Median (P50) = 92.0d, P25 = 50.0d, P75 = 143.0d, IQR = 93.0d, P90 = 208.0d, P95 = 270.7d, Range: [0 .. 616]d. Scheduled-to-Delivered Slip Mean = +0.78d, Median = 0.0d, IQR = 0.0d, Range: [-57 .. 150]d.
+   - Added Section 6 to [`DATA_AUDIT.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/DATA_AUDIT.md), [`data/README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/data/README.md), and [`reports/eda/README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/reports/eda/README.md).
+   - Added behavioral anti-hardcoding test [`test_direct_po_lead_time_distribution_estimator`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py) verifying dynamic computation against custom input files.
+
+3. **SQL Injection Defense in Zetaris Queries (Council Item A)**:
+   - Wired `_sanitize_id` into all dynamic query builders in [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py) (`get_batches`, `get_latest_ledger`, `get_ledger_on_date`, `get_latest_physical_audit`, `get_recent_consumption`, `get_purchase_orders`, `get_deliveries`, `get_transfers`, `get_supplier_slip_priors`).
+   - Added unit test [`test_data_store_query_methods_enforce_sql_injection_defense`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py) asserting that injection payloads (`' OR '1'='1`, `; DROP TABLE`, `--`) raise `ValueError`.
+
+4. **Transparent Benchmark Disclosure & Docs Honesty (Monitor 22:55 Corrective & Council Item C)**:
+   - Cut the 5-row comparative metrics table, the 'Advantage / Delta' column, and the 4-point baseline blindness list from [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md).
+   - Replaced with concise 2-sentence note under `### 🧪 Regression / Rule-Coverage Checks` declaring the 25 scenarios are hand-crafted rule-coverage checks written by the same author as the rules, not an accuracy result.
+   - Plainly reported that on this curated suite, MedTrace's correct-abstention rate on clean controls is 75.0% (6/8) versus the rules baseline's 87.5% (7/8).
+   - Disclosed in `README.md` that the 180-day simulation replay measures the **Deterministic Engine's Multi-Source Federated Audit Detector** across 12 facilities, 12 medicines, and ~120,000 transaction rows.
+   - Replaced 'Generalization is proven separately' with 'evaluated on held-out simulated seeds 3–4'.
+   - Synchronized test counts across all documentation from 132 to 135 tests (`test_agents.py`: 38, `test_api.py`: 31, `test_data_store.py`: 13, `test_deterministic.py`: 23, `test_enriched_data.py`: 13, `test_backtest.py`: 12, `test_world_model.py`: 5).
+
+5. **Full Test Suite Verification**:
+   - Full test suite: **135 passed, 1 warning** across all 7 test suites (clean working tree).
+
+#### What Is Next
+- **Batch 2 (P1 — Core Sponsor Tech & User Experience)**:
+  - Backlog Item 3: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
+  - Backlog Item 4: Implement interactive web UI dashboard (`app/ui.py` or FastAPI `/dashboard`).
+  - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+  - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.

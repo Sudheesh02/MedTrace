@@ -1477,3 +1477,114 @@ def test_action_pack_stock_attributes_are_dynamic_and_unhardcoded():
 
 
 
+
+
+def test_number_auditor_detects_dosage_forms_and_contextual_bare_quantities():
+    """
+    Monitor Corrective Gate D:
+    Verify Number Auditor extends regex pattern matching beyond basic units/tablets/packs to:
+    1. Clinical dosage forms: capsules, vials, strips, boxes, ampoules, bottles, doses, blisters, cartons.
+    2. Contextual bare quantities: shortfall of X, counted X, loss of X, discrepancy of X, quarantine of X, missing X.
+    3. Immunity to temporal durations (14 days), percentages (35%), and dates (2026-05-01).
+    4. Verification across dynamic variations of evidence pack inputs.
+    """
+    from app.agents.skeptic import SkepticAgent
+    from app.adapters.llm_client import LLMClient
+    from app.models.schemas import Hypothesis
+
+    skeptic = SkepticAgent(LLMClient())
+
+    # Dynamic test fixture across varied drift and shortfall levels
+    for drift_val, shortfall_val in [(50.0, 30.0), (120.0, 45.0), (250.0, 100.0)]:
+        deterministic_recon = {
+            "stock_evaluation": {
+                "ledger_stock": 1000.0,
+                "usable_stock": 1000.0 - drift_val,
+                "audit_drift": drift_val,
+                "quarantined_stock": 0.0,
+                "expiring_stock": 0.0,
+                "days_of_cover": 25.0,
+                "adjusted_daily_demand": 20.0,
+            },
+            "trust_shortfall": {
+                "shortfall_units": shortfall_val,
+                "gap_days": 2.0,
+            },
+            "discrepancies": [
+                {"anomaly_type": "GHOST_STOCK", "impact_units": drift_val}
+            ],
+            "uom_info": {
+                "reported_quantity": drift_val / 10.0,
+                "normalized_quantity": drift_val,
+                "pack_size_units": 10.0
+            }
+        }
+
+        # Sub-test 1: Ungrounded dosage forms must be rejected
+        dosage_forms = [
+            ("capsules", 888.0),
+            ("vials", 777.0),
+            ("strips", 666.0),
+            ("boxes", 555.0),
+            ("ampoules", 444.0),
+            ("bottles", 333.0),
+            ("doses", 222.0),
+            ("blisters", 111.0),
+            ("cartons", 999.0)
+        ]
+        for form, invented_num in dosage_forms:
+            hyp_invented = Hypothesis(
+                hypothesis_id=f"H-INV-{form}",
+                title=f"Inventory shortage of {form}",
+                cause=f"Supplier dispatch discrepancy leaves {invented_num} {form} unrecorded.",
+                likelihood=0.90,
+                supporting_evidence=[f"Audit counted valid ledger over 14 days, missing {invented_num} {form}."],
+                refuting_evidence=[],
+                confirming_query="SELECT 1"
+            )
+            _, rev = skeptic.review_and_audit([hyp_invented], deterministic_recon, round_number=1)
+            assert rev.audited_numbers_valid is False, f"Number Auditor failed to reject invented {invented_num} {form}!"
+            assert rev.accepted is False
+            assert any(str(invented_num) in msg for msg in rev.flagged_inconsistencies)
+
+        # Sub-test 2: Contextual bare quantities must be rejected when ungrounded
+        contextual_phrases = [
+            ("shortfall of", 610.0),
+            ("counted", 710.0),
+            ("loss of", 810.0),
+            ("discrepancy of", 910.0),
+            ("quarantine of", 410.0),
+            ("missing", 510.0),
+            ("shrinkage of", 310.0)
+        ]
+        for phrase, invented_num in contextual_phrases:
+            hyp_bare = Hypothesis(
+                hypothesis_id="H-INV-BARE",
+                title=f"Unreconciled {phrase}",
+                cause=f"Investigation notes a severe {phrase} {invented_num} in the facility log.",
+                likelihood=0.90,
+                supporting_evidence=[f"Observed during Round 1 across 14 days with 35% confidence on 2026-05-01."],
+                refuting_evidence=[],
+                confirming_query="SELECT 1"
+            )
+            _, rev = skeptic.review_and_audit([hyp_bare], deterministic_recon, round_number=1)
+            assert rev.audited_numbers_valid is False, f"Number Auditor failed to reject bare ungrounded {phrase} {invented_num}!"
+            assert rev.accepted is False
+            assert any(str(invented_num) in msg for msg in rev.flagged_inconsistencies)
+
+        # Sub-test 3: Legitimate numbers using dosage forms & contextual phrases must pass
+        hyp_valid = Hypothesis(
+            hypothesis_id="H-VALID",
+            title=f"Physical Audit Discrepancy ({drift_val} units)",
+            cause=f"Physical audit confirmed a discrepancy of {drift_val} capsules and a shortfall of {shortfall_val} vials.",
+            likelihood=0.90,
+            supporting_evidence=[
+                f"Ledger overstated usable stock by {drift_val} boxes (pack size: 10.0 units).",
+                f"Evaluation spans 14 days with 35% surveillance adjustment on 2026-05-01."
+            ],
+            refuting_evidence=[],
+            confirming_query="SELECT 1"
+        )
+        _, rev_valid = skeptic.review_and_audit([hyp_valid], deterministic_recon, round_number=1)
+        assert rev_valid.audited_numbers_valid is True, f"Number Auditor incorrectly rejected grounded quantities {drift_val}, {shortfall_val}!"
+        assert rev_valid.accepted is True
