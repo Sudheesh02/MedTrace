@@ -1,7 +1,8 @@
 # CORRECTIVE (monitor, 2026-10-25 10:50 IST) - [ALL COMPLETED & VERIFIED]
 - [x] [DONE] The anomaly F1 evaluation was unhardcoded: BacktestEngine now derives evaluation bounds dynamically from ground truth trigger schedules rather than hardcoded 160..178 slice. In README/SPONSOR_TECH, numbers are honestly labeled as planted anomaly detection on synthetic multi-tier simulation data with 10 planted failure modes, avoiding misleading "multi-agent reasoning accuracy" labels.
-- [x] [DONE] SPONSOR_TECH.md reworded to transparently state "live cloud connections testable via smoke_test.py with user credentials" and "96/96 automated tests verified".
+- [x] [DONE] SPONSOR_TECH.md reworded to transparently state "live cloud connections testable via smoke_test.py with user credentials" and "103/103 automated tests verified".
 - [x] [DONE] Priority 0 item 7 complete: tracked sanitized sample trace `logs/sample_trace_FAC-DH-01_MED-007.jsonl` in git via `.gitignore` exception `!logs/sample_trace_*.jsonl`, updated `scripts/explain_trace.py` with automatic clean-clone fallback, and added test in `tests/test_api.py`.
+
 # PRIORITY 0 (from independent blind review, do these before anything else)
 1. [x] [DONE] Load .env (python-dotenv) in run.py/app; remove the 127.0.0.1-only gate for Nightshift; actually read METERLESS_MODEL; record the model the API really returned per trace event; add llm_used and fallback flags to every trace line; outside sample mode fail loudly instead of silently returning canned text; test that traced model equals response model.
    - Initialized `python-dotenv` (`load_dotenv()`) in `run.py` and `app/__init__.py`.
@@ -27,14 +28,10 @@
    - Unified alert threshold in `BacktestEngine` to 14.0 days across Naive LMIS, Heuristic, and MedTrace.
    - Tuned on seeds 1–2 and verified on held-out seeds 3–4 (94.7% F1 on held-out seeds 3–4; 94.8% F1 overall).
    - Dropped artificial lead-time headline; documented baseline parity on uncorrupted stock and 94.8% root-cause accuracy in `README.md`, `scripts/run_backtest.py`, and `output/backtest_seed_*.json`.
-   - Verified 88 unit and integration tests passing cleanly.
-6. [x] [DONE] Truth pass on SPONSOR_TECH.md, PRE_EXISTING_COMPONENTS.md, metadata.json, README: correct test counts, remove tests that do not exist, remove claims such as 100% verified or via NVIDIA NIM unless true, label rule-assigned DailyMed fields and invented WHO multipliers / Monte Carlo slip as assumptions, declare the Gemini overnight automation.
-   - Corrected test counts in `SPONSOR_TECH.md` (updated stale 61 reference to 88).
-   - Qualified status badges in `SPONSOR_TECH.md` to distinguish 88 offline/mock passing tests from live cloud smoke tests.
-   - Updated `metadata.json` model reference from NVIDIA NIM to NVIDIA API / Meterless Nightshift endpoint.
-   - Declared Gemini overnight autonomous agent harness in `PRE_EXISTING_COMPONENTS.md` Section 4.
-   - Labeled WHO surveillance multipliers (1.35x), DailyMed rule assignments, and Monte Carlo slip priors as calibrated modeling assumptions in `PRE_EXISTING_COMPONENTS.md` and `data/README.md`.
-   - Synchronized transparent declarations in `README.md`.
+   - Verified 103 unit and integration tests passing cleanly.
+6. [ ] [IN PROGRESS] Truth pass on SPONSOR_TECH.md, PRE_EXISTING_COMPONENTS.md, metadata.json, README: correct test counts, remove tests that do not exist, remove claims such as 100% verified or via NVIDIA NIM unless true, label rule-assigned DailyMed fields and invented WHO multipliers / Monte Carlo slip as assumptions, declare the Gemini overnight automation.
+   - Completed: `SPONSOR_TECH.md` updated to 103 tests and qualified status badges; `metadata.json` updated to NVIDIA API / Meterless; `data/README.md` and `PRE_EXISTING_COMPONENTS.md` annotate assumptions; Gemini overnight harness declared.
+   - Pending verification: `PRE_EXISTING_COMPONENTS.md` line 84 still contains stale `88 automated tests` count (must be updated to 103 to achieve 100% truth verification across all files).
 7. [x] [DONE] Track a sample trace (un-ignore one sanitized logs/*.jsonl) and commit scripts/explain_trace.py wired to --explain.
    - Tracked `logs/sample_trace_FAC-DH-01_MED-007.jsonl` in git with `.gitignore` exception `!logs/sample_trace_*.jsonl`.
    - Wired `scripts/explain_trace.py` `find_latest_trace()` to automatically fall back to the tracked sample trace on fresh clones.
@@ -54,16 +51,21 @@
 - [x] [DONE] Derived baseline medicine demand dynamically in `BacktestEngine` from catchment-normalized consumption.
 - [x] [DONE] Dedicated 30-second judge walkthrough script (`scripts/quick_demo.py`).
 - [x] [DONE] Zetaris 4-way federated SQL join test in `tests/test_data_store.py`.
+- [x] [DONE] Deterministic budget and financial impact computation in `ActionPlannerAgent` with Number Auditor validation.
+- [x] [DONE] Automated clean-clone validation harness (`scripts/validate_clean_clone.py`) passing all 7 gates.
+- [x] [DONE] Printable officer procurement memorandum exporter in Markdown (`scripts/export_action_pack.py` and `--export-memo`).
+- [x] [DONE] Lightweight `docker-compose.yml` with backend and optional profiled Postgres service.
+- [x] [DONE] RxNorm standard packaging multiplier dynamic lookup in `DataStore` and `ReconcilerAgent`.
 
 ---
 
 # MedTrace Senior Reviewer Comprehensive Audit & Prioritized Overnight Backlog
 
-**Audit Timestamp**: 2026-10-25 10:15 UTC  
+**Audit Timestamp**: 2026-10-25 11:45 UTC  
 **Reviewer Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
 **Evaluation Target**: Open Agent Hackathon 2026 — Track 2 (*The Agent That Can Explain Why*)  
 **Scope**: README Claims vs. Real Code, Multi-Agent Deliberation Loop, Data Layer, Backtest Engine, Test Suite, FastAPI/CLI App, Dockerfile, Docs, and Hackathon Alignment.  
-**Baseline Test Suite**: **89 passed, 1 warning in 93.49s** (100% passing rate).  
+**Baseline Test Suite**: **103 passed, 1 warning in 114.73s** (100% passing rate across all 7 test suites).  
 **Status**: Application code untouched in this audit step. Exactly 12 prioritized, concrete, small items formulated below replacing completed/stale entries.
 
 ---
@@ -72,198 +74,176 @@
 
 | Area | Current Code State | Identified Gap / Risk | Judging Impact | Priority |
 | :--- | :--- | :--- | :--- | :---: |
-| **Docs & Provenance** | 88 tests pass; claims updated in README. | `SPONSOR_TECH.md` test counts verified (88 tests); `metadata.json` updated to NVIDIA API/Meterless; `PRE_EXISTING_COMPONENTS.md` declares Gemini overnight automation; assumptions annotated in `data/README.md`. | **Passed** (10/10 pts) | **[x] DONE** |
-| **Trace Evaluation** | `scripts/explain_trace.py` tracked in git; `--explain` wired. | `.gitignore` ignores `logs/` and `*.jsonl`. On a fresh `git clone`, `logs/` is empty; running `explain_trace.py --latest` fails with missing file error. | **-3 pts** (Demo 15 pts / Track 2) | **P0 (Item 7)** |
-| **Smoke Test** | `smoke_test.py` validates Zetaris & NVIDIA. | Line 33 still defaults to `"<REDACTED>"` password; `power_model()` strictly requires `MODEL_API_KEY`, failing if user configures Meterless Nightshift runtime. | **-2 pts** (Technical / Sponsor Tech) | **P0** |
-| **Action Planner** | Peer transfers, expedites, POs, audits, buffer. | Plan §2.4 specifies budget constraint. Recommendations lack deterministic financial cost estimates (`estimated_cost_usd` / emergency surcharge). | **-3 pts** (Impact 30 pts / Technical) | **P1** |
-| **Human Escalation** | `escalated_to_human` set in orchestrator. | `run.py --cli` terminal printer completely omits `pack.escalated_to_human` and `pack.escalation_reason`, failing to alert officer on unresolved debate. | **-2 pts** (Product & UX 10 pts) | **P1** |
-| **Backtest Engine** | Evaluates 180-day replay at 14.0d threshold. | Anomaly detection checks hardcoded day index slice `160 <= day_idx <= 178` rather than dynamically matching against `ground_truth.csv` entities. | **-2 pts** (Technical Depth 20 pts) | **P1** |
-| **Clean Clone Gate** | Quickstart commands documented in README. | No automated test script verifying Gate G4 / Phase 8.1 clean-clone execution without `.env` in a sandbox directory. | **-2 pts** (Reliable Execution) | **P1** |
-| **Data Layer UOM** | `convert_uom` converts 10x pack size. | UOM multiplier uses ad-hoc check rather than reading registered dose packaging from `data/real/rxnorm_standards.json`. | **-1 pt** (Data Integrity) | **P2** |
-| **Swagger UI / API** | Endpoints functional (`/run`, `/triage`, `/decision`). | Request models lack Pydantic `json_schema_extra` examples; Swagger UI shows empty/generic JSON templates. | **-2 pts** (Product & UX 10 pts) | **P2** |
-| **Printable Output** | Emits JSON and stdout. | Hackathon rewards "an output someone could actually use". Lacks printable procurement memorandum markdown exporter. | **-2 pts** (Product & UX / Impact) | **P2** |
-| **Docker Packaging** | `Dockerfile` with healthcheck. | Lacks a lightweight `docker-compose.yml` defining the full local service stack (backend + optional pre-loaded Postgres). | **-1 pt** (Technical / Deployment) | **P2** |
-| **API Concurrency** | Options restored in `finally` block. | Lacks automated test verifying rapid concurrent/alternating requests with varying `sample_mode` options do not race. | **-1 pt** (Test Rigor) | **P2** |
+| **Docs & Provenance** | 103 tests pass; README & SPONSOR_TECH updated. | `PRE_EXISTING_COMPONENTS.md` line 84 still says `(88 automated tests passing)`; needs synchronization with 103-test reality. | **-2 pts** (Compliance / Transparency) | **P0 (Item 6)** |
+| **Sponsor Integration** | `DataStore` queries Zetaris via REST SQL. | Participant Setup Guide lines 786-804 & 1620-1623 & 1799-1808 specify `ZETARIS_REST_URL` (`http://localhost:8888/api/v1.0`) and `POST /sql-editor/sqls/run`. `DataStore` only reads `ZETARIS_BASE_URL` (`http://localhost:3000`) and hits `/api/proxy/sql-editor/sqls/run-query`. | **-4 pts** (Sponsor Tech 10 pts) | **P1** |
+| **Multi-Agent Shared State** | World Model builds context; passes to Investigator. | `InvestigatorAgent.investigate()` declares `context: Dict[str, Any]` but never references it in the method body! Skeptic also does not inspect World Model conflicts. | **-4 pts** (Innovation 15 pts / Technical) | **P1** |
+| **Output Examples** | 3 input and 3 output samples present. | `ActionRecommendation` in `output_examples/*.json` was not regenerated after financial costs were implemented (`estimated_cost_usd` missing in sample JSONs). | **-2 pts** (Demo 15 pts / Submission Specs) | **P1** |
+| **API Ergonomics** | Strict case checking on facility and medicine IDs. | Passing `fac-dh-01` or `med-007` or trailing whitespace raises uncaught 404 `ValueError`. Needs case-insensitive `.strip().upper()` normalization. | **-2 pts** (Product & UX 10 pts) | **P1** |
+| **Human Escalation** | Orchestrator sets `escalated_to_human = True`. | `ActionPlannerAgent` is unaware of escalation; formulates autonomous transfer recommendations with high feasibility instead of requiring human authorization. | **-2 pts** (Responsible AI / Technical) | **P1** |
+| **FastAPI Document Routes** | CLI exports Markdown memo and renders trace. | FastAPI Swagger UI lacks endpoints to retrieve generated procurement memorandum (`GET /memo/{fac}/{med}`) or latest debate trace (`GET /trace/latest`). | **-2 pts** (Product & UX 10 pts) | **P2** |
+| **Backtest Reporting** | Backtest saves JSON and logs to stdout. | Lacks an automated, judge-ready Markdown summary report (`output/backtest_summary.md`) comparing seeds 1–4 side by side with Markdown tables. | **-2 pts** (Technical Depth 20 pts) | **P2** |
+| **Triage CLI Flow** | `run.py --triage` scans district portfolio. | Plan §4.2 specifies Triage Planner feeds at-risk items to Reconciler. CLI lacks `--auto-triage` flag to automatically audit the top #1 urgent bottleneck. | **-1 pt** (Technical / Multi-Agent) | **P2** |
+| **Dockerfile Defaults** | `SAMPLE_MODE=true` set in Dockerfile ENV. | `Dockerfile` omits explicit `ENV USE_ZETARIS=false`. When running `docker run` directly without compose, explicit ENV prevents confusion. | **-1 pt** (Deployment / Technical) | **P2** |
+| **Backtest Performance** | Lead time and anomaly metrics computed. | Backtest engine does not record execution throughput (events/sec, latency, memory delta) valued by sponsors (Meterless & NVIDIA). | **-1 pt** (Sponsor Tech / Technical) | **P2** |
+| **Trace Conformance** | Traces emitted in `logs/trace_*.jsonl`. | Lacks an automated conformance validator (`scripts/validate_traces.py`) verifying all JSONL trace lines adhere to Track 2 debate/audit requirements. | **-1 pt** (Test Rigor / Track 2) | **P2** |
 
 ---
 
 ## 🚀 Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
 
-### Item 1: Complete Priority 0 Item 6 — Truth Pass on Docs, Test Counts, NIM Claims & Overnight Automation
-- **Priority**: P0 (Sponsor Tech 10 pts, Transparency & Hackathon Compliance)
-- **Status**: [x] [DONE]
-- **Files**: [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md), [`PRE_EXISTING_COMPONENTS.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/PRE_EXISTING_COMPONENTS.md), [`metadata.json`](file:///C:/Users/Asus/Desktop/Open%20Agent/metadata.json), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`data/README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/data/README.md)
-- **Problem**:
-  1. `SPONSOR_TECH.md` line 160 references "61-test pytest suite" (stale count; 88 tests pass).
-  2. `SPONSOR_TECH.md` title claims "Status: 100% Fully Verified with Conformance Tests" without explicitly distinguishing between automated offline/mock tests (which pass 100%) and live cloud connections (which require user credentials).
-  3. `metadata.json` line 37 says `"nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA NIM API in app/adapters/llm_client.py"` — it is via NVIDIA API / Meterless Nightshift endpoint, not a local NVIDIA NIM container.
-  4. `PRE_EXISTING_COMPONENTS.md` Section 4 does not declare the Gemini overnight autonomous AI assistant / agent harness.
-  5. `data/README.md` and `PRE_EXISTING_COMPONENTS.md` do not label WHO surveillance multipliers (1.35x), DailyMed specs, and Monte Carlo slip assignments as calibrated synthetic assumptions.
+### Item 1: Complete Priority 0 Item 6 — Update Stale Test Count in `PRE_EXISTING_COMPONENTS.md`
+- **Priority**: P0 (Docs Integrity, Hackathon Compliance)
+- **Status**: [ ] [PENDING]
+- **Files**: [`PRE_EXISTING_COMPONENTS.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/PRE_EXISTING_COMPONENTS.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: In `PRE_EXISTING_COMPONENTS.md` line 84, the text states `Comprehensive test suite in tests/ (88 automated tests passing with 100% success rate)`. The test suite has grown to 103 tests across 7 test suites. Leaving "88" violates Priority 0 Item 6 ("truth pass on PRE_EXISTING_COMPONENTS.md... correct test counts").
 - **Action**:
-  1. In `SPONSOR_TECH.md`, updated test count in line 160 from 61 to 88. Qualified status to reflect that 88 tests pass offline and live cloud connections are verified via smoke test with user credentials.
-  2. In `metadata.json`, updated `"model"` description to `"nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA API / Meterless Nightshift endpoint"`.
-  3. In `PRE_EXISTING_COMPONENTS.md` Section 4, explicitly declared the Gemini overnight autonomous coding assistant / agent loop used for continuous architecture, test authoring, and refinement.
-  4. In `data/README.md` and `PRE_EXISTING_COMPONENTS.md`, explicitly annotated WHO surveillance multipliers (1.35x), DailyMed packaging specs, and vendor-to-slip assignments as calibrated synthetic assumptions.
-  5. Synchronized transparency declarations in `README.md`.
-- **Acceptance Criteria**: Documentation has zero stale test counts, removes ungrounded NIM/100% claims, labels all heuristic assumptions, and declares the overnight coding agent. (VERIFIED)
+  1. In `PRE_EXISTING_COMPONENTS.md` line 84, update "88 automated tests" to "103 automated tests passing with 100% success rate across all 7 test suites".
+  2. In `tests/test_api.py` `test_metadata_json_and_docs_integrity`, add assertion verifying `PRE_EXISTING_COMPONENTS.md` references the verified test count (103 tests) and contains zero stale "88 automated tests" references.
+- **Acceptance Criteria**: `PRE_EXISTING_COMPONENTS.md` reflects 103 passing tests; verified by `test_metadata_json_and_docs_integrity`.
 
 ---
 
-### Item 2: Complete Priority 0 Item 7 — Track Sanitized Sample Trace in `logs/` for Clean Clone Evaluation
-- **Priority**: P0 (Demo 15 pts, Innovation 15 pts, Track 2 "Explain Why")
-- **Status**: [x] [DONE]
-- **Files**: [`.gitignore`](file:///C:/Users/Asus/Desktop/Open%20Agent/.gitignore), `logs/sample_trace_FAC-DH-01_MED-007.jsonl`, [`scripts/explain_trace.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/explain_trace.py)
-- **Problem**: `.gitignore` ignores `logs/` and `*.jsonl`. On a fresh `git clone`, `logs/` is empty. If a judge clones the repo and runs `python scripts/explain_trace.py --latest` as suggested in `README.md`, it crashes with `[!] No trace files found in logs/.`.
+### Item 2: Official Zetaris `ZETARIS_REST_URL` & Dual-Endpoint Compatibility in `DataStore` and `smoke_test.py`
+- **Priority**: P1 (Sponsor Tech 10 pts, Participant Guide Compliance)
+- **Status**: [ ] [PENDING]
+- **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), [`smoke_test.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/smoke_test.py), [`.env.example`](file:///C:/Users/Asus/Desktop/Open%20Agent/.env.example), [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py)
+- **Problem**: The official Participant Setup Guide (lines 786-804 & 1620-1623 & 1799-1808) defines `ZETARIS_REST_URL=http://localhost:8888/api/v1.0` and `POST /sql-editor/sqls/run`. Currently `DataStore` and `smoke_test.py` only read `ZETARIS_BASE_URL` (defaulting to `http://localhost:3000`) and hit `/api/proxy/sql-editor/sqls/run-query`. If a judge configures `ZETARIS_REST_URL` per the guide, connectivity fails.
 - **Action**:
-  1. Generated a sanitized, complete, multi-agent trace covering all 5 agents, adversarial debate (Round 1 challenge -> Round 2 revision), Number Auditor verification, and Action Plan audit, and saved to `logs/sample_trace_FAC-DH-01_MED-007.jsonl`.
-  2. In `.gitignore`, added exception: `!logs/sample_trace_*.jsonl` so this file is tracked in git.
-  3. In `scripts/explain_trace.py`, if `find_latest_trace()` finds no dynamic trace, it automatically falls back to `logs/sample_trace_FAC-DH-01_MED-007.jsonl` rather than exiting with error.
-  4. Added automated test in `tests/test_api.py`: `test_explain_trace_sample_trace_fallback`.
-- **Acceptance Criteria**: In a fresh clone without running `run.py`, `python scripts/explain_trace.py --latest` renders the full debate timeline cleanly with exit code 0. (VERIFIED)
+  1. In `DataStore.__init__` and `smoke_test.py`, inspect `ZETARIS_REST_URL` first, falling back to `ZETARIS_BASE_URL`.
+  2. In `_query_zetaris`, if the base URL contains `/api/v1.0` or port 8888, target `/sql-editor/sqls/run`. Otherwise fall back to `/api/proxy/sql-editor/sqls/run-query` or try direct `/sql-editor/sqls/run` upon 404.
+  3. In `.env.example`, document both `ZETARIS_REST_URL=http://localhost:8888/api/v1.0` and `ZETARIS_BASE_URL=http://localhost:3000`.
+  4. Add unit test in `tests/test_data_store.py` verifying that `ZETARIS_REST_URL` is parsed and queries `/sql-editor/sqls/run`.
+- **Acceptance Criteria**: Live Zetaris queries succeed whether configured with `ZETARIS_REST_URL` (port 8888 `/sql-editor/sqls/run`) or `ZETARIS_BASE_URL` (port 3000 UI proxy).
 
 ---
 
-### Item 3: Eradicate Hardcoded Password and Add Meterless Nightshift Support in `smoke_test.py`
-- **Priority**: P0 (Security & Clean Credentials, Sponsor Tech 10 pts)
-- **Status**: [x] [DONE]
-- **Files**: [`smoke_test.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/smoke_test.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**:
-  1. `smoke_test.py` line 33 contained `password = os.environ.get("ZETARIS_PASSWORD", "<REDACTED>")`. Leaving `"<REDACTED>"` as a fallback contradicts Priority 0 Item 4.
-  2. `smoke_test.py` `power_model()` strictly required `MODEL_BASE_URL` and `MODEL_API_KEY`, failing if a participant runs with Meterless Nightshift (`METERLESS_RUNTIME_TOKEN` and `METERLESS_BASE_URL`), contradicting the required Meterless integration.
+### Item 3: Wire World Model Shared Context & Conflicts into `InvestigatorAgent` and `SkepticAgent`
+- **Priority**: P1 (Innovation 15 pts, Sponsor Tech 10 pts, Reasoning Architecture)
+- **Status**: [ ] [PENDING]
+- **Files**: [`app/agents/investigator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/investigator.py), [`app/agents/skeptic.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/skeptic.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
+- **Problem**: `orchestrator.py` builds `world_context = self.context_builder.build_structured_context(facility_id, medicine_id)` and passes it to `investigator.investigate(recon, world_context, ...)`. However, in `investigator.py` line 19, `context` is completely unreferenced and unused! Furthermore, `SkepticAgent` does not inspect `world_context` or `world_store.get_conflicts(facility_id)`.
 - **Action**:
-  1. In `smoke_test.py`, removed `"<REDACTED>"` fallback; require `ZETARIS_PASSWORD` from `.env` or raise a clean ValueError instructions.
-  2. In `power_model()`, inspect both `METERLESS_RUNTIME_TOKEN` (Nightshift) and `MODEL_API_KEY` (NVIDIA), validating connectivity against whichever provider is configured.
-  3. Added regression test in `tests/test_api.py`: `test_smoke_test_provider_handling_and_zero_hardcoding`.
-- **Acceptance Criteria**: Zero hardcoded credentials in `smoke_test.py`; passes when either Meterless Nightshift or NVIDIA credentials are configured. (VERIFIED)
+  1. In `InvestigatorAgent.investigate()`, actively extract `facility` metadata (level, catchment), `relationships` (edges like `HOLDS_INVENTORY`), `canon_hash`, and any recorded conflicts from `world_context`. Incorporate them into hypothesis supporting evidence and the LLM prompt.
+  2. In `orchestrator.py`, pass `world_context` into `SkepticAgent.review_and_audit()`.
+  3. In `SkepticAgent`, verify that candidate hypotheses correlate with recorded World Model conflict entities.
+  4. Add automated unit test in `tests/test_agents.py`: `test_investigator_and_skeptic_grounded_in_world_model_context`.
+- **Acceptance Criteria**: `context` is actively consumed; hypotheses cite World Model canonical entity IDs (`ent_inv_*`) and canon hashes.
 
 ---
 
-### Item 4: Deterministic Budget & Financial Impact Invariant in `ActionPlannerAgent` (Plan §2.4 & §4.2)
-- **Priority**: P1 (Impact 30 pts, Technical Depth 20 pts)
-- **Status**: [x] [DONE]
-- **Files**: [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/action_planner.py), [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/models/schemas.py), [`app/agents/skeptic.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/skeptic.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
-- **Problem**: Execution Plan §2.4 specifies constraint checks: "transfer lead time, expiry-after-arrival, budget." Currently, `ActionRecommendation` contained unit counts and feasibility scores, but lacked financial cost estimation (`estimated_cost_usd`), leaving warehouse officers unable to evaluate financial trade-offs.
+### Item 4: Synchronize `output_examples/*.json` via `scripts/generate_examples.py` for Financial Cost Schemas
+- **Priority**: P1 (Deliverable Compliance, Technical Execution)
+- **Status**: [ ] [PENDING]
+- **Files**: [`scripts/generate_examples.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/generate_examples.py), `output_examples/*.json`, [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: In Item 4, `ActionRecommendation` and `ActionPlannerAgent` were updated to compute deterministic financial outlays (`estimated_cost_usd`). However, `output_examples/*.json` was not regenerated, leaving existing sample output files missing `estimated_cost_usd` and differing from the live API response.
 - **Action**:
-  1. Added `get_medicine_unit_price` in `DataStore` reading standard WHO/NLEM benchmarks.
-  2. In `ActionPlannerAgent`, compute deterministic estimated costs:
-     - Routine/Expedited PO: `units * unit_price * 1.10` (rush surcharge).
-     - Peer Transfer: `units * unit_price * 0.15` (inter-facility transit handling fee).
-     - Emergency Local Purchase: `units * unit_price * 2.50` (spot procurement premium).
-     - Monitor Buffer / Batch Release / Adjustment: `$0.00`.
-  3. Extended Skeptic Number Auditor to mathematically verify `estimated_cost_usd` non-negative invariants.
-  4. Added automated unit tests in `tests/test_agents.py`: `test_action_planner_computes_deterministic_financial_costs` and `test_skeptic_action_plan_audit_rejects_negative_costs`.
-- **Acceptance Criteria**: 100% of action recommendations include provable financial cost estimates audited by the Number Auditor without LLM math. (VERIFIED)
+  1. Re-execute `python scripts/generate_examples.py` to regenerate all 3 sample output JSON files.
+  2. Verify that each recommendation in `output_examples/*.json` includes valid `estimated_cost_usd` values ($0.00 for monitoring/adjustments, non-zero for transfers/POs).
+  3. Add regression test in `tests/test_api.py`: `test_output_examples_schema_and_financial_costs_conformance`.
+- **Acceptance Criteria**: 100% of sample output files in `output_examples/` contain valid `estimated_cost_usd` matching the live API output schema.
 
 ---
 
-### Item 5: Prominent Human Escalation Alert in CLI and OpenAPI Schemas (Plan §3.6)
-- **Priority**: P1 (Product & UX 10 pts, Responsible AI)
-- **Status**: [x] [DONE]
-- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/models/schemas.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: `pack.escalated_to_human` and `pack.escalation_reason` were implemented in `app/orchestrator.py`, but `run.py` CLI (`--cli`) completely ignored `pack.escalated_to_human`.
+### Item 5: Case-Insensitive & Whitespace-Tolerant Identifier Normalization in Orchestrator and API
+- **Priority**: P1 (Product & UX 10 pts, Judge Ergonomics)
+- **Status**: [ ] [PENDING]
+- **Files**: [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
+- **Problem**: When a user runs `python run.py --cli --facility fac-dh-01 --medicine med-007` (lowercase) or provides input with trailing whitespace, `orchestrator.run_investigation` raises an unhandled 404 `ValueError` because facility and medicine ID lookup is strictly case-sensitive.
 - **Action**:
-  1. In `run.py` CLI printer, explicitly render escalation status: `Escalated to Officer: YES / NO` with reason.
-  2. In `run.py`, added Pydantic v2 `json_schema_extra` examples to `RunRequest` and `DecisionRequest` for clean Swagger UI presentation.
-  3. Display estimated financial cost in CLI action recommendation.
-- **Acceptance Criteria**: Escalation status prominently appears in CLI summary. (VERIFIED)
+  1. In `app/orchestrator.py`, normalize input identifiers: `facility_id = facility_id.strip().upper()` and `medicine_id = medicine_id.strip().upper()`.
+  2. In `run.py`, ensure `RunRequest` and `DecisionRequest` strip whitespace and normalize case before delegating to orchestrator.
+  3. Add unit test in `tests/test_agents.py`: `test_orchestrator_case_insensitive_and_whitespace_normalization`.
+- **Acceptance Criteria**: Inputs like `"fac-dh-01 "` and `"med-007"` resolve cleanly to canonical records without 404 errors.
 
 ---
 
-### Item 6: Dynamic Ground-Truth Entity Matching in `BacktestEngine`
-- **Priority**: P1 (Technical Depth 20 pts, Test Rigor)
-- **Status**: [x] [DONE]
-- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py)
-- **Problem**: `BacktestEngine` restricted anomaly detection to a hardcoded day range `160 <= day_idx <= 178`.
+### Item 6: Escalation-Aware Action Recommendation Feasibility and Officer Counter-Signature Annotation
+- **Priority**: P1 (Responsible AI, Technical Depth 20 pts)
+- **Status**: [ ] [PENDING]
+- **Files**: [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/action_planner.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/models/schemas.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
+- **Problem**: When multi-agent debate fails to achieve consensus or confidence falls below 0.50, `orchestrator` correctly sets `escalated_to_human = True`. However, `ActionPlannerAgent` is completely unaware of escalation, generating standard peer transfer recommendations with high feasibility scores rather than noting that human counter-signature is mandatory.
 - **Action**:
-  1. Decoupled anomaly inspection from rigid hardcoded day bounds by dynamically deriving inspection bounds from `ground_truth.csv` schedules (`min(day_index)` to `max(day_index) + 3`).
-  2. Added test in `tests/test_backtest.py`: `test_backtest_dynamic_anomaly_bounds_adapt_to_ground_truth`.
-- **Acceptance Criteria**: `BacktestEngine` detects ground truth anomalies dynamically across variable time windows without hardcoded day constants. (VERIFIED)
+  1. Pass `escalated_to_human: bool` into `ActionPlannerAgent.plan_actions()`.
+  2. When True, reduce autonomous feasibility scores by 0.25 (reflecting unresolved debate) and annotate justifications: `"[ESCALATED TO CONTROLLER] Requires manual clinical review before dispatch authorization"`.
+  3. Add automated test in `tests/test_agents.py`: `test_action_planner_adapts_to_human_escalation`.
+- **Acceptance Criteria**: Action plans for escalated runs explicitly reflect escalation status in justifications and feasibility scoring.
 
 ---
 
-### Item 7: Automated Clean-Clone Offline Verification Script (Gate G4 & Plan §8.1)
-- **Priority**: P1 (Reliable Execution, Demo 15 pts)
-- **Status**: [x] [DONE]
-- **Files**: `scripts/validate_clean_clone.py`, [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
-- **Problem**: Execution Plan Phase 8.1 / Gate G4 requires: "Fresh clone, follow the README only, no manual fixes." Currently there is no automated script to simulate a clean clone in a sandbox directory without `.env` and verify that all quickstart commands (`quick_demo.py`, `run.py --cli --sample-mode`, `explain_trace.py --latest`, `pytest`) succeed without external network dependencies.
-- **Action**:
-  1. Authored `scripts/validate_clean_clone.py` executing 7 comprehensive clean-clone verification steps:
-     - Environment isolation check (initializes `MedTraceOrchestrator` offline without credentials).
-     - Gate G1 `smoke_test.py` (verifies clean exit and provider reporting).
-     - 30-Second Executive Demo `scripts/quick_demo.py` (verifies end-to-end multi-agent pipeline).
-     - CLI investigation `run.py --cli --sample-mode --explain --export-memo`.
-     - Explain-Why visualizer `scripts/explain_trace.py --latest` (verifies tracked sample trace fallback).
-     - Action pack memorandum exporter `scripts/export_action_pack.py`.
-     - Fast pytest verification across data layer and real packaging standards.
-  2. Documented `python scripts/validate_clean_clone.py` in `README.md` Section 3.
-  3. Added automated unit test in `tests/test_api.py`: `test_validate_clean_clone_script_execution`.
-- **Acceptance Criteria**: `python scripts/validate_clean_clone.py` runs and passes, providing judges with a single command to verify clean-clone compliance. (VERIFIED)
-
----
-
-### Item 8: Standardized Unit-of-Measure (UOM) Multiplier Grounding from RxNorm Standards
-- **Priority**: P2 (Data Integrity, Innovation 15 pts)
-- **Status**: [x] [DONE]
-- **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), [`app/agents/reconciler.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/reconciler.py), [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py)
-- **Problem**: `data/real/rxnorm_standards.json` contains real packaging ratios (e.g. 10 tablets/strip, 100 tablets/bottle), but `DeterministicEngine.convert_uom()` and `ReconcilerAgent` previously used ad-hoc 10x multiplier checks rather than dynamically looking up the packaging standard from `DataStore`.
-- **Action**:
-  1. In `DataStore`, implemented `get_uom_pack_multiplier(medicine_id, reported_unit)` reading from `rxnorm_standards.json` and DailyMed packaging specifications.
-  2. Wired `get_packaging_standard` and `get_rxnorm_standard` into `ReconcilerAgent` for dispensing unit derivation (`tablet`, `capsule`, `vial`) and packaging spec grounding.
-  3. Added automated tests in `tests/test_enriched_data.py`: `test_datastore_uom_pack_multiplier_grounding` and `test_reconciler_uom_mismatch_uses_packaging_standards`.
-- **Acceptance Criteria**: UOM mismatch detection and conversion are grounded in registered RxNorm packaging standards. (VERIFIED)
-
----
-
-### Item 9: Enrich Swagger UI / OpenAPI Documentation with Realistic Sample Payloads
-- **Priority**: P2 (Product & UX 10 pts, API Cleanliness)
-- **Status**: [x] [DONE]
+### Item 7: Expose Printable Memorandum & Trace Endpoints on FastAPI (`GET /memo` and `GET /trace/latest`)
+- **Priority**: P2 (Product & UX 10 pts, Demo 15 pts)
+- **Status**: [ ] [PENDING]
 - **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: When judges navigate to `http://localhost:8000/docs`, `RunRequest` and `DecisionRequest` had minimal field metadata without JSON schema examples, requiring judges to manually type test JSON payloads.
+- **Problem**: While `run.py --export-memo` generates Markdown procurement memoranda and `explain_trace.py` visualizes debate traces in terminal, judges interacting with the FastAPI web service (`/docs`) have no endpoints to read the generated memorandum or retrieve the latest debate event timeline via HTTP.
 - **Action**:
-  1. In `run.py`, configured `RunRequest` and `DecisionRequest` Pydantic models with `Field(..., description=...)` and `json_schema_extra` containing realistic facility IDs (`FAC-DH-01`, `FAC-CHC-01`), medicine IDs (`MED-007`, `MED-001`), and sample options.
-  2. Added rich API title, summary, and markdown description metadata in `FastAPI(..., summary=..., description=...)` highlighting Track 2 goals, zero LLM arithmetic, and sponsor integrations.
-  3. Added regression test `test_openapi_documentation_schema_and_metadata` in `tests/test_api.py`.
-- **Acceptance Criteria**: Swagger UI at `/docs` renders one-click "Try it out" examples for all endpoints. (VERIFIED)
+  1. In `run.py`, add `GET /memo/{facility_id}/{medicine_id}` generating and returning the official GitHub-Flavored Markdown procurement memorandum as `text/markdown`.
+  2. In `run.py`, add `GET /trace/latest` returning the latest JSONL debate event list structured for frontend or inspection.
+  3. Add regression tests in `tests/test_api.py`: `test_api_get_memo_endpoint` and `test_api_get_trace_latest_endpoint`.
+- **Acceptance Criteria**: Navigating to `/memo/FAC-DH-01/MED-007` or `/trace/latest` in Swagger UI returns formatted memorandum text and trace events.
 
 ---
 
-### Item 10: Printable Officer Action Pack Markdown Exporter (`scripts/export_action_pack.py`)
-- **Priority**: P2 (Product & UX 10 pts, Impact 30 pts)
-- **Status**: [x] [DONE]
-- **Files**: `scripts/export_action_pack.py`, [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: While `ActionPack` emits JSON and terminal logs, real district drug warehouse officers require an official, human-readable **Transfer Indent & Supplier Chase Memorandum** that can be exported, printed, or emailed to facility medical officers and vendor contacts.
+### Item 8: Automated Comparative Backtest Markdown Summary Exporter (`output/backtest_summary.md`)
+- **Priority**: P2 (Impact 30 pts, Evaluation Rigor)
+- **Status**: [ ] [PENDING]
+- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py), [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py)
+- **Problem**: `scripts/run_backtest.py` saves JSON results to `output/backtest_seed_N.json` and prints terminal stdout, but lacks an automated, human-readable Markdown summary report (`output/backtest_summary.md`) that judges can immediately view on GitHub.
 - **Action**:
-  1. Created `scripts/export_action_pack.py` and CLI flag `--export-memo` in `run.py` generating an official GitHub-Flavored Markdown memorandum (`output/memo_{facility_id}_{medicine_id}.md`).
-  2. Rendered official memorandum header, facility catchment details, trust vs naive stock comparison table, Number Auditor certification badge, and formatted transfer indents with authorization signature lines.
-  3. Added automated unit test in `tests/test_api.py`: `test_export_action_pack_memorandum`.
-- **Acceptance Criteria**: Running with `--export-memo` writes a human-readable, printable procurement memo to `output/`. (VERIFIED)
+  1. In `scripts/run_backtest.py`, format aggregated multi-seed metrics into `output/backtest_summary.md`.
+  2. Include comparison table (Naive LMIS vs Heuristic vs MedTrace across lead time, recall, precision, F1, and capital lockup), seed-by-seed breakdown (seeds 1–2 tuning, seeds 3–4 held-out test), and honest methodology notes.
+  3. Add automated test in `tests/test_backtest.py`: `test_backtest_summary_markdown_generation`.
+- **Acceptance Criteria**: Running `python scripts/run_backtest.py` generates `output/backtest_summary.md` with complete comparative Markdown tables.
 
 ---
 
-### Item 11: Lightweight `docker-compose.yml` for Local Evaluation Stack
-- **Priority**: P2 (Technical Deployment, Product & UX)
-- **Status**: [x] [DONE]
-- **Files**: `docker-compose.yml`, [`Dockerfile`](file:///C:/Users/Asus/Desktop/Open%20Agent/Dockerfile), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: The project had a `Dockerfile` for the FastAPI backend, but running with a local Postgres database required manual setup. Having a single `docker-compose.yml` defining the backend and an optional Postgres database with healthchecks simplifies evaluation for judges using Docker.
+### Item 9: Triage Planner Integration into Default CLI & Investigation Pipeline (Plan §4.2)
+- **Priority**: P2 (Technical 20 pts, Multi-Agent Coordination)
+- **Status**: [ ] [PENDING]
+- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
+- **Problem**: In Execution Plan §4.2, Triage Planner is the upstream agent that proactively scans the district and identifies at-risk targets. Currently, running `python run.py --cli` requires manual `--facility` and `--medicine` arguments (defaulting to FAC-DH-01 / MED-007).
 - **Action**:
-  1. Created `docker-compose.yml` defining `backend` (built from `Dockerfile`, ports `8000:8000`, environment variables, volume mounts for `logs` and `output`, automated python healthcheck).
-  2. Included optional profiled `postgres` service with simulation schema for offline Zetaris emulation.
-  3. Documented `docker compose up --build` in `README.md` Section 9.
-  4. Added regression test `test_docker_compose_configuration` in `tests/test_api.py`.
-- **Acceptance Criteria**: Validated `docker-compose.yml` passes syntax and schema verification. (VERIFIED)
+  1. In `run.py`, add CLI flag `--auto-triage`. When specified, the system runs a proactive district triage scan, selects the #1 highest urgency bottleneck, and seamlessly launches the deep multi-agent audit on that item without manual ID entry.
+  2. Add unit test in `tests/test_agents.py`: `test_auto_triage_delegation_flow`.
+- **Acceptance Criteria**: `python run.py --cli --auto-triage --sample-mode` scans the district and investigates the top urgent bottleneck in a single pass.
 
 ---
 
-### Item 12: Concurrency and State Isolation Stress Test in `test_api.py`
-- **Priority**: P2 (Test Rigor, Production Quality)
-- **Status**: [x] [DONE]
-- **Files**: [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: `POST /run` modifies `orchestrator.llm_client.sample_mode` and `orchestrator.data_store.use_zetaris` on the fly when `options.sample_mode` is passed. While wrapped in `try/finally`, there was no test verifying that rapid alternating or concurrent API calls do not corrupt the orchestrator state across sessions.
+### Item 10: Explicit `ENV USE_ZETARIS=false` in `Dockerfile` for Non-Compose Container Execution
+- **Priority**: P2 (Technical Deployment, Docker Packaging)
+- **Status**: [ ] [PENDING]
+- **Files**: [`Dockerfile`](file:///C:/Users/Asus/Desktop/Open%20Agent/Dockerfile), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: `Dockerfile` defines `ENV SAMPLE_MODE=true` and `ENV PORT=8000`, but omits `ENV USE_ZETARIS=false`. When a judge executes `docker run -p 8000:8000 <image>` directly rather than using Docker Compose, declaring `ENV USE_ZETARIS=false` in the image guarantees offline isolation without relying on code fallbacks.
 - **Action**:
-  1. In `tests/test_api.py`, added `test_api_concurrency_and_state_isolation`.
-  2. Executed alternating requests with `sample_mode=True` and `sample_mode=False`.
-  3. Asserted that responses are properly scoped and global orchestrator flags return cleanly to default state without state bleeding.
-- **Acceptance Criteria**: Test proves orchestrator options remain completely isolated across consecutive/concurrent requests. (VERIFIED)
+  1. In `Dockerfile`, add `ENV USE_ZETARIS=false`.
+  2. In `tests/test_api.py`, add assertions in `test_docker_compose_configuration` or a dedicated test verifying `Dockerfile` environment variables.
+- **Acceptance Criteria**: Dockerfile explicitly sets `ENV USE_ZETARIS=false`.
+
+---
+
+### Item 11: Benchmark Throughput & Resource Metrics in Backtest Engine
+- **Priority**: P2 (Technical Depth 20 pts, Sponsor Tech)
+- **Status**: [ ] [PENDING]
+- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py)
+- **Problem**: `BacktestEngine` records statistical accuracy metrics (lead time, recall, F1), but omits computational throughput metrics (replay duration, daily transaction processing rate in events/sec), which sponsor technologies (Meterless & NVIDIA) evaluate for runtime efficiency.
+- **Action**:
+  1. In `BacktestEngine.run_backtest()`, measure total replay duration, daily transaction throughput (`total_transactions / duration`), and include under a `"performance_benchmarks"` dictionary in the returned results.
+  2. Add test in `tests/test_backtest.py`: `test_backtest_performance_benchmarks_metrics`.
+- **Acceptance Criteria**: Backtest results include execution duration and transaction throughput metrics.
+
+---
+
+### Item 12: Multi-Agent Audit Trace Conformance Validator Script (`scripts/validate_traces.py`)
+- **Priority**: P2 (Reliable Execution, Track 2 "Explain Why")
+- **Status**: [ ] [PENDING]
+- **Files**: `scripts/validate_traces.py`, [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: Track 2 judges evaluate audit traces to verify that agents act, critique, and revise outputs rather than running fixed prompt wrappers. There is currently no standalone validator that inspects all generated JSONL traces in `logs/` and asserts Track 2 conformance.
+- **Action**:
+  1. Author `scripts/validate_traces.py` that validates all traces in `logs/` against schema rules:
+     - 100% of lines contain valid `timestamp`, `agent`, `action`, `details`, `model`, `llm_used`, and `fallback` keys.
+     - Contains at least 1 `RECONCILE_COMPLETE`, 1 `CONTEXT_BUILT`, 1 `ROUND_1_START`, 1 `ROUND_1_EVALUATION` with critique, 1 `ROUND_2_START` revision, and 1 `ACTION_PLAN_AUDITED`.
+     - Zero ungrounded numbers in agent reasoning.
+  2. Add unit test in `tests/test_api.py`: `test_trace_conformance_validator_execution`.
+- **Acceptance Criteria**: `python scripts/validate_traces.py` validates all logs in `logs/` and exits 0.
 
 ---
 
@@ -272,4 +252,4 @@ To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
-Current Baseline Status: **103 passed, 1 warning in ~100s** (100% passing rate across all 7 test suites).
+Current Baseline Status: **103 passed, 1 warning in ~114s** (100% passing rate across all 7 test suites).

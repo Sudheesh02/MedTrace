@@ -709,3 +709,40 @@
 #### What Is Next
 - Perform final pre-submission repository inspection and tag release candidate.
 - Ensure all sample artifacts in `output/` and `logs/` are fully accessible for judges.
+
+
+---
+
+### Session: 2026-10-25 11:50 UTC
+**Role**: Senior Staff AI Reviewer & Project Auditor  
+**Phase**: Comprehensive Project Audit & Backlog Formulation (Pre-Implementation Gate)
+
+#### What Was Done
+1. **Full-Scope Senior Project Audit**:
+   - Reviewed [README.md](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [MedTrace_Research_and_Execution_Plan.md](file:///C:/Users/Asus/Desktop/Open%20Agent/MedTrace_Research_and_Execution_Plan.md), and all hackathon specifications in `hackathon details/` ([16page.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon details/16page.md), [How to Win Hackathons!.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon details/How to Win Hackathons!.md), [Meterless_ Overview.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon details/Meterless_ Overview.md), [participant-setup-guide.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon details/participant-setup-guide.md), [zetaris-*.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon details/zetaris-sponsor-overview.md)).
+   - Inspected all code components: [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`app/adapters/`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/), [`app/agents/`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/), [`app/engine/deterministic.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engine/deterministic.py), [`app/engines/`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engines/), [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`Dockerfile`](file:///C:/Users/Asus/Desktop/Open%20Agent/Dockerfile), and tests.
+2. **Key Findings Uncovered Across the 8 Core Dimensions**:
+   - **README Claims vs Real Code**: `PRE_EXISTING_COMPONENTS.md` line 84 still contains a stale reference to `88 automated tests` (the verified test suite has grown to 103 tests). Sample outputs in `output_examples/*.json` lack `estimated_cost_usd` fields introduced during financial invariant implementation.
+   - **Multi-Agent Shared State**: `world_context` built by `ContextBuilderService` is passed into `InvestigatorAgent.investigate()` as a parameter, but `context` is completely unreferenced in the method body. `SkepticAgent` does not cross-reference World Model conflict entities.
+   - **Data Layer & Sponsor Integration**: `participant-setup-guide.md` lines 786-804 & 1620-1623 define `ZETARIS_REST_URL` (`http://localhost:8888/api/v1.0`) and `POST /sql-editor/sqls/run`. `DataStore` only checks `ZETARIS_BASE_URL` (`http://localhost:3000`) and hits `/api/proxy/sql-editor/sqls/run-query`, risking 404 connection failure on standard participant setups.
+   - **API & Ergonomics**: Input validation in `orchestrator.run_investigation` is strictly case-sensitive; lowercase inputs (`fac-dh-01`, `med-007`) or trailing whitespace fail with an unhandled 404 `ValueError`.
+   - **Human Escalation**: `ActionPlannerAgent` is unaware of `pack.escalated_to_human`, continuing to generate autonomous recommendations with standard feasibility instead of flagging that human counter-signature is required.
+   - **Backtest Reporting**: Multi-seed evaluation outputs JSON and stdout, but lacks an automated Markdown comparison report (`output/backtest_summary.md`) for judges.
+3. **Formulated Prioritized Backlog (Exactly 12 Concrete, Small Items)**:
+   - Kept the **PRIORITY 0** section at the very top of [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md), flagging Item 6 as in progress until `PRE_EXISTING_COMPONENTS.md` test count is synchronized.
+   - Formulated 12 prioritized, concrete, and small items replacing stale entries.
+   - Preserved all application code untouched in this step.
+4. **Verified Baseline Test Suite**:
+   - Executed `python -m pytest tests -q` — **103 passed, 1 warning in 114.73s** (100% passing rate).
+
+#### What Is Next
+- **Batch 1 (Immediate Stability, Compliance & Core Wiring)**:
+  - Backlog Item 1: Complete Priority 0 Item 6 by updating stale test count in `PRE_EXISTING_COMPONENTS.md` to 103 tests.
+  - Backlog Item 2: Add `ZETARIS_REST_URL` and dual-endpoint compatibility in `DataStore` and `smoke_test.py`.
+  - Backlog Item 3: Wire World Model shared context into `InvestigatorAgent` and `SkepticAgent`.
+  - Backlog Item 4: Re-generate `output_examples/*.json` via `scripts/generate_examples.py`.
+- **Batch 2 (Ergonomics, Escalation & Product Polish)**:
+  - Backlog Item 5: Case-insensitive and whitespace-tolerant input normalization.
+  - Backlog Item 6: Escalation-aware action recommendations and feasibility adjustment.
+  - Backlog Item 7: FastAPI memorandum and trace endpoints (`GET /memo`, `GET /trace/latest`).
+  - Backlog Item 8: Backtest Markdown summary report generator (`output/backtest_summary.md`).
