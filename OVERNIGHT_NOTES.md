@@ -588,3 +588,34 @@
 - Execute Item 1 (Priority 0 Item 6): Truth pass across `SPONSOR_TECH.md`, `PRE_EXISTING_COMPONENTS.md`, `metadata.json`, and `README.md`.
 - Execute Item 2 (Priority 0 Item 7): Track a sanitized sample trace in `logs/` and verify clean-clone visualizer fallback.
 - Execute Item 3: Hardening `smoke_test.py` to eradicate default credentials and support Meterless Nightshift.
+
+---
+
+### Session: 2026-10-25 10:35 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Priority 0 Item 6 / Item 1 Truth Pass on Docs, Test Counts, NIM Claims, Assumptions & Overnight Automation
+
+#### What Was Done
+1. **Truth Pass on `SPONSOR_TECH.md`**:
+   - Corrected test suite references from stale 61 to verified 89 tests.
+   - Qualified status badges to distinguish 89 passing automated offline and mock tests from live cloud smoke tests (`smoke_test.py`).
+   - Clarified that all sponsor technology interfaces are verified via 89 passing offline/mock tests, with live cloud connections verified through `smoke_test.py` with active user credentials.
+2. **Truth Pass on `metadata.json`**:
+   - Updated `"model"` description from `"nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA NIM API in app/adapters/llm_client.py"` to `"nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA API / Meterless Nightshift endpoint in app/adapters/llm_client.py"`, accurately reflecting the OpenAI-compatible REST API / Meterless Nightshift runtime integration rather than a local NIM container.
+3. **Explicit Modeling Assumption Annotations in `PRE_EXISTING_COMPONENTS.md` & `data/README.md`**:
+   - Declared WHO disease surveillance +35% (1.35x) consumption surge multiplier for `ELEVATED` risk tiers as a calibrated modeling assumption.
+   - Declared DailyMed temperature storage bounds (2°C–8°C for cold chain vs 15°C–30°C for room temp) and 10x10 blister packaging as rule-assigned clinical supply heuristics.
+   - Declared USAID supplier delay priors and Monte Carlo slip distributions `[0.0, 0.5*p90, 1.0*p90, 1.5*p90]` as calibrated simulation modeling assumptions.
+4. **Overnight AI Assistant Declaration in `PRE_EXISTING_COMPONENTS.md`**:
+   - Added Section 4.6 explicitly declaring the Gemini autonomous coding assistant and Google Antigravity harness used for continuous architecture auditing, test generation, and overnight refinement under developer direction.
+5. **Added Automated Regression Test in `tests/test_api.py`**:
+   - Added `test_metadata_json_and_docs_integrity` verifying `metadata.json` valid schema, sponsor keys, absence of ungrounded NIM claims, `SPONSOR_TECH.md` test counts and status qualification, and declarations in `PRE_EXISTING_COMPONENTS.md` and `data/README.md`.
+6. **Marked Item 1 / Priority 0 Item 6 Done**:
+   - Updated [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md) marking Priority 0 Item 6 and Item 1 as completed.
+7. **Verified Full Test Suite**:
+   - Executed `python -m pytest tests -q` — **89 passed, 1 warning in 93.76s** (100% passing rate).
+
+#### What Is Next
+- **Priority 0 Item 7 / Item 2**: Track a sanitized sample trace in `logs/` (un-ignore in `.gitignore`) and ensure `scripts/explain_trace.py --latest` works cleanly on a fresh clone.
+- **Item 3**: Hardening `smoke_test.py` to eradicate default credentials and support Meterless Nightshift.
+- **Item 4**: Deterministic budget & financial impact invariant in `ActionPlannerAgent`.

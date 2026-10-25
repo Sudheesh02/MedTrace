@@ -34,7 +34,7 @@
     },
     "nvidia": {
       "role": "Primary LLM Power Layer",
-      "model": "nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA NIM API in app/adapters/llm_client.py"
+      "model": "nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA API / Meterless Nightshift endpoint in app/adapters/llm_client.py"
     },
     "cursor": {
       "role": "Development Environment",

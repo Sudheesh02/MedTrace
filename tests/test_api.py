@@ -287,3 +287,41 @@ def test_cli_subprocess_execution_modes():
     )
     assert res_rec.returncode == 0
     assert "Successfully recorded officer decision in H-MEM" in res_rec.stdout
+
+
+def test_metadata_json_and_docs_integrity():
+    """Verify metadata.json, SPONSOR_TECH.md, and PRE_EXISTING_COMPONENTS.md conform to honest hackathon reporting."""
+    import json
+    import os
+
+    # 1. metadata.json validation
+    assert os.path.exists("metadata.json")
+    with open("metadata.json", "r", encoding="utf-8") as f:
+        meta = json.load(f)
+    assert meta["project_name"] == "MedTrace"
+    assert "zetaris" in meta["sponsor_technology"]
+    assert "meterless" in meta["sponsor_technology"]
+    assert "nvidia" in meta["sponsor_technology"]
+    nvidia_model = meta["sponsor_technology"]["nvidia"]["model"]
+    assert "NIM" not in nvidia_model
+    assert "NVIDIA API" in nvidia_model or "Meterless" in nvidia_model
+
+    # 2. SPONSOR_TECH.md truth checks
+    with open("SPONSOR_TECH.md", "r", encoding="utf-8") as f:
+        sponsor_doc = f.read()
+    assert "61-test" not in sponsor_doc
+    assert "89-test pytest suite" in sponsor_doc
+    assert "Status: 100% Fully Verified" not in sponsor_doc
+    assert "89/89 Automated Tests Verified" in sponsor_doc
+
+    # 3. PRE_EXISTING_COMPONENTS.md declarations
+    with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
+        pre_existing_doc = f.read()
+    assert "Gemini Autonomous Coding Assistant & Harness" in pre_existing_doc
+    assert "Calibrated Assumption" in pre_existing_doc
+
+    # 4. data/README.md modeling assumptions
+    with open("data/README.md", "r", encoding="utf-8") as f:
+        data_doc = f.read()
+    assert "Explicit Modeling Assumptions" in data_doc
+    assert "who_surveillance_multiplier = 1.35" in data_doc

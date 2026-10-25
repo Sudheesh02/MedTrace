@@ -95,7 +95,8 @@ All models are evaluated under the **identical 14.0-day replenishment alert thre
 In strict accordance with the **Open Agent Hackathon 2026** submission guidelines:
 - **03 GitHub Repository**: Clean codebase, full test suite, and reproducible run instructions.
 - **04 Sponsor Tech Explanation**: Complete breakdown of Zetaris, Meterless, NVIDIA, and Cursor in [SPONSOR_TECH.md](SPONSOR_TECH.md).
-- **05 Pre-Existing Components Declaration**: Detailed declaration of open-source libraries vs new hackathon-built architecture in [PRE_EXISTING_COMPONENTS.md](PRE_EXISTING_COMPONENTS.md).
+- **05 Pre-Existing Components Declaration**: Detailed declaration of open-source libraries vs new hackathon-built architecture, explicit modeling assumptions, and overnight autonomous coding assistance in [PRE_EXISTING_COMPONENTS.md](PRE_EXISTING_COMPONENTS.md).
+- **Declared Assumptions & Transparency**: All empirical data derivatives, rule-assigned packaging parameters, and the Gemini overnight agent harness are fully documented in [PRE_EXISTING_COMPONENTS.md](PRE_EXISTING_COMPONENTS.md) and [data/README.md](data/README.md).
 - **Offline / Sample Mode Conformance**: Fully supports offline evaluation without active credentials via `SAMPLE_MODE=true` or `python run.py --cli --sample-mode`.
 - **Data Provenance & Download Scripts**: All raw datasets are lightweight public open data, with automated download scripts documented in [data/README.md](data/README.md) and executable via `python scripts/download_real_data.py`.
 
@@ -170,7 +171,7 @@ python run.py
 
 ### 7. Run Test Suite & Backtest Evaluation
 ```bash
-# Run unit & agent tests (88 tests across 7 test suites)
+# Run unit & agent tests (89 tests across 7 test suites)
 python -m pytest tests/
 
 # Run 180-day comparative multi-seed backtest

@@ -38,15 +38,16 @@ The following standard Python packages were installed via `pip` and used as unde
 
 All external data referenced by MedTrace originates from public, open-access healthcare repositories:
 
-| Dataset | Authority / Source | Origin Date | Usage in MedTrace |
+| Dataset | Authority / Source | Origin Date | Usage in MedTrace & Modeling Assumptions |
 | :--- | :--- | :--- | :--- |
 | **WHO Model EML & India NLEM 2022** | World Health Organization / Ministry of Health & Family Welfare, India | 2022–2023 | Reference list for 12 essential medicines, ATC classifications, and standard dosing forms. |
-| **USAID GHSC-PSM Delivery History** | USAID Global Health Supply Chain Program (Data.gov) | 2015–2020 | 10,324 public shipment records used solely to derive empirical vendor lead-time delay distributions (`p50`, `p90`). |
+| **USAID GHSC-PSM Delivery History & Supplier Slip Priors** | USAID Global Health Supply Chain Program (Data.gov) | 2015–2020 | 10,324 public shipment records used to derive empirical vendor lead-time delay percentiles (`mean`, `p50`, `p90`).<br>*Calibrated Assumption*: Empirical delay percentiles are assigned to simulation suppliers, and Monte Carlo transit slip is modeled via empirical distribution sampling `[0.0, 0.5*p90, 1.0*p90, 1.5*p90]`. |
 | **openFDA Shortages & Enforcement Recalls** | US Food & Drug Administration Open Data API (`api.fda.gov`) | Live API / Public Domain | Public shortage alerts and Class I/II recall lot identifiers used as external disruption signals. |
-| **NIH RxNorm & DailyMed** | US National Library of Medicine (NLM / NIH) | Public Domain | Standard clinical drug vocabularies and official packaging/temperature storage specifications. |
+| **NIH RxNorm & DailyMed** | US National Library of Medicine (NLM / NIH) | Public Domain | Standard clinical drug vocabularies and official product listings.<br>*Calibrated Assumption*: Packaging formats (10x10 blister strips) and storage temperatures (2°C–8°C cold chain vs 15°C–30°C room temp) are assigned via rule-based clinical supply heuristics. |
+| **WHO GHO Disease Surveillance** | WHO Global Health Observatory Athena OData API | Live API / Public Domain | Real epidemiological indicator time-series (malaria, meningitis, HIV).<br>*Calibrated Assumption*: An assumed +35% (1.35x) surge consumption multiplier is mapped to `ELEVATED` epidemiological risk tiers in `DeterministicEngine`. |
 | **Kaggle Pharma Sales Daily** | SaibalPatraDS / Zdravković | CC-BY 4.0 | Time-series sales patterns used to extract normalized seasonal multipliers (mean = 1.0). |
 
-*Note: All data samples in the repository are lightweight, legal to use, and accompanied by automated download and extraction scripts in `scripts/download_real_data.py`.*
+*Note: All data samples in the repository are lightweight, legal to use, accompanied by automated download and extraction scripts in `scripts/download_real_data.py`, and all heuristic or synthetic parameters are explicitly declared above.*
 
 ---
 
@@ -82,3 +83,6 @@ The entirety of MedTrace's domain logic, reasoning loops, evaluation harnesses, 
    - Hardened `Dockerfile` with container healthcheck and `.dockerignore`.
    - Comprehensive test suite in [`tests/`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/) (88 automated tests passing with 100% success rate).
    - All documentation: `README.md`, `SPONSOR_TECH.md`, `scripts/register_zetaris_sources.md`, `data/lmis_export_contract.md`.
+
+6. **Autonomous Development & Agent Harness**:
+   - **Gemini Autonomous Coding Assistant & Harness**: Continuous architecture auditing, test generation, benchmark standardization, and iterative overnight refinement executed through the Google Antigravity / Gemini autonomous agent harness under developer direction during the hackathon window.
