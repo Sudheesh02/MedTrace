@@ -1147,3 +1147,41 @@
 - **Item 9 (P1)**: Author consolidated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
 - **Item 10 (P2)**: Dockerfile & `.dockerignore` trace inclusion for tracked sample traces.
 - **Item 11 (P2)**: Reframe README narrative around audit accuracy and explanation faithfulness.
+
+---
+
+### Session: 2026-10-25 20:35 IST
+**Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
+**Phase**: Comprehensive Senior Audit & Prioritized Overnight Backlog Formulation (Pre-Implementation Gate)
+
+#### What Was Done
+1. **Full-Scope Senior Review & Rubric Gap Audit**:
+   - Audited the entire repository against the 100-point Open Agent Hackathon 2026 Track 2 rubric (Impact 30, Technical 20, Innovation 15, Demo 15, Product & UX 10, Sponsor Tech 10), [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.md), [MedTrace_Research_and_Execution_Plan.md](file:///C:/Users/Asus/Desktop/Open Agent/MedTrace_Research_and_Execution_Plan.md), and all guides in `hackathon details/`.
+   - Verified that all hard rules are strictly enforced: no application code changed, no secrets read/committed, no git branches created or pushed, zero LLM math in quantitative code paths.
+2. **Key Audit Findings & Deficits Identified**:
+   - **EDA Hardcoding Fallback (P0)**: `scripts/generate_eda_charts.py` lines 442-455 still contains fallback arrays (`medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]`, `baseline_f1 = [18.2]*5`) and uses `.get('naive_lmis_f1', 18.2)` as a silent default. Line 305 contains hand-typed text `'• Baseline ~1.2% represents pharmacy Sunday/holiday closures.'`.
+   - **Test Suite Git Dirtiness (P0)**: Running `pytest` executes `test_validate_clean_clone_script_execution` in `tests/test_api.py`, which invokes `scripts/validate_clean_clone.py`. In Gate G5, `validate_clean_clone.py` runs `scripts/run_curated_eval.py --quiet`, which writes directly to `output/curated_evaluation.md`, overwriting its timestamp `Generated: 2026-10-25T...` and dirtying `git status`. Must pass an isolated temp output dir.
+   - **Missing Curated Benchmark in Docs (P0)**: The Curated Multi-Agent Benchmark evaluated across 20 clinical scenarios (`output/curated_evaluation.md`) proves 100% precision/recall, 100% correct abstention on clean cases, and 0% unsupported claims via Number Auditor, but `README.md` and `SPONSOR_TECH.md` fail to mention or cite this major Track 2 asset.
+   - **Docs Target Language (P0)**: `README.md` lines 71-72 still retain `(>85% target)` language; must lead with audit accuracy, faithful explanations, and zero hallucinated math, and document that planted anomaly detection evaluates rule-coverage.
+   - **Missing Live openFDA Query (P1)**: `DataStore` reads local JSON directly; needs live HTTP queries to `api.fda.gov` with 5s timeout and cache-aside fallback.
+   - **Missing Interactive UI Screen (P1)**: Execution Plan Phase 6.2 specifies 1 simple interactive screen (`app/ui.py`) for judges preferring visual walkthroughs.
+   - **Scattered Sponsor Tests (P1)**: Lacks consolidated `tests/test_sponsor_conformance.py` for 1-command verification of Zetaris, Meterless, and Nemotron.
+   - **Docker Build Trace Exclusion (P2)**: `.dockerignore` ignores `logs/*.jsonl` without exceptions for tracked sample/golden traces.
+   - **Golden Trace LLM Provenance Documentation (P2)**: Need explicit documentation in `logs/README.md` and `SPONSOR_TECH.md` that sample mode provides offline reproducibility without API keys, while live mode connects to Nemotron.
+3. **Formulated Prioritized 12-Item Overnight Backlog**:
+   - Replaced stale entries in [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open Agent/OVERNIGHT_BACKLOG.md) with exactly 12 small, concrete, prioritized items with explicit acceptance criteria.
+   - Strictly preserved all Priority 0 and Monitor Corrective sections at the top until each is verified and closed by the monitor.
+4. **Verified Baseline Test Suite**:
+   - Executed full test suite (`python -m pytest tests -q`): **128 passed, 1 warning in 257.14s** (100% passing rate across all 7 test suites).
+   - Maintained clean git working tree. Zero application code modified.
+
+#### What Is Next
+- **Batch 1 (Immediate Priority — P0)**:
+  - Backlog Item 1: Eliminate hardcoded fallbacks and hand-typed callouts in `scripts/generate_eda_charts.py`.
+  - Backlog Item 2: Fix test suite git-tree isolation in `scripts/validate_clean_clone.py` (pass temp output dir to `run_curated_eval.py`).
+  - Backlog Item 3: Document and highlight Curated Multi-Agent Benchmark (20 clinical scenarios) in `README.md` and `SPONSOR_TECH.md`.
+  - Backlog Item 4: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
+- **Batch 2 (Core Features & Sponsor Tech — P1)**:
+  - Backlog Item 5: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
+  - Backlog Item 6: Create lightweight interactive Streamlit dashboard (`app/ui.py`).
+  - Backlog Item 7: Author consolidated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).

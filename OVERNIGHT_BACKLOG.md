@@ -47,7 +47,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 # CORRECTIVE (monitor, 2026-10-25 10:50 IST) - [ALL COMPLETED & VERIFIED]
 - [x] [DONE] The anomaly F1 evaluation was unhardcoded: BacktestEngine now derives evaluation bounds dynamically from ground truth trigger schedules rather than hardcoded 160..178 slice. In README/SPONSOR_TECH, numbers are honestly labeled as planted anomaly detection on synthetic multi-tier simulation data with 10 planted failure modes, avoiding misleading "multi-agent reasoning accuracy" labels.
-- [x] [DONE] SPONSOR_TECH.md reworded to transparently state "live cloud connections testable via smoke_test.py with user credentials" and "124/124 automated tests verified".
+- [x] [DONE] SPONSOR_TECH.md reworded to transparently state "live cloud connections testable via smoke_test.py with user credentials" and "128/128 automated tests verified".
 - [x] [DONE] Priority 0 item 7 complete: tracked sanitized sample trace `logs/sample_trace_FAC-DH-01_MED-007.jsonl` in git via `.gitignore` exception `!logs/sample_trace_*.jsonl`, updated `scripts/explain_trace.py` with automatic clean-clone fallback, and added test in `tests/test_api.py`.
 
 # PRIORITY 0 (from independent blind review, do these before anything else)
@@ -74,7 +74,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 - [x] [DONE] Dedicated 30-second judge walkthrough script (`scripts/quick_demo.py`).
 - [x] [DONE] Zetaris 4-way federated SQL join test in `tests/test_data_store.py`.
 - [x] [DONE] Deterministic budget and financial impact computation in `ActionPlannerAgent` with Number Auditor validation.
-- [x] [DONE] Automated clean-clone validation harness (`scripts/validate_clean_clone.py`) passing all 7 gates.
+- [x] [DONE] Automated clean-clone validation harness (`scripts/validate_clean_clone.py`) passing all 9 gates.
 - [x] [DONE] Printable officer procurement memorandum exporter in Markdown (`scripts/export_action_pack.py` and `--export-memo`).
 - [x] [DONE] Lightweight `docker-compose.yml` with backend and optional profiled Postgres service.
 - [x] [DONE] RxNorm standard packaging multiplier dynamic lookup in `DataStore` and `ReconcilerAgent`.
@@ -94,157 +94,117 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 - [x] [DONE] Executive Verdict-Flip Card & counterfactual dissent log implemented in `scripts/explain_trace.py`, wired into `run.py` (`--explain` and `--verdict-flip`) and FastAPI (`/trace/verdict-flip`). Verified by `test_explain_trace_renders_verdict_flip_card` in `tests/test_api.py`.
 - [x] [DONE] Rich terminal styling with 4 color-coded panels (Winning Verdict, Counterfactual Trigger, Dissent Log, Cognitive Memory Impact) and plain ASCII fallback. Verified by `test_explain_trace_rich_and_plain_modes` in `tests/test_api.py`.
 - [x] [DONE] Preserved 10,324 distinct consignment rows in `scripts/process_real_data.py` (0 dropped as duplicates) with 3 concrete raw examples documented in `DATA_AUDIT.md`. Verified by `test_usaid_multiline_po_preservation` in `tests/test_enriched_data.py`.
+- [x] [DONE] High-resolution empirical EDA figures generated in `reports/eda/*.png` and documented in `reports/eda/README.md`. Verified by `test_eda_charts_generation` and `test_generate_eda_charts_cli` in `tests/test_enriched_data.py`.
+- [x] [DONE] Unrigged baseline anomaly detector with rolling z-score (|z| >= 3.0) and audit variance (|drift| >= 45) in `BacktestEngine`, reporting type-agnostic F1 alongside typed F1 (23.9% vs 93.5%).
+- [x] [DONE] Timing-bounded anomaly evaluation (+/-7 days) and raw counts (TP/FP/FN) in `BacktestEngine` and `README.md`.
+- [x] [DONE] Curated Multi-Agent Benchmark Suite (20 clinical scenarios) in `app/backtest/curated_benchmark.py` and `scripts/run_curated_eval.py` yielding 100% precision/recall, 100% clean-stock abstention, and 0.0% unsupported claims via Number Auditor.
 
 ---
 
 # MedTrace Senior Reviewer Comprehensive Audit & Prioritized Overnight Backlog
 
-**Audit Timestamp**: 2026-10-25 18:30 IST  
+**Audit Timestamp**: 2026-10-25 20:35 IST  
 **Reviewer Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
-**Evaluation Target**: Open Agent Hackathon 2026 â€” Track 2 (*The Agent That Can Explain Why*)  
+**Evaluation Target**: Open Agent Hackathon 2026 — Track 2 (*The Agent That Can Explain Why*)  
 **Scope**: README Claims vs. Real Code, Multi-Agent Deliberation Loop, Data Layer, Backtest Engine, Test Suite, FastAPI/CLI App, Dockerfile, Docs, and Hackathon Alignment.  
-**Baseline Test Suite**: **127 passed, 1 warning in 249.69s** (100% passing rate across all 7 test suites).  
-**Status**: Application code untouched in this audit step. Exactly 12 prioritized, concrete, small items formulated below replacing completed/stale entries while preserving all Priority 0 sections.
+**Baseline Test Suite**: **128 passed, 1 warning in 257.14s** (100% passing rate across all 7 test suites).  
+**Status**: Application code untouched in this audit step. Exactly 12 prioritized, concrete, small items formulated below replacing completed/stale entries while strictly preserving all Priority 0 sections.
 
 ---
 
-## ðŸ” Executive Audit Findings Summary
+## 🔍 Executive Audit Findings Summary
 
-| Area | Current Code State | Identified Gap / Risk | Judging Impact | Priority |
+| Area | Current Code State | Identified Gap / Risk | Judging Rubric Impact | Priority |
 | :--- | :--- | :--- | :--- | :---: |
-| **EDA Visualizations** | 55 JSON profile reports in `reports/eda/*.json`. | Priority 0b specifies 5 automated matplotlib figures in `reports/eda/*.png` (vendor slip, seasonality, zero demand, real vs simulated, lead time survival) with written findings in `reports/eda/README.md`. | **-3 pts** (Technical Depth / Visual Rigor) | **P0** |
-| **Backtest Baseline Detector** | Baseline detector only flags `DEMAND_SPIKE`. | Baseline recall is capped at 10% (1/10) by construction on planted seeds. The 18.2% vs 93.5% F1 comparison is rigged. Baselines need a generic rolling z-score detector (|z| > 3.0) and type-agnostic F1 reporting. | **-4 pts** (Evaluation Rigor / Technical 20 pts) | **P0** |
-| **Backtest Timing & Raw Counts** | Anomaly matching matches `(type, fac, med)` set. | Detection day should fall within +/-7 days of planted anomaly day for True Positive credit. Raw counts (TP/FP/FN) must be reported alongside percentages in tables. | **-3 pts** (Evaluation Honesty) | **P0** |
-| **README Metric Sync** | README reports outdated backtest metrics (58.4d, 93.5% Prec, 95.0% Rec, 93.9% F1). | Rerun on cleaned data yielded 74.2d clean lead time, 97.5% Precision, 90.0% Recall, 93.5% F1, and 94.7% held-out test F1 in `output/backtest_summary.md`. README must match measured numbers. | **-2 pts** (Docs Integrity / Hard Rule) | **P0** |
-| **Curated Multi-Agent Benchmark** | 180-day backtest tests deterministic simulation layer. | Lacks a dedicated evaluation of the *multi-agent LLM debate loop itself* across 20 hand-crafted clinical scenarios (clean controls, phantom drift, QA quarantine, supplier delay, transit loss, UOM error) vs rules baseline. | **-3 pts** (Innovation 15 pts / Technical Depth) | **P1** |
-| **Demo Dynamic Strings & Trace Hygiene** | `quick_demo.py` prints static `(DailyMed/FDA recall)` string. | Narrative claims must derive strictly from runtime pack/trace objects; check if recall is in data before printing; ensure pytest runs never overwrite committed canonical traces. | **-2 pts** (Demo 15 pts / Code Hygiene) | **P1** |
-| **Live openFDA REST API Adapter** | `DataStore` reads cached JSON for shortages. | Direct live queries to `api.fda.gov/drug/shortages.json` with 5s timeout and cache-aside fallback to fulfill live web-API requirement while preserving offline reliability. | **-3 pts** (Sponsor Tech 10 pts) | **P1** |
-| **Interactive Web UI Screen** | FastAPI Swagger UI + CLI modes operational. | Execution Plan Phase 6.2 specifies 1 simple interactive screen: triage risk board, debate inspector, and Approve/Reject buttons wired to `POST /decision`. | **-3 pts** (Product & UX 10 pts / Demo 15 pts) | **P1** |
-| **Dedicated Sponsor Test Suite** | Sponsor tests scattered across multiple test files. | Consolidated `tests/test_sponsor_conformance.py` for single-command judge audit of Zetaris SQL, Meterless World Model (W1, W2), H-MEM (H1, H2, H3), and Nemotron tracking. | **-2 pts** (Sponsor Tech 10 pts) | **P1** |
-| **Dockerfile Trace Inclusion** | `.dockerignore` ignores `logs/*.jsonl`. | Ignores tracked sample traces (`logs/sample_trace_*.jsonl`), causing `--explain` to fail on clean containers before dynamic runs. Add exceptions for tracked sample/golden traces. | **-2 pts** (Container Deployment / Demo) | **P2** |
-| **Docs Reframing & Sample Mode** | README leads with lead-time headline. | Reframe around audit accuracy (97.5% precision, 90.0% recall) and explanation faithfulness; clarify lead time parity on clean stock; label sample mode clearly as deterministic offline simulation. | **-2 pts** (Docs Integrity) | **P2** |
-| **Clean-Clone Gate for Curated Eval** | `validate_clean_clone.py` verifies 7 existing gates. | Add automated validation step for `scripts/run_curated_eval.py` and EDA PNG figures to ensure all new benchmarks execute cleanly in offline clones. | **-2 pts** (Verification Rigor) | **P2** |
+| **EDA Hardcoding Fallback** | `scripts/generate_eda_charts.py` lines 442-455 has fallback arrays and `.get(..., 18.2)`. | Violates monitor rule: fail loudly if `backtest_seed_*.json` is missing; remove `.get(..., 18.2)` and hand-typed 1.2% callout. | **-4 pts** (Evaluation Rigor / Honesty) | **P0** |
+| **Test Suite Git Isolation** | `pytest` runs `validate_clean_clone.py` which touches `output/curated_evaluation.md`. | Running test suite modifies timestamp in `output/curated_evaluation.md`, dirtying `git status`. Must pass temp output dir. | **-3 pts** (Test Hygiene / Hard Rules) | **P0** |
+| **README Curated Benchmark Sync** | `output/curated_evaluation.md` has 20-scenario results (100% Prec/Rec, 0% hallucination). | `README.md` completely omits the curated benchmark and its metrics. Major Track 2 multi-agent evaluation asset is invisible to judges. | **-4 pts** (Impact 30 pts / Technical 20 pts) | **P0** |
+| **Docs Reframe & Target Language** | `README.md` lines 71-72 still retain `(>85% target)` language. | Monitor 12:20/13:45 directive: remove target language; lead with audit accuracy, faithful explanations, and zero hallucinated math. | **-3 pts** (Docs Rigor / Honesty) | **P0** |
+| **Live openFDA REST Adapter** | `DataStore` reads local JSON for shortages and recalls. | Live web API query requirement from Execution Plan Phase 4.2; implement HTTP query to `api.fda.gov` with 5s timeout & cache-aside fallback. | **-3 pts** (Sponsor Tech / Technical Depth) | **P1** |
+| **Interactive Web UI Dashboard** | FastAPI Swagger UI + rich CLI operational. | Execution Plan Phase 6.2 specifies 1 simple interactive browser screen (`app/ui.py`) for visual point-and-click judge evaluation. | **-3 pts** (Product & UX 10 pts / Demo 15 pts) | **P1** |
+| **Dedicated Sponsor Test Suite** | Sponsor tests scattered across multiple files. | Consolidated `tests/test_sponsor_conformance.py` for single-command judge audit of Zetaris SQL, Meterless (W1, W2, H1, H2, H3), and Nemotron. | **-2 pts** (Sponsor Tech 10 pts) | **P1** |
+| **Dockerfile Trace Inclusion** | `.dockerignore` line 9 excludes `logs/*.jsonl`. | Strips tracked canonical traces from container image context; `--explain` or `GET /trace/latest` fails on clean container. | **-2 pts** (Container Deployment / Demo) | **P2** |
+| **Golden Trace Provenance Docs** | Committed golden trace uses `model=rule-based-sample-mode`. | Transparently document in `logs/README.md` and `SPONSOR_TECH.md` that sample mode provides offline reproducibility without API keys. | **-2 pts** (Docs Transparency) | **P2** |
+| **Clean-Clone Gate Synchronization** | `validate_clean_clone.py` executes 9 existing gates. | Synchronize clean-clone gates for all new verification scripts (EDA charts, curated eval, sponsor suite). | **-2 pts** (Verification Rigor) | **P2** |
+| **Dual Packaging Standards Lookup** | UOM normalization uses RxNorm standards. | Dual-lookup across both RxNorm standards and DailyMed packaging formats in `ReconcilerAgent` with explicit logging. | **-1 pt** (Data Layer Completeness) | **P2** |
+| **FastAPI Telemetry & Middleware** | Endpoints return basic exception detail strings. | Add `X-Response-Time` latency header middleware and structured error schema format across all API routes. | **-1 pt** (Production Quality) | **P2** |
 
 ---
 
-## ðŸš€ Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
+## 🚀 Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
 
-### Item 1: Automated Empirical EDA Figures in Matplotlib (`reports/eda/*.png`)
-- **Priority**: P0 (Priority 0b Item 3, Visual Evidence, Technical Depth 20 pts)
-- **Status**: [x] [DONE]
-- **Files**: `scripts/generate_eda_charts.py`, `reports/eda/*.png`, `reports/eda/README.md`, [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py), [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py)
-- **Problem**: Priority 0b specifies saving EDA charts to `reports/eda/*.png` using matplotlib with a short written findings section. Currently, `reports/eda/` contains 55 JSON files but zero visual charts.
+### Item 1: Eliminate Hardcoded Fallbacks & Hand-Typed Callouts in `scripts/generate_eda_charts.py`
+- **Priority**: P0 (Monitor Corrective 19:50 IST, Data Rigor, Anti-Hardcoding Standard)
+- **Status**: [ ] [PENDING]
+- **Files**: `scripts/generate_eda_charts.py`, `reports/eda/*.png`, `reports/eda/README.md`, [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py)
+- **Problem**: `scripts/generate_eda_charts.py` lines 442-455 still contains fallback arrays (`medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]`, `baseline_f1 = [18.2]*5`) and uses `.get('naive_lmis_f1', 18.2)` as a silent default. Line 305 contains hand-typed text `'• Baseline ~1.2% represents pharmacy Sunday/holiday closures.'`.
 - **Action**:
-  1. Author `scripts/generate_eda_charts.py` using `matplotlib` to generate 5 high-resolution figures:
-     - `reports/eda/supplier_slip_distribution.png`: empirical delay histogram across top vendors and shipment modes with p50/p90 annotations.
-     - `reports/eda/demand_seasonality_patterns.png`: weekday and monthly seasonality across ATC categories.
-     - `reports/eda/zero_demand_share.png`: zero-inflation breakdown across therapeutic classes.
-     - `reports/eda/simulated_vs_real_comparison.png`: distribution overlay comparing synthetic simulation against empirical USAID/Kaggle priors.
-     - `reports/eda/stockout_lead_time_distribution.png`: lead-time survival curves from backtest replay.
-  2. Include an EDA findings summary in `reports/eda/README.md` explaining what the data shows and how it calibrates the simulator.
-  3. Add test in `tests/test_enriched_data.py`: `test_eda_charts_generation` and `test_generate_eda_charts_cli`.
-  4. Integrate chart generation into `scripts/validate_clean_clone.py` (Gate G4).
-- **Acceptance Criteria**: Running `python scripts/generate_eda_charts.py` generates all 5 PNG figures in `reports/eda/` and passes unit test.
-- **Verification**: Verified via `test_eda_charts_generation` and `test_generate_eda_charts_cli` in `tests/test_enriched_data.py` (11/11 passed in 67.89s) and `scripts/validate_clean_clone.py` passing all 8 validation gates. All 5 high-resolution PNG figures generated in `reports/eda/*.png` and documented in `reports/eda/README.md`.
+  1. In `scripts/generate_eda_charts.py`, require all 4 `output/backtest_seed_*.json` files to exist; raise loud `FileNotFoundError` if missing or `KeyError` if `naive_lmis_f1` / `f1_score_pct` is absent. Eliminate all fallback lists and silent `.get(..., 18.2)` defaults.
+  2. In `generate_zero_demand_chart`, compute Sunday/holiday closure percentage dynamically from date/weekday of `salesdaily.csv` (ratio of zero-demand days on Sundays) or remove the hand-typed sentence.
+  3. Regenerate all 5 PNG figures in `reports/eda/*.png` via `python scripts/generate_eda_charts.py`.
+  4. Verify with `test_eda_charts_generation` and `test_generate_eda_charts_cli` in `tests/test_enriched_data.py`.
+- **Acceptance Criteria**: Zero fallback numbers exist in `generate_eda_charts.py`; script fails loudly if backtest outputs are missing; closure rate is dynamically computed or removed; all 5 PNGs regenerated.
 
 ---
 
-### Item 2: Backtest Rigor â€” Generic Baseline Z-Score Detector & Type-Agnostic Comparison
-- **Priority**: P0 (Monitor Corrective 12:20 & 13:45 IST, Evaluation Rigor, Technical 20 pts)
-- **Status**: [x] [DONE]
-- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py), `output/backtest_summary.md`
-- **Problem**: Baseline "detector" currently only emits `DEMAND_SPIKE`, capping baseline recall at 10% (1/10) by construction. The 18.2% vs 93.5% F1 comparison is structurally rigged.
+### Item 2: Test Suite Git-Tree Isolation: Prevent `validate_clean_clone` from Overwriting Tracked Artifacts
+- **Priority**: P0 (Monitor Rules, Test Isolation & Repo Hygiene)
+- **Status**: [ ] [PENDING]
+- **Files**: [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: Executing `python -m pytest tests -q` runs `test_validate_clean_clone_script_execution` in `tests/test_api.py`. In Gate G5, `validate_clean_clone.py` invokes `scripts/run_curated_eval.py --quiet`, which writes directly to `output/curated_evaluation.md`, overwriting its timestamp `Generated: 2026-10-25T...` and dirtying `git status`.
 - **Action**:
-  1. In `app/backtest/engine.py`, give Naive LMIS and Heuristic baselines a generic per-pair rolling z-score detector (rolling mean/std on consumption and ledger-vs-audit gap, $|z| > 3.0$) capable of flagging any anomaly type.
-  2. Compute and report a type-agnostic anomaly detection F1 score for all models alongside the typed F1 score.
-  3. Update `output/backtest_summary.md` and `scripts/run_backtest.py` with the unrigged comparison.
-- **Acceptance Criteria**: Baseline anomaly comparison is genuine; type-agnostic F1 is reported alongside typed F1 in backtest summary.
-- **Verification**: Verified via `tests/test_backtest.py` (10 passed in 48.74s). Baselines equipped with rolling z-score detector ($|z| \ge 3.0$) and audit variance detector ($|\text{drift}| \ge 45$), achieving 23.5% typed F1 and 23.9% type-agnostic F1. MedTrace achieves 93.5% typed F1 and 93.5% type-agnostic F1.
+  1. In `scripts/validate_clean_clone.py`, pass an isolated temporary directory argument `--output-dir` to `scripts/run_curated_eval.py` so clean-clone checks never write to tracked repository files.
+  2. In `tests/test_api.py`, ensure all subprocess CLI invocations pass temporary output paths.
+  3. Verify that running `python -m pytest tests -q` leaves `git status` completely clean with 0 uncommitted modifications.
+- **Acceptance Criteria**: Running `python -m pytest tests -q` succeeds with 128+ passing tests and leaves `git status` 100% clean.
 
 ---
 
-### Item 3: Backtest Rigor â€” Timing-Bounded Anomaly Scoring & Raw Counts (TP/FP/FN)
-- **Priority**: P0 (Monitor Corrective 12:20 & 13:45 IST, Evaluation Honesty)
-- **Status**: [x] [DONE]
-- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py), `output/backtest_summary.md`, [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
-- **Problem**: Current anomaly scoring evaluates `(type, fac, med)` set intersection ignoring timing (an anomaly detected on day 10 matches ground truth on day 160). Raw counts $(TP/FP/FN)$ are omitted from percentage tables.
+### Item 3: Document & Highlight Curated Multi-Agent Benchmark in `README.md` and `SPONSOR_TECH.md`
+- **Priority**: P0 (Track 2 Core Pitch, Impact 30 pts, Technical 20 pts)
+- **Status**: [ ] [PENDING]
+- **Files**: [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: The Curated Multi-Agent Benchmark evaluated across 20 clinical scenarios (`app/backtest/curated_benchmark.py`, `output/curated_evaluation.md`) proves 100.0% Anomaly Precision (15/15), 100.0% Recall (15/15), 100.0% Correct Abstention on clean cases (5/5), and 0.0% Unsupported Claim Rate via Number Auditor, decisively defeating the rules baseline (60% Prec, 20% Rec, 30% F1). However, `README.md` completely omits this evaluation!
 - **Action**:
-  1. In `app/backtest/engine.py`, require the detection day index to fall within $\pm 7$ days of the planted anomaly day index for True Positive credit (`timed_tps`).
-  2. Compute and report median detection delay in days.
-  3. In `output/backtest_summary.md` and `README.md`, report raw counts $(TP/FP/FN)$ directly next to every percentage metric.
-  4. Document plainly that MedTrace planted anomaly evaluation is a rule-coverage audit on synthetic multi-tier data.
-- **Acceptance Criteria**: Anomaly scoring enforces $\pm 7$-day detection window; raw counts and median detection delay appear in all benchmark tables.
-- **Verification**: Verified via `test_type_agnostic_and_timed_anomaly_scoring_invariants` in `tests/test_backtest.py`. Timing window enforced (+/-7 days; MedTrace 80.0% timed recall, 0.0d median delay; baselines 17.5% timed recall, 0.0d delay). Raw counts (TP/FP/FN) explicitly reported in `output/backtest_summary.md`, `README.md`, and `reports/eda/stockout_lead_time_distribution.png`.
+  1. In `README.md`, add a dedicated section: **Curated Multi-Agent Benchmark Evaluation (20 Scenarios)**.
+  2. Embed the comparative benchmark table (Precision, Recall, F1, Correct Abstention, Unsupported Claim Rate) and link to `output/curated_evaluation.md`.
+  3. Explain the scenario breakdown (Clean Controls, Phantom Drift, Quarantined Batches, Supplier Delay, Transit Loss, UOM Error).
+  4. In `SPONSOR_TECH.md`, cite the curated benchmark in the Number Auditor and multi-agent deliberation sections.
+  5. Verify doc integrity test in `tests/test_api.py`.
+- **Acceptance Criteria**: `README.md` and `SPONSOR_TECH.md` prominently present the 20-scenario curated benchmark results matching `output/curated_evaluation.md`.
 
 ---
 
-### Item 4: Synchronize README Benchmark Metrics with Backtest Summary
-- **Priority**: P0 (Docs Integrity & Prompt Rule: "Only claim numbers that the backtest actually measures")
-- **Status**: [x] [DONE]
+### Item 4: Reframe README Narrative Around Audit Accuracy, Faithful Explanations & Remove Target Language
+- **Priority**: P0 (Priority 0c Item 6, Monitor 12:20/13:45 Directives, Docs Honesty)
+- **Status**: [ ] [PENDING]
 - **Files**: [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: `README.md` lines 65-75 cite stale numbers (Clean Stock Lead Time 58.4d, 93.5% Prec, 95.0% Rec, 93.9% F1) that deviate from the actual measured metrics in `output/backtest_summary.md` (Clean Stock Lead Time 74.2d, 97.5% Prec, 90.0% Rec, 93.5% F1, 94.7% held-out test F1).
+- **Problem**: `README.md` lines 71-72 still retain `(>85% target)` language. The prompt and monitor instruct to drop lead-time and 'F1' as the headline, lead with audit accuracy, faithful explanations, and zero hallucinated math, and document that planted anomaly detection is a rule-coverage audit on synthetic multi-tier data.
 - **Action**:
-  1. In `README.md`, update the Executive Benchmark table with the exact measured metrics from `output/backtest_summary.md`.
-  2. Clearly explain that under identical 14.0-day alert thresholds, routine lead times are identical on clean data (74.2 days), while MedTrace achieves 100% stockout intercept and 93.5% F1 on planted failure modes where traditional baselines collapse (18.2% F1).
-  3. Ensure test count in docs is synchronized to 124 tests across 7 test suites.
-  4. Verify with `test_metadata_json_and_docs_integrity` in `tests/test_api.py`.
-- **Acceptance Criteria**: All numbers in `README.md` match `output/backtest_summary.md` to the decimal point; test count reflects 124 tests.
-- **Verification**: Synchronized `README.md` Executive Benchmark table and prose notes with exact numbers from `output/backtest_summary.md` (74.2d, 97.5% Prec, 90.0% Rec, 93.5% F1, 93.5% Type-Agnostic F1, 94.7% Held-Out F1, 0 false emergency orders). Test count updated to 127 in `README.md`, `SPONSOR_TECH.md`, `PRE_EXISTING_COMPONENTS.md`, and verified by `test_metadata_json_and_docs_integrity` in `tests/test_api.py`.
-- **Acceptance Criteria**: All numbers in `README.md` match `output/backtest_summary.md` to the decimal point; test count reflects 124 tests.
+  1. In `README.md`, remove `(>85% target)` from lines 71-72; add explicit note that planted anomaly detection evaluates rule-coverage across 10 failure modes on synthetic multi-tier data.
+  2. Reframe Executive Summary and Pitch: lead with **Audit Accuracy (97.5% precision, 90.0% recall)**, **Zero LLM Math Hallucination (guaranteed by Number Auditor)**, and **Multi-Agent Adversarial Deliberation & Dissent**, placing routine lead time in its honest context (identical on clean data, decisive advantage on corrupted records).
+  3. Ensure all numbers in `README.md` match `output/backtest_summary.md` and `output/curated_evaluation.md`.
+- **Acceptance Criteria**: `README.md` leads with audit accuracy and explanation faithfulness, drops `(>85% target)` text, and passes doc integrity test.
 
 ---
 
-### Item 5: Curated Multi-Agent Benchmark Suite (20 Clinical Scenarios)
-- **Priority**: P1 (Priority 0c Item 5, Technical Depth 20 pts, Innovation 15 pts)
-- **Status**: [x] [DONE]
-- **Files**: [`app/backtest/curated_benchmark.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/curated_benchmark.py), [`scripts/run_curated_eval.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_curated_eval.py), [`output/curated_evaluation.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/output/curated_evaluation.md), [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py), [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py)
-- **Problem**: The 180-day simulation backtest evaluates the data layer; judges also reward a small, honest evaluation of the *multi-agent LLM debate loop itself* across diverse clinical scenarios.
-- **Action**:
-  1. Author `app/backtest/curated_benchmark.py` with 20 hand-crafted clinical scenarios:
-     - 5 Clean / Normal cases (stock adequate, no anomalies).
-     - 4 Phantom Drift cases (shelf count < ledger).
-     - 3 Quarantined Batch cases (QA hold / recall).
-     - 3 Chronic Supplier Slip cases (p90 delay > cover).
-     - 3 Dispatched PO Transit Loss cases.
-     - 2 Unit-of-Measure Mismatch cases (10x blister pack error).
-  2. Author `scripts/run_curated_eval.py` comparing MedTrace multi-agent loop against a rules-only baseline:
-     - Measures: Anomaly Precision, Anomaly Recall, Unsupported Number Claim Rate (0%), and Correct Abstention rate (refraining from false orders on clean cases).
-     - Generates Markdown comparison report `output/curated_evaluation.md`.
-  3. Add automated test in `tests/test_backtest.py`: `test_curated_benchmark_evaluation_execution`.
-- **Acceptance Criteria**: `python scripts/run_curated_eval.py` executes 20 curated scenarios, outputs `output/curated_evaluation.md`, proves 0% unsupported claims, and is verified by pytest.
-- **Verification**: Authored `app/backtest/curated_benchmark.py` with 20 hand-crafted clinical scenarios and `scripts/run_curated_eval.py` comparing MedTrace multi-agent loop against rules-only baseline. MedTrace achieves 100.0% Anomaly Precision (15/15), 100.0% Anomaly Recall (15/15), 100.0% F1 Score, 100.0% Correct Abstention on clean cases (5/5), and 0.0% Unsupported Number Claim Rate via Number Auditor, decisively outperforming the rules baseline (60.0% Prec, 20.0% Rec, 30.0% F1). Comprehensive Markdown report generated at `output/curated_evaluation.md`. Integrated into `scripts/validate_clean_clone.py` (all 9 gates passing). Verified by `test_curated_benchmark_evaluation_execution` in `tests/test_backtest.py` (128/128 tests passing).
-
----
-
-### Item 6: Refactor `scripts/quick_demo.py` Narrative Dynamism & Test Trace Isolation
-- **Priority**: P1 (Monitor Corrective 14:25 IST, Demo 15 pts, Code Hygiene)
-- **Status**: [x] [DONE]
-- **Files**: [`scripts/quick_demo.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/quick_demo.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: `scripts/quick_demo.py` line 91 prints static `(DailyMed/FDA recall)` even when no recall record is in data. Tests should write traces to temporary directories so running pytest never dirties `git status`.
-- **Action**:
-  1. In `scripts/quick_demo.py`, dynamically inspect `pack.discrepancies` and batch records; only print recall citations if an actual recall or QA hold is verified in data.
-  2. In `tests/test_api.py`, ensure tests invoking `quick_demo.py` pass an explicit temporary output directory or check without modifying `logs/golden_trace_*.jsonl`.
-- **Acceptance Criteria**: Running `scripts/quick_demo.py` produces 100% dynamic output; running `pytest` never leaves uncommitted trace diffs.
-- **Verification**: In `scripts/quick_demo.py`, dynamic openFDA recall checking implemented via `data_store.get_openfda_recalls`; dynamic round progression extracted from `pack.trace_file` events (`ROUND_*_EVALUATION`); grounded Number Auditor audit status reported; and `pytest` writes traces to temporary directories without dirtying git status. Verified via `test_quick_demo_golden_case_execution` in `tests/test_api.py`.
-
----
-
-### Item 7: Real-Time openFDA REST API Adapter with Offline Cache-Aside
-- **Priority**: P1 (Sponsor Tech 10 pts, Technical Depth 20 pts)
+### Item 5: Real-Time openFDA REST API Adapter with Offline Cache-Aside in `DataStore`
+- **Priority**: P1 (Execution Plan Phase 4.2 & 4.4, Technical Depth 20 pts, Sponsor Tech 10 pts)
 - **Status**: [ ] [PENDING]
 - **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py)
-- **Problem**: In `DataStore`, `get_cross_border_shortages` currently reads `data/real/cross_border_shortages.json` directly from disk. Connecting live queries to `https://api.fda.gov/drug/shortages.json` with a cache-aside pattern fulfills the live web-API data source requirement while maintaining 100% offline reliability.
+- **Problem**: In `DataStore`, `get_openfda_shortages`, `get_openfda_recalls`, and `get_cross_border_shortages` currently read local JSON files from disk only. The Execution Plan specifies openFDA as a live web API data source (REAL).
 - **Action**:
-  1. In `DataStore`, implement `fetch_live_openfda_shortages(medicine_name: str)`:
-     - Issues HTTP GET to `https://api.fda.gov/drug/shortages.json?search=generic_name:{medicine_name}&limit=5` with 5-second timeout.
-     - If response succeeds, update in-memory cache and return live record.
-     - If network is unreachable, timeout occurs, or in `SAMPLE_MODE=true`, fall back immediately to `cross_border_shortages.json`.
-  2. Add unit test in `tests/test_data_store.py`: `test_data_store_openfda_live_and_fallback`.
+  1. In `app/adapters/data_store.py`, implement `fetch_live_openfda_shortages(medicine_name: str)`:
+     - Issues HTTP GET to `https://api.fda.gov/drug/shortages.json?search=generic_name:{medicine_name}&limit=5` with a 5-second timeout.
+     - On HTTP 200, parses records, updates in-memory cache, and returns live records.
+     - On network disconnect, timeout, or when `SAMPLE_MODE=true` / `offline`, falls back immediately and cleanly to `data/real/openfda_shortages.json`.
+  2. Implement `fetch_live_openfda_recalls(medicine_id: str, generic_name: str)` with identical cache-aside pattern against `https://api.fda.gov/drug/enforcement.json`.
+  3. Add unit tests in `tests/test_data_store.py`: `test_data_store_openfda_live_and_fallback`.
 - **Acceptance Criteria**: `DataStore` executes live queries against openFDA when online and falls back cleanly without errors in sample mode.
 
 ---
 
-### Item 8: Lightweight Interactive Web UI Dashboard (`app/ui.py`)
+### Item 6: Lightweight Interactive Web UI Dashboard (`app/ui.py`)
 - **Priority**: P1 (Execution Plan Phase 6.2, Demo 15 pts, Product & UX 10 pts)
 - **Status**: [ ] [PENDING]
 - **Files**: `app/ui.py`, [`requirements.txt`](file:///C:/Users/Asus/Desktop/Open%20Agent/requirements.txt), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
@@ -256,15 +216,16 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
      - **Action Pack & Decision Recorder**: display recommended peer transfers and PO expedites with interactive "Approve" / "Reject" buttons that post to `POST /decision` and update H-MEM live.
      - **Printable Procurement Memorandum**: one-click view/download of generated Markdown memorandum.
   2. Document execution in `README.md`: `streamlit run app/ui.py`.
+  3. Add automated test in `tests/test_api.py` verifying Streamlit app file syntax and CLI launch.
 - **Acceptance Criteria**: Running `streamlit run app/ui.py` launches a responsive browser dashboard supporting triage inspection, debate review, and interactive officer decision recording.
 
 ---
 
-### Item 9: Dedicated Sponsor Conformance Test Suite (`tests/test_sponsor_conformance.py`)
+### Item 7: Dedicated Sponsor Conformance Test Suite (`tests/test_sponsor_conformance.py`)
 - **Priority**: P1 (Sponsor Tech 10 pts, Submission Compliance)
 - **Status**: [ ] [PENDING]
 - **Files**: `tests/test_sponsor_conformance.py`, [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md)
-- **Problem**: Sponsor technology tests are currently scattered across `test_data_store.py`, `test_agents.py`, and `test_world_model.py`. Judges evaluating the 10-point Sponsor Tech criterion benefit from a single consolidated test file verifying all sponsor requirements.
+- **Problem**: Sponsor technology tests are currently scattered across `test_data_store.py`, `test_agents.py`, and `test_world_model.py`. Judges evaluating the 10-point Sponsor Tech criterion benefit from a single consolidated test file verifying all sponsor requirements in one command.
 - **Action**:
   1. Create `tests/test_sponsor_conformance.py` consolidating:
      - **Zetaris**: REST proxy URL resolution, SQL injection identifier validation, 4-way cross-source join, and credential safety.
@@ -272,15 +233,16 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
      - **Meterless H-MEM**: Test H1 (cross-session recall), Test H2 (contradiction resolution), and Test H3 (supplier delay belief decision shift).
      - **NVIDIA Nemotron / Nightshift**: Model name tracking in traces, `llm_used` and `fallback` flags, zero-math prompt boundaries, and loud failure outside sample mode.
   2. Document in `SPONSOR_TECH.md`: `python -m pytest tests/test_sponsor_conformance.py -v`.
+  3. Verify that running `python -m pytest tests/test_sponsor_conformance.py` passes 100% green.
 - **Acceptance Criteria**: Running `python -m pytest tests/test_sponsor_conformance.py` executes all sponsor conformance tests cleanly.
 
 ---
 
-### Item 10: Dockerfile & `.dockerignore` Trace Inclusion
+### Item 8: Dockerfile & `.dockerignore` Trace Inclusion
 - **Priority**: P2 (Container Deployment & Clean-Clone Reproducibility)
 - **Status**: [ ] [PENDING]
 - **Files**: [`.dockerignore`](file:///C:/Users/Asus/Desktop/Open%20Agent/.dockerignore), [`Dockerfile`](file:///C:/Users/Asus/Desktop/Open%20Agent/Dockerfile), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: `.dockerignore` contains `logs/*.jsonl`, which excludes all JSONL files. This strips the committed sample trace (`logs/sample_trace_*.jsonl`) from Docker containers, causing `--explain` or `--verdict-flip` to fail if invoked inside a fresh container prior to a new investigation.
+- **Problem**: `.dockerignore` contains `logs/*.jsonl`, which excludes all JSONL files. This strips the committed sample trace (`logs/sample_trace_*.jsonl`), golden trace (`logs/golden_trace_*.jsonl`), and H-MEM memory traces (`logs/trace_*.jsonl`) from Docker containers, causing `--explain`, `--verdict-flip`, or `GET /trace/latest` to fail with 404 inside a clean container prior to a new investigation.
 - **Action**:
   1. In `.dockerignore`, add explicit exceptions:
      ```
@@ -291,40 +253,72 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
      !logs/trace_without_memory.jsonl
      ```
   2. Add automated regression check in `tests/test_api.py` to assert `.dockerignore` preserves tracked sample traces.
+  3. Verify container build context.
 - **Acceptance Criteria**: Tracked canonical traces are preserved in container build context while dynamic traces are ignored.
 
 ---
 
-### Item 11: Reframe README Narrative Around Audit Accuracy & Explanation Faithfulness
-- **Priority**: P2 (Priority 0c Item 6, Presentation & Track 2 Alignment)
+### Item 9: Transparent Golden Trace LLM Provenance Documentation (`logs/README.md`)
+- **Priority**: P2 (Monitor 14:25 IST Note, Track 2 Auditability)
 - **Status**: [ ] [PENDING]
-- **Files**: [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
-- **Problem**: README must be reframed around audit accuracy and explanation faithfulness rather than artificial lead times. Test count is currently 124 tests and must be kept synchronized across docs and tests.
+- **Files**: `logs/README.md`, [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
+- **Problem**: Monitor 14:25 IST note: The committed golden trace is `model=rule-based-sample-mode`, `llm_used=false` for every agent: the "debate" is rule-based offline simulation. While `quick_demo.py` displays `Deterministic Sample Mode (rule-based offline)`, judges reading trace files directly need explicit, transparent documentation.
 - **Action**:
-  1. In `README.md`, reframe the Executive Summary and Benchmark section: lead with **Audit Accuracy (97.5% precision, 90.0% recall, 93.5% F1)**, **Zero LLM Hallucinated Math**, and **Multi-Agent Adversarial Deliberation & Dissent**, placing lead-time in proper context (baseline parity on clean data, decisive advantage on corrupted records).
-  2. Clearly document that offline sample mode uses deterministic rule-based agents while live mode connects to Nemotron via Nightshift.
-  3. Ensure test count in docs reflects 124 tests across 7 test suites.
-- **Acceptance Criteria**: `README.md` leads with audit accuracy and explanation faithfulness, clearly distinguishes sample mode from live LLM mode, and reflects 124 tests.
+  1. Author `logs/README.md` documenting all committed traces (`golden_trace_*.jsonl`, `sample_trace_*.jsonl`, `trace_with_memory.jsonl`, `trace_without_memory.jsonl`): explain their scenario, mode (sample mode vs live LLM), schema keys, and verification commands.
+  2. In `SPONSOR_TECH.md` and `README.md`, document plainly that sample mode traces use rule-based synthesis for 100% offline reproducibility without API keys, while live mode connects to Nemotron via Nightshift.
+- **Acceptance Criteria**: `logs/README.md` documents all committed traces, their execution mode, and provenance.
 
 ---
 
-### Item 12: Automated Clean-Clone Validation Gate for Curated Benchmark & EDA Figures
+### Item 10: Clean-Clone Gate Integration for All Verification Scripts
 - **Priority**: P2 (Gate G4 & Code Quality)
 - **Status**: [ ] [PENDING]
 - **Files**: [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: `scripts/validate_clean_clone.py` (Gate G4) verifies that offline quickstart entry points run without `.env`. When the curated benchmark (`scripts/run_curated_eval.py`) and EDA chart generator (`scripts/generate_eda_charts.py`) are added, they should be validated as clean-clone gates.
+- **Problem**: `scripts/validate_clean_clone.py` verifies 9 gates. As new features (live openFDA with cache-aside, sponsor conformance suite) are added, ensure they are registered as clean-clone gates so a fresh clone without `.env` passes 100% of offline verification steps.
 - **Action**:
-  1. In `scripts/validate_clean_clone.py`, add validation steps for:
-     - `python scripts/generate_eda_charts.py`: confirms 5 PNG figures are produced in `reports/eda/`.
-     - `python scripts/run_curated_eval.py`: confirms 20 curated scenarios execute and generate `output/curated_evaluation.md`.
+  1. In `scripts/validate_clean_clone.py`, ensure all offline gates execute cleanly:
+     - Gate 1: Smoke test (sample mode)
+     - Gate 2: Quick demo (golden case)
+     - Gate 3: CLI explain & verdict flip
+     - Gate 4: Action pack memorandum export
+     - Gate 5: EDA charts generator
+     - Gate 6: Curated multi-agent benchmark
+     - Gate 7: Sponsor conformance test suite
+     - Gate 8: Full unit & integration test suite
   2. Verify that `python scripts/validate_clean_clone.py` passes all gates cleanly.
 - **Acceptance Criteria**: `scripts/validate_clean_clone.py` passes all validation gates including EDA charts and curated benchmark evaluation.
 
 ---
 
-## ðŸŽ¯ Verification Command Baseline
+### Item 11: Dual Packaging Standards Lookup (RxNorm & DailyMed) in `ReconcilerAgent`
+- **Priority**: P2 (Data Layer Completeness, Provenance Rigor)
+- **Status**: [ ] [PENDING]
+- **Files**: [`app/agents/reconciler.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/reconciler.py), [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
+- **Problem**: In `ReconcilerAgent`, UOM mismatch detection queries `DataStore.get_rxnorm_standards`. Packaging data is also present in `data/real/dailymed_packaging.json`.
+- **Action**:
+  1. In `ReconcilerAgent`, implement dual-lookup across both RxNorm standards and DailyMed packaging formats for pack size multipliers (e.g. 10x10 blister strips).
+  2. Record the exact source standard (`RxNorm` vs `DailyMed`) in `uom_info["provenance_source"]`.
+  3. Add regression assertion in `tests/test_agents.py`.
+- **Acceptance Criteria**: Reconciler queries both RxNorm and DailyMed packaging registries with documented provenance.
+
+---
+
+### Item 12: Production Logging & Telemetry Middleware for FastAPI
+- **Priority**: P2 (API Robustness, Production Quality)
+- **Status**: [ ] [PENDING]
+- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: FastAPI request logging currently prints unformatted errors to stderr on unexpected exceptions. Production endpoints (`POST /run`, `POST /decision`, `GET /triage`, `GET /memo`) benefit from structured JSON access logging, request timing headers (`X-Response-Time`), and clean error schemas.
+- **Action**:
+  1. In `run.py`, add FastAPI middleware to log request latency (`X-Response-Time` header) and structured request/response metadata.
+  2. Standardize all HTTP error response schemas with `status`, `error_type`, `detail`, and `timestamp`.
+  3. Add regression tests in `tests/test_api.py` asserting `X-Response-Time` header and error format.
+- **Acceptance Criteria**: FastAPI responses include `X-Response-Time` header and structured error formats.
+
+---
+
+## 🎯 Verification Command Baseline
 To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
-Current Baseline Status: **124 passed, 1 warning in ~232s** (100% passing rate across all 7 test suites).
+Current Baseline Status: **128 passed, 1 warning in ~257s** (100% passing rate across all 7 test suites).
