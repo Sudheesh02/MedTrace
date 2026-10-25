@@ -1424,3 +1424,38 @@
   - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
   - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.
   - Backlog Item 7: Author transparent golden trace provenance documentation in `logs/README.md`.
+
+
+### Session: 2026-10-26 00:30 IST
+**Role**: Senior Staff AI Reviewer & Project Auditor  
+**Phase**: Comprehensive Project Audit, Pytest Collection-Time Isolation Discovery, and 12-Item Prioritized Backlog Formulation
+
+#### What Was Done
+1. **Exhaustive Senior Review & Rubric Gap Audit**:
+   - Audited the entire repository against the 100-point Open Agent Hackathon 2026 Track 2 rubric, [README.md](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [MedTrace_Research_and_Execution_Plan.md](file:///C:/Users/Asus/Desktop/Open%20Agent/MedTrace_Research_and_Execution_Plan.md), and all guides in `hackathon details/`.
+   - Verified that empirical metrics on the 180-day simulation replay (Seeds 1–4, 94.7% F1 on held-out test seeds 3–4 vs 23.4% baseline under identical 14.0d alert thresholds) and curated 25-scenario benchmark match code and output files.
+   - Preserved all application code unchanged in this audit step.
+2. **Critical Audit Findings Uncovered**:
+   - **Pytest Collection Isolation Gap**: `tests/conftest.py` sets `SAMPLE_MODE=true` inside a session fixture (`default_test_environment`). Because pytest imports `tests/test_api.py` at test collection time, `run.py` is imported BEFORE the fixture runs. `run.py` instantiates `orchestrator = MedTraceOrchestrator()`, which reads `SAMPLE_MODE` from the environment. When pytest is run without `$env:SAMPLE_MODE` pre-exported in the shell, `orchestrator.llm_client.sample_mode` is `False`. Tests calling `POST /run` without explicit `options.sample_mode` attempt outbound API calls to NVIDIA/Meterless, hanging on 45s timeouts or returning HTTP 500.
+   - **Clinical Near-Expiry Transfer Risk**: In [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/action_planner.py), peer facility surplus calculation audits for quarantine and phantom drift, but does not check peer batch expiration dates (`expiry_date <= today + 30 days`), risking emergency transfers of near-expiry stock that will expire during or immediately after transit.
+   - **Backtest Summary Stale Text**: [`output/backtest_summary.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/output/backtest_summary.md) lines 18-19 still contain `(>85% target)` tags, and line 56 claims `demonstrating 94.7% F1 generalization on unseen facility networks` (violating monitor 22:55 directive on simulated seeds 3–4).
+   - **Docker Context Trace Exclusion**: `.dockerignore` line 9 excludes `logs/*.jsonl`, stripping committed canonical traces from Docker images and breaking containerized `--explain` and `GET /trace/latest`.
+   - **Scattered Sponsor Tests**: Sponsor conformance tests (Zetaris, Meterless World Model, Meterless H-MEM, NVIDIA Nemotron) are scattered across 4 test files without a single-command judge audit suite.
+   - **Next.js Dashboard Mandate (Priority 0d)**: User explicitly requested Next.js App Router in `dashboard/` (not Streamlit) for district risk board, multi-agent debate inspector, and decision-flip card.
+3. **Updated Prioritized Overnight Backlog (`OVERNIGHT_BACKLOG.md`)**:
+   - Preserved all PRIORITY 0 sections at the top (including PRIORITY 0d - Next.js Dashboard).
+   - Moved completed Items 1–3 to COMPLETED VERIFIED BASELINE ARCHITECTURE.
+   - Formulated exactly 12 small, concrete, prioritized items with explicit problem, action, and acceptance criteria.
+4. **Verified Baseline Test Suite**:
+   - Verified that running with `$env:SAMPLE_MODE = 'true'` executes all 136 tests cleanly: **136 passed, 1 warning in ~270s** across all 7 test suites (`test_agents.py`: 38, `test_api.py`: 31, `test_data_store.py`: 14, `test_deterministic.py`: 23, `test_enriched_data.py`: 13, `test_backtest.py`: 12, `test_world_model.py`: 5).
+
+#### What Is Next
+- **Batch 1 (P0 — Immediate Reliability & Next.js Frontend)**:
+  - Backlog Item 1: Pytest collection-time environment isolation in `tests/conftest.py` & dynamic sample mode check in `LLMClient.generate()`.
+  - Backlog Item 2: Build Next.js App Router interactive dashboard in `dashboard/` (PRIORITY 0d).
+- **Batch 2 (P1 — Sponsor Tech, Clinical Rigor, and Container Parity)**:
+  - Backlog Item 3: Dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+  - Backlog Item 4: Peer facility batch expiration safeguard in `ActionPlannerAgent`.
+  - Backlog Item 5: Dockerfile & `.dockerignore` trace whitelist inclusion.
+  - Backlog Item 6: Transparent golden trace provenance documentation in `logs/README.md`.
+  - Backlog Item 7: Clean up stale target language and generalization claims in `output/backtest_summary.md`.
