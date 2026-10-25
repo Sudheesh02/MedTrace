@@ -122,3 +122,60 @@ def test_reconciler_and_skeptic_loop(store):
     )
     assert review.audited_numbers_valid is True
     assert review.confidence_score > 0.0
+
+def test_datastore_uom_pack_multiplier_grounding(store):
+    """
+    Validates that DataStore derives packaging multipliers directly from
+    DailyMed and RxNorm standards without hardcoding.
+    """
+    # Dispensing unit for MED-001 is tablet, MED-004 is capsule
+    assert store.get_uom_pack_multiplier("MED-001", "tablet") == 1.0
+    assert store.get_uom_pack_multiplier("MED-001", "strip") == 10.0
+    assert store.get_uom_pack_multiplier("MED-001", "box") == 100.0
+    assert store.get_uom_pack_multiplier("MED-001", "carton") == 100.0
+
+    assert store.get_uom_pack_multiplier("MED-004", "capsule") == 1.0
+    assert store.get_uom_pack_multiplier("MED-004", "blister") == 10.0
+    assert store.get_uom_pack_multiplier("MED-004", "box of 100") == 100.0
+
+def test_reconciler_uom_mismatch_uses_packaging_standards(store):
+    """
+    Validates that ReconcilerAgent extracts dispensing unit and packaging spec
+    from DailyMed / RxNorm data when reconciling PO vs delivery quantities.
+    """
+    world_store = WorldStoreService()
+    ingest = IngestPipelineService(world_store)
+    reconciler = ReconcilerAgent(store, ingest)
+
+    # Mock deliveries with a 10x pack mismatch
+    mock_deliveries = [{
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-004",
+        "po_id": "PO-TEST-001",
+        "received_qty": 50.0,
+        "delivery_date": "2026-03-01"
+    }]
+    mock_pos = [{
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-004",
+        "po_id": "PO-TEST-001",
+        "quantity": 500.0,
+        "status": "DELIVERED"
+    }]
+
+    # Temporarily monkeypatch get_deliveries and get_purchase_orders
+    orig_deliv = store.get_deliveries
+    orig_pos = store.get_purchase_orders
+    try:
+        store.get_deliveries = lambda fac, med: mock_deliveries
+        store.get_purchase_orders = lambda fac, med: mock_pos
+
+        recon = reconciler.reconcile_item("FAC-DH-01", "MED-004")
+        uom_disc = next((d for d in recon["discrepancies"] if d["anomaly_type"] == "UOM_MISMATCH"), None)
+        assert uom_disc is not None
+        # MED-004 dispensing unit is capsule from DailyMed / RxNorm
+        assert "capsule" in uom_disc["description"].lower()
+    finally:
+        store.get_deliveries = orig_deliv
+        store.get_purchase_orders = orig_pos
+

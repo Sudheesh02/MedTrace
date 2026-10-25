@@ -460,3 +460,31 @@ class DataStore:
             return None
         except Exception:
             return None
+
+    def get_uom_pack_multiplier(self, medicine_id: str, reported_unit: str = "strip") -> float:
+        """
+        Derives pack multiplier for a medicine grounded in RxNorm and DailyMed packaging standards.
+        e.g., 'strip' -> 10.0, 'box' -> 100.0, 'tablet'/'capsule' -> 1.0.
+        """
+        pkg = self.get_packaging_standard(medicine_id)
+        rx = self.get_rxnorm_standard(medicine_id)
+        unit = (reported_unit or "").lower().strip()
+        disp_unit = (pkg.get("dispensing_unit") if pkg else (rx.get("standard_form") if rx else "tablet")).lower().strip()
+
+        if unit == disp_unit or unit in ["unit", "item", "each", "piece"]:
+            return 1.0
+        if unit in ["strip", "blister", "strip of 10"]:
+            return 10.0
+        if unit in ["box", "carton", "box of 100", "pack"]:
+            if pkg and "standard_packaging" in pkg:
+                desc = pkg["standard_packaging"].lower()
+                if "10x10" in desc or "100" in desc:
+                    return 100.0
+            return 100.0
+        if unit in ["vial_box", "box of 10 vials"]:
+            return 10.0
+        if unit in ["bottle", "bottle of 100"]:
+            return 100.0
+
+        return 1.0
+

@@ -665,3 +665,47 @@
 - Author automated clean-clone validation script (`scripts/validate_clean_clone.py`) verifying Gate G4 / Phase 8.1 in a sandbox.
 - Implement RxNorm standard packaging multiplier lookup in `DataStore` (Backlog Item 8).
 - Author printable officer procurement memorandum exporter in Markdown (Backlog Item 10).
+
+---
+
+### Session: 2026-10-25 11:35 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Clean-Clone Offline Verification, RxNorm Multiplier Grounding, Markdown Memo Exporter & Docker Compose Validation
+
+#### What Was Done
+1. **Automated Clean-Clone Offline Verification Harness (Gate G4 & Plan §8.1 — Backlog Item 7)**:
+   - Authored `scripts/validate_clean_clone.py` executing 7 sequential offline validation steps:
+     - Environment isolation check (`MedTraceOrchestrator` clean instantiation without cloud credentials).
+     - Gate G1 `smoke_test.py` pre-flight check.
+     - 30-Second Executive Demo (`scripts/quick_demo.py`).
+     - CLI audit, multi-agent debate, trace output, and memorandum export (`run.py --cli --sample-mode --explain --export-memo`).
+     - Explain-Why visualizer (`scripts/explain_trace.py --latest`) verifying fallback to tracked judge sample trace.
+     - Direct memorandum generation (`scripts/export_action_pack.py`).
+     - Fast pytest verification across data layer and real packaging standards.
+   - Documented single-command clean-clone verification in `README.md` Section 3.
+   - Added automated unit test `test_validate_clean_clone_script_execution` in `tests/test_api.py`.
+2. **RxNorm Packaging Multiplier Grounding (Backlog Item 8)**:
+   - Implemented `DataStore.get_uom_pack_multiplier(medicine_id, reported_unit)` reading from `rxnorm_standards.json` and DailyMed packaging specifications (`strip` -> 10.0, `box` -> 100.0, etc.).
+   - Refactored `ReconcilerAgent` to ground dispensing units (`tablet`, `capsule`, `vial`) and packaging specs in official registered data standards rather than ad-hoc heuristics.
+   - Added automated unit tests `test_datastore_uom_pack_multiplier_grounding` and `test_reconciler_uom_mismatch_uses_packaging_standards` in `tests/test_enriched_data.py`.
+3. **Printable Officer Procurement Memorandum Exporter (Backlog Item 10)**:
+   - Authored `scripts/export_action_pack.py` and CLI flag `--export-memo` in `run.py`.
+   - Generates official, human-readable GitHub-Flavored Markdown procurement and transfer indent memoranda (`output/memo_{facility_id}_{medicine_id}.md`) with document control metadata, audit certification badge, and signature lines.
+   - Added automated regression test `test_export_action_pack_memorandum` in `tests/test_api.py`.
+4. **Rich OpenAPI / Swagger UI Metadata & Schema Examples (Backlog Item 9)**:
+   - Enhanced `FastAPI` instance in `run.py` with comprehensive API title, summary, and markdown description emphasizing zero LLM arithmetic, multi-agent debate, and sponsor technologies.
+   - Annotated `RunRequest` and `DecisionRequest` fields with Pydantic `Field(..., description=...)` and realistic `json_schema_extra` examples.
+   - Added regression test `test_openapi_documentation_schema_and_metadata` in `tests/test_api.py`.
+5. **Lightweight `docker-compose.yml` for Local Evaluation Stack (Backlog Item 11)**:
+   - Authored `docker-compose.yml` configuring the backend container (`8000:8000`), automated python HTTP healthcheck, volume mounts for `logs` and `output`, and an optional `full-stack` profiled Postgres service for offline Zetaris emulation.
+   - Documented Docker Compose execution in `README.md` Section 9.
+   - Added automated test `test_docker_compose_configuration` in `tests/test_api.py`.
+6. **API Concurrency & State Isolation Stress Test (Backlog Item 12)**:
+   - Added `test_api_concurrency_and_state_isolation` in `tests/test_api.py` validating that rapid alternating API calls with differing `sample_mode` options preserve orchestrator state without bleeding.
+7. **Synchronized Documentation & Test Counts**:
+   - Updated `README.md`, `SPONSOR_TECH.md`, and `OVERNIGHT_BACKLOG.md` reflecting 103 passed tests across all 7 suites (103/103 automated tests verified, 100% passing rate).
+   - Updated truth checks in `test_metadata_json_and_docs_integrity`.
+
+#### What Is Next
+- Perform final pre-submission repository inspection and tag release candidate.
+- Ensure all sample artifacts in `output/` and `logs/` are fully accessible for judges.

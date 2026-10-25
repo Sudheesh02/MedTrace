@@ -313,9 +313,11 @@ def test_metadata_json_and_docs_integrity():
         sponsor_doc = f.read()
     assert "61-test" not in sponsor_doc
     assert "89-test" not in sponsor_doc
-    assert "96-test pytest suite" in sponsor_doc
+    assert "96-test" not in sponsor_doc
+    assert "101-test" not in sponsor_doc
+    assert "103-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "96/96 Automated Tests Verified" in sponsor_doc
+    assert "103/103 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -374,3 +376,109 @@ def test_explain_trace_sample_trace_fallback(capsys):
     assert "InvestigatorAgent" in captured
     assert "SkepticAgent & Number Auditor" in captured
     assert "ActionPlannerAgent" in captured
+
+
+def test_export_action_pack_memorandum(tmp_path):
+    """Verify scripts/export_action_pack.py generates an executive printable Markdown memorandum."""
+    from scripts.export_action_pack import generate_memorandum
+    from app.orchestrator import MedTraceOrchestrator
+
+    orchestrator = MedTraceOrchestrator(use_zetaris=False)
+    pack = orchestrator.run_investigation("FAC-DH-01", "MED-007")
+
+    out_file = tmp_path / "test_memo.md"
+    generated_path = generate_memorandum(pack, output_path=str(out_file))
+
+    assert os.path.exists(generated_path)
+    with open(generated_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "DISTRICT HEALTH PROCUREMENT & INVENTORY RECONCILIATION MEMORANDUM" in content
+    assert "Document Control & Provenance Metadata" in content
+    assert "Executive Inventory Divergence Assessment" in content
+    assert "Multi-Agent Root Cause Deliberation" in content
+    assert "Ranked Procurement & Transfer Indents" in content
+    assert "Official Verification & Indent Authorization Sign-off" in content
+    assert "Skeptic Number Auditor" in content
+    assert "FAC-DH-01" in content
+    assert "MED-007" in content
+
+
+def test_api_concurrency_and_state_isolation(client):
+    """
+    Verify that rapid alternating requests to POST /run with varying sample_mode
+    options preserve orchestrator state across sessions without state bleeding.
+    """
+    from run import orchestrator
+
+    orig_sample_mode = orchestrator.llm_client.sample_mode
+    orig_use_zetaris = orchestrator.data_store.use_zetaris
+
+    # Send request with sample_mode override True
+    res1 = client.post("/run", json={
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "options": {"sample_mode": True}
+    })
+    assert res1.status_code == 200
+    assert orchestrator.llm_client.sample_mode == orig_sample_mode
+    assert orchestrator.data_store.use_zetaris == orig_use_zetaris
+
+    # Send request without sample_mode override
+    res2 = client.post("/run", json={
+        "facility_id": "FAC-CHC-01",
+        "medicine_id": "MED-001"
+    })
+    assert res2.status_code == 200
+    assert orchestrator.llm_client.sample_mode == orig_sample_mode
+    assert orchestrator.data_store.use_zetaris == orig_use_zetaris
+
+
+def test_validate_clean_clone_script_execution():
+    """Verify scripts/validate_clean_clone.py executes cleanly and passes all offline checks."""
+    import subprocess
+    import sys
+
+    res = subprocess.run(
+        [sys.executable, "scripts/validate_clean_clone.py"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "SAMPLE_MODE": "true", "USE_ZETARIS": "false"}
+    )
+    assert res.returncode == 0, f"validate_clean_clone failed with stderr: {res.stderr}"
+    assert "SUCCESS: Clean-clone environment and all quickstart entry points verified!" in res.stdout
+
+
+def test_openapi_documentation_schema_and_metadata(client):
+    """Verify OpenAPI Swagger schema contains rich metadata, descriptions, and examples (Item 9)."""
+    res = client.get("/openapi.json")
+    assert res.status_code == 200
+    schema = res.json()
+    assert "MedTrace" in schema["info"]["title"]
+    assert "Zero LLM Arithmetic" in schema["info"]["description"]
+    assert "summary" in schema["info"]
+    assert "/run" in schema["paths"]
+    assert "/decision" in schema["paths"]
+    assert "/triage" in schema["paths"]
+
+    run_schema = schema["components"]["schemas"]["RunRequest"]
+    assert "properties" in run_schema
+    assert "description" in run_schema["properties"]["facility_id"]
+    assert "example" in run_schema
+
+
+def test_docker_compose_configuration():
+    """Verify docker-compose.yml exists, is valid YAML, and configures backend service (Item 11)."""
+    import yaml
+
+    assert os.path.exists("docker-compose.yml")
+    with open("docker-compose.yml", "r", encoding="utf-8") as f:
+        compose = yaml.safe_load(f)
+
+    assert "services" in compose
+    assert "backend" in compose["services"]
+    backend = compose["services"]["backend"]
+    assert "8000:8000" in backend["ports"]
+    assert "SAMPLE_MODE=true" in backend["environment"]
+    assert "healthcheck" in backend
+

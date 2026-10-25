@@ -129,26 +129,35 @@ MODEL_API_KEY=your-nvapi-key
 NEMOTRON_MODEL=nvidia/nemotron-3.5-lightning-30b-a3b
 ```
 
-### 3. Run 30-Second Executive Walkthrough (Recommended for Judges)
+### 3. Run Clean-Clone & Offline Environment Validation (Gate G4)
+Verify that all offline quickstart entry points, smoke tests, visualizers, memorandum exports, and test suites run cleanly without external dependencies or `.env`:
+```bash
+python scripts/validate_clean_clone.py
+```
+
+### 4. Run 30-Second Executive Walkthrough (Recommended for Judges)
 Execute the complete end-to-end cognitive workflow (District Triage -> Deep Audit -> Adversarial Debate -> Action Pack -> Timeline Visualization) in one offline command:
 ```bash
 python scripts/quick_demo.py
 ```
 
-### 4. Run Pre-Flight Smoke Test (Gate G1)
+### 5. Run Pre-Flight Smoke Test (Gate G1)
 ```bash
 python smoke_test.py
 ```
 *Verifies both Zetaris REST SQL API and NVIDIA Nemotron connectivity.*
 
-### 5. Run CLI Modes & Proactive Triage
+### 6. Run CLI Modes & Proactive Triage
 Audit a specific facility and medicine or execute district triage (live or offline sample mode):
 ```bash
 # Standard live run (connects to configured Zetaris / Nemotron endpoints)
 python run.py --cli --facility FAC-CHC-01 --medicine MED-001
 
-# Offline / Judge Sample Mode with executive explain-why timeline
-python run.py --cli --facility FAC-DH-01 --medicine MED-007 --sample-mode --explain
+# Offline / Judge Sample Mode with executive explain-why timeline & printable memo export
+python run.py --cli --facility FAC-DH-01 --medicine MED-007 --sample-mode --explain --export-memo
+
+# Export printable officer procurement memorandum directly
+python scripts/export_action_pack.py --facility FAC-DH-01 --medicine MED-007
 
 # Proactive District Triage Scan across all 144 facility-medicine pairs
 python run.py --triage --sample-mode --top-n 5
@@ -160,7 +169,7 @@ python scripts/explain_trace.py --latest
 python run.py --record-decision --facility FAC-CHC-01 --medicine MED-001 --action-type PEER_TRANSFER --decision REJECTED --reason "Route flooded"
 ```
 
-### 6. Launch FastAPI Service
+### 7. Launch FastAPI Service
 ```bash
 python run.py
 ```
@@ -169,13 +178,19 @@ python run.py
 - Proactive district triage: `GET http://localhost:8000/triage?top_n=10`
 - Record officer decision: `POST http://localhost:8000/decision`
 
-### 7. Run Test Suite & Backtest Evaluation
+### 8. Run Test Suite & Backtest Evaluation
 ```bash
-# Run unit & agent tests (96 tests across 7 test suites)
+# Run unit & agent tests (103 tests across 7 test suites)
 python -m pytest tests/
 
 # Run 180-day comparative multi-seed backtest
 python scripts/run_backtest.py
+```
+
+### 9. Containerized Deployment with Docker Compose
+Run the MedTrace backend service with automated healthchecks in Docker:
+```bash
+docker compose up --build
 ```
 
 ---
@@ -209,12 +224,17 @@ python scripts/run_backtest.py
 ├── input_examples/            # Verified sample request payloads
 ├── output_examples/           # Matching verified action pack responses
 ├── scripts/
+│   ├── quick_demo.py                    # 30-second executive judge walkthrough
+│   ├── validate_clean_clone.py          # Gate G4 clean-clone & offline environment validator
+│   ├── explain_trace.py                 # Multi-agent debate timeline visualizer
+│   ├── export_action_pack.py            # Printable officer procurement memorandum exporter
 │   ├── generate_facility_simulation.py  # Data pipeline generator
 │   ├── run_backtest.py                  # Multi-seed evaluation runner
 │   ├── generate_examples.py             # Generates API-contract verified samples
 │   └── register_zetaris_sources.md      # DDL & REST registration guide for Zetaris
 ├── tests/                     # Deterministic, agent & World Model tests
 ├── Dockerfile                 # Containerized deployment spec
+├── docker-compose.yml         # Compose orchestration with healthchecks
 ├── requirements.txt           # Python dependencies
 ├── smoke_test.py              # Gate G1 smoke verification
 └── run.py                     # Unified entry point (FastAPI + CLI)

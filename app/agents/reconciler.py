@@ -74,6 +74,11 @@ class ReconcilerAgent:
         # Check UOM mismatch between deliveries and POs
         uom_info = None
         uom_mismatch_po = None
+        pkg_std = self.data_store.get_packaging_standard(medicine_id) if hasattr(self.data_store, "get_packaging_standard") else None
+        rx_std = self.data_store.get_rxnorm_standard(medicine_id) if hasattr(self.data_store, "get_rxnorm_standard") else None
+        disp_unit = (pkg_std.get("dispensing_unit") if pkg_std else (rx_std.get("standard_form") if rx_std else "tablet")) or "tablet"
+        pack_spec = pkg_std.get("standard_packaging") if pkg_std else None
+
         for deliv in deliveries:
             p_id = deliv.get("po_id")
             matching_po = next((p for p in pos if p.get("po_id") == p_id), None)
@@ -84,8 +89,9 @@ class ReconcilerAgent:
                     multiplier = round(rec_qty / po_qty, 1) if rec_qty > po_qty else round(po_qty / rec_qty, 1)
                     uom_info = DeterministicEngine.normalize_uom_quantity(
                         reported_quantity=rec_qty,
-                        reported_unit="box" if rec_qty < po_qty else "tablet",
-                        dispensing_unit="tablet",
+                        reported_unit="box" if rec_qty < po_qty else disp_unit,
+                        dispensing_unit=disp_unit,
+                        packaging_spec=pack_spec,
                         pack_size_units=int(multiplier) if multiplier > 1 else 10
                     )
                     uom_mismatch_po = (p_id, po_qty, rec_qty)

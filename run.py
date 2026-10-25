@@ -18,18 +18,29 @@ load_dotenv()
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
 
 from app.orchestrator import MedTraceOrchestrator
 
-app = FastAPI(title="MedTrace AI Agent API", version="1.0.0")
+app = FastAPI(
+    title="MedTrace AI Agent API",
+    version="1.0.0",
+    summary="MedTrace Multi-Agent Inventory Reconciliation & Supply Chain Intelligence Service",
+    description=(
+        "Autonomous Clinical Supply Chain Intelligence Platform for District Health Logistics.\n\n"
+        "**Track 2: The Agent That Can Explain Why** (Open Agent Hackathon 2026)\n\n"
+        "- **Zero LLM Arithmetic**: All inventory reconciliation, days-of-cover, and order quantities are 100% deterministic.\n"
+        "- **Adversarial Multi-Agent Deliberation**: Reconciler, Investigator, Skeptic Number Auditor, and Action Planner.\n"
+        "- **Sponsor Technologies**: Zetaris Lightning SQL, Meterless World Model & H-MEM, NVIDIA Nemotron."
+    )
+)
 orchestrator = MedTraceOrchestrator()
 
 class RunRequest(BaseModel):
-    facility_id: Optional[str] = "FAC-DH-01"
-    medicine_id: Optional[str] = "MED-007"
-    options: Optional[Dict[str, Any]] = None
+    facility_id: Optional[str] = Field("FAC-DH-01", description="Target facility identifier (e.g. FAC-DH-01, FAC-CHC-01)")
+    medicine_id: Optional[str] = Field("MED-007", description="Target essential medicine identifier (e.g. MED-007, MED-001)")
+    options: Optional[Dict[str, Any]] = Field(None, description="Operational overrides, e.g. {'sample_mode': True}")
 
     model_config = {
         "json_schema_extra": {
@@ -42,11 +53,11 @@ class RunRequest(BaseModel):
     }
 
 class DecisionRequest(BaseModel):
-    facility_id: str
-    medicine_id: str
-    action_type: str
-    decision: str
-    reason: Optional[str] = ""
+    facility_id: str = Field(..., description="Target facility identifier (e.g. FAC-CHC-01)")
+    medicine_id: str = Field(..., description="Target essential medicine identifier (e.g. MED-001)")
+    action_type: str = Field(..., description="Action recommendation type (e.g. PEER_TRANSFER, EXPEDITED_PO)")
+    decision: str = Field(..., description="Officer decision: APPROVED or REJECTED")
+    reason: Optional[str] = Field("", description="Officer clinical or logistics reasoning")
 
     model_config = {
         "json_schema_extra": {
@@ -153,6 +164,7 @@ def main():
     parser.add_argument("--triage", action="store_true", help="Execute proactive district-wide inventory triage scan")
     parser.add_argument("--top-n", type=int, default=5, help="Number of urgent items to display in triage")
     parser.add_argument("--explain", action="store_true", help="Render executive multi-agent debate timeline after investigation")
+    parser.add_argument("--export-memo", action="store_true", help="Export printable Markdown procurement memorandum to output/")
     args = parser.parse_args()
 
     if args.sample_mode:
@@ -228,6 +240,10 @@ def main():
         if args.explain:
             from scripts.explain_trace import render_trace
             render_trace(pack.trace_file)
+        if args.export_memo:
+            from scripts.export_action_pack import generate_memorandum
+            memo_path = generate_memorandum(pack)
+            print(f"\n[+] Procurement Memorandum exported to: {memo_path}")
     else:
         port = int(os.getenv("PORT", args.port))
         print(f"[*] Starting MedTrace HTTP Server on 0.0.0.0:{port}...")

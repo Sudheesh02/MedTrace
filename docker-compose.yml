@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medtrace-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - SAMPLE_MODE=true
+      - USE_ZETARIS=false
+      - LOGS_DIR=logs
+    volumes:
+      - ./logs:/app/logs
+      - ./output:/app/output
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  # Optional Postgres service for offline Zetaris metastore / tabular warehouse emulation
+  postgres:
+    image: postgres:15-alpine
+    container_name: medtrace-postgres
+    profiles: ["full-stack"]
+    environment:
+      POSTGRES_USER: medtrace_admin
+      POSTGRES_PASSWORD: medtrace_password
+      POSTGRES_DB: medtrace_warehouse
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medtrace_admin -d medtrace_warehouse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
