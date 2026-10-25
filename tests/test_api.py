@@ -585,7 +585,7 @@ def test_api_concurrency_and_state_isolation(client):
 
 
 def test_validate_clean_clone_script_execution(tmp_path):
-    """Verify scripts/validate_clean_clone.py executes cleanly and passes all offline checks."""
+    """Verify scripts/validate_clean_clone.py executes cleanly, passes all offline checks, and protects git tree."""
     import subprocess
     import sys
 
@@ -597,6 +597,36 @@ def test_validate_clean_clone_script_execution(tmp_path):
     )
     assert res.returncode == 0, f"validate_clean_clone failed with stderr: {res.stderr}"
     assert "SUCCESS: Clean-clone environment and all quickstart entry points verified!" in res.stdout
+
+    # Assert tracked output/ and logs/ artifacts are strictly untouched
+    git_res = subprocess.run(
+        ["git", "status", "--porcelain", "output/", "logs/"],
+        capture_output=True,
+        text=True
+    )
+    assert git_res.stdout.strip() == "", f"Tracked artifacts were modified by validate_clean_clone:\n{git_res.stdout}"
+
+
+def test_export_action_pack_respects_custom_output_dir(tmp_path, monkeypatch):
+    """Verify generate_memorandum writes to custom output_path and respects MEDTRACE_OUTPUT_DIR."""
+    import json
+    from scripts.export_action_pack import generate_memorandum
+
+    with open("output_examples/sample_1_district_hospital_metformin.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # 1. Custom output path
+    target_path = os.path.join(str(tmp_path), "custom_memo.md")
+    out = generate_memorandum(data, output_path=target_path)
+    assert os.path.exists(out)
+    assert out == target_path
+
+    # 2. MEDTRACE_OUTPUT_DIR environment variable
+    custom_dir = str(tmp_path / "memo_dir")
+    monkeypatch.setenv("MEDTRACE_OUTPUT_DIR", custom_dir)
+    out2 = generate_memorandum(data)
+    assert os.path.exists(out2)
+    assert str(custom_dir) in out2
 
 
 def test_openapi_documentation_schema_and_metadata(client):

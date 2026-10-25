@@ -165,14 +165,16 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 2: Test Suite Git-Tree Isolation: Prevent `validate_clean_clone` from Overwriting Tracked Artifacts
 - **Priority**: P0 (Monitor Rules, Test Isolation & Repo Hygiene)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
-- **Problem**: Executing `python -m pytest tests -q` runs `test_validate_clean_clone_script_execution` in `tests/test_api.py`. In Gate G5, `validate_clean_clone.py` invokes `scripts/run_curated_eval.py --quiet`, which writes directly to `output/curated_evaluation.md`, overwriting its timestamp `Generated: 2026-10-25T...` and dirtying `git status`.
+- **Problem**: Executing `python -m pytest tests -q` runs `test_validate_clean_clone_script_execution` in `tests/test_api.py`. In Gate G5, `validate_clean_clone.py` invokes `scripts/run_curated_eval.py --quiet`, which writes directly to `output/curated_evaluation.md`, overwriting its timestamp `Generated: 2026-10-25T...` and dirtying `git status`. Furthermore, running `validate_clean_clone.py` directly without `MEDTRACE_OUTPUT_DIR` in the environment causes `run.py --export-memo` to overwrite tracked `output/memo_FAC-DH-01_MED-007.md`.
 - **Action**:
-  1. In `scripts/validate_clean_clone.py`, pass an isolated temporary directory argument `--output-dir` to `scripts/run_curated_eval.py` so clean-clone checks never write to tracked repository files.
-  2. In `tests/test_api.py`, ensure all subprocess CLI invocations pass temporary output paths.
-  3. Verify that running `python -m pytest tests -q` leaves `git status` completely clean with 0 uncommitted modifications.
+  1. In `scripts/validate_clean_clone.py`, pass an isolated temporary directory argument `--output-dir` to `scripts/run_curated_eval.py` and `scripts/generate_eda_charts.py` so clean-clone checks never write to tracked repository files.
+  2. In `scripts/validate_clean_clone.py`, set default `MEDTRACE_OUTPUT_DIR` to a temporary directory in `run_step` and pass `--output-trace` pointing to temp storage for `quick_demo.py`, preventing any modification to tracked `output/memo_*.md` or `logs/*.jsonl` even when run standalone without environment variables.
+  3. In `tests/test_api.py`, add strict `git status --porcelain output/ logs/` assertions in `test_validate_clean_clone_script_execution` and add `test_export_action_pack_respects_custom_output_dir` verifying custom output routing.
+  4. Verify that running `python -m pytest tests -q` succeeds (132/132 tests) and leaves `git status` 100% clean.
 - **Acceptance Criteria**: Running `python -m pytest tests -q` succeeds with 128+ passing tests and leaves `git status` 100% clean.
+- **Implementation Note**: Fixed in `scripts/validate_clean_clone.py` and `tests/test_api.py`. `MEDTRACE_OUTPUT_DIR` is isolated to `$TEMP/validate_clean_clone_out` in `run_step` and `--output-trace` routes quick demo traces to temp storage. Unit test `test_export_action_pack_respects_custom_output_dir` verifies routing. Full test suite (132 tests) executed with 0 failures and 0 uncommitted modifications to tracked artifacts.
 
 ---
 

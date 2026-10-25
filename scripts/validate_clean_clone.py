@@ -26,12 +26,23 @@ def run_step(cmd_args, step_name: str, expected_snippet: str = None) -> bool:
     print(f"\n[*] STEP: {step_name}")
     print(f"    Command: {' '.join(cmd_args)}")
     t0 = time.time()
+    
+    # Isolate all generated outputs to a temporary directory to keep git tree pristine
+    temp_out_dir = os.path.join(os.environ.get("TEMP", "/tmp"), "validate_clean_clone_out")
+    os.makedirs(temp_out_dir, exist_ok=True)
+    step_env = {
+        **os.environ,
+        "SAMPLE_MODE": "true",
+        "USE_ZETARIS": "false",
+        "MEDTRACE_OUTPUT_DIR": os.environ.get("MEDTRACE_OUTPUT_DIR") or temp_out_dir,
+    }
+    
     res = subprocess.run(
         cmd_args,
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
-        env={**os.environ, "SAMPLE_MODE": "true", "USE_ZETARIS": "false"}
+        env=step_env
     )
     elapsed = time.time() - t0
     
@@ -70,7 +81,7 @@ def main():
             "RUNNING MEDTRACE PRE-FLIGHT SMOKE TEST"
         ),
         (
-            [sys.executable, "scripts/quick_demo.py"],
+            [sys.executable, "scripts/quick_demo.py", "--output-trace", os.path.join(os.environ.get("TEMP", "/tmp"), "validate_clean_clone_out", "quick_demo_trace.jsonl")],
             "30-Second Executive Judge Demo (scripts/quick_demo.py)",
             "EXECUTIVE JUDGE DEMONSTRATION"
         ),

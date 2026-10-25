@@ -1252,3 +1252,28 @@
 - **Backlog Item 3 (P0)**: Document and highlight Curated Multi-Agent Benchmark in `README.md` and `SPONSOR_TECH.md` (as a rule-coverage regression suite).
 - **Backlog Item 4 (P0)**: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
 - **Backlog Item 5 (P1)**: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
+
+---
+
+### Session: 2026-10-25 22:08 IST
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 2 — Item 2 Implementation (Test Suite Git-Tree Isolation & Clean-Clone Artifact Protection)
+
+#### What Was Done
+1. **Isolated Output Directory in Clean-Clone Harness (`scripts/validate_clean_clone.py`)**:
+   - Updated `run_step` in [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py) to set default `MEDTRACE_OUTPUT_DIR` to an isolated `$TEMP/validate_clean_clone_out` directory.
+   - When `run.py --export-memo` executes during Gate G4 validation, output memoranda are directed to disposable temporary storage, guaranteeing that tracked repository files (`output/memo_FAC-DH-01_MED-007.md`) are never modified or overwritten by clean-clone validation runs.
+   - Configured `scripts/quick_demo.py` in Step 3 to pass `--output-trace` pointing to `$TEMP/validate_clean_clone_out/quick_demo_trace.jsonl`, isolating demo trace logs from git-tracked log directories.
+2. **Added Artifact Isolation Regression Tests**:
+   - Enhanced `test_validate_clean_clone_script_execution` in [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py) with strict `git status --porcelain output/ logs/` assertions, verifying that executing the clean-clone validation harness leaves all tracked artifacts 100% clean with zero modifications.
+   - Added `test_export_action_pack_respects_custom_output_dir` in [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py) verifying that `generate_memorandum` strictly respects custom `output_path` and `MEDTRACE_OUTPUT_DIR`.
+3. **Marked Item 2 Completed in Backlog**:
+   - Updated [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md) to record Item 2 as `[x] [DONE]` with complete implementation notes.
+4. **Verified Full Pytest Suite**:
+   - Executed full test suite (`python -m pytest tests -q`): **132 passed, 1 warning in 273.15s** (100% passing across all 7 test suites).
+   - Confirmed `git status` remains 100% clean across all tracked output and log files.
+
+#### What Is Next
+- **Backlog Item 3 / Monitor Override**: Synchronize Curated Benchmark in `README.md` and `SPONSOR_TECH.md` under a rule-coverage / regression check heading (not as headline metric).
+- **Backlog Item 4 (P0)**: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
+- **Backlog Item 5 (P1)**: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
