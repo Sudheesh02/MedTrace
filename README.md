@@ -38,7 +38,8 @@ flowchart TD
     end
 
     subgraph MultiAgentSystem [Multi-Agent Deliberation Loop]
-        D3 --> AG1[Reconciler Agent]
+        TP[Triage Planner Agent] -->|District Prioritization| AG1[Reconciler Agent]
+        D3 --> AG1
         AG1 -->|Discrepancy Manifest| AG2[Investigator Agent]
         AG2 -->|>= 3 Competing Hypotheses| AG3[Skeptic & Number Auditor]
         AG3 -->|Adversarial Critique & Verification| AG2
@@ -66,6 +67,7 @@ Evaluated across a **180-day facility simulation replay** across seeds 1–3 and
 | **Anomaly Precision** | 0.0 % | 0.0 % | **97.7 %** | Ground-truth anomaly precision (Target: >85% exceeded) |
 | **Anomaly Recall** | 0.0 % | 0.0 % | **92.5 %** | Ground-truth anomaly recall (Target: >85% exceeded) |
 | **Anomaly F1 Score** | 0.0 % | 0.0 % | **94.8 %** | High harmonic accuracy (Target: >85% exceeded) |
+| **Action Sizing Error** | 61.9 % | 0.0 % | **0.6 %** | **-61.3% error vs baseline** (Target: lower than baseline) |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across full 180-day simulation |
 
 *Note: All metrics reflect empirical evaluation executed across development seeds 1–3 and held-out test seed 4 via `python scripts/run_backtest.py`. Zero metrics are hallucinated or artificially rounded.*
@@ -123,39 +125,52 @@ MODEL_API_KEY=your-nvapi-key
 NEMOTRON_MODEL=nvidia/nemotron-3.5-lightning-30b-a3b
 ```
 
-### 3. Run Pre-Flight Smoke Test (Gate G1)
+### 3. Run 30-Second Executive Walkthrough (Recommended for Judges)
+Execute the complete end-to-end cognitive workflow (District Triage -> Deep Audit -> Adversarial Debate -> Action Pack -> Timeline Visualization) in one offline command:
+```bash
+python scripts/quick_demo.py
+```
+
+### 4. Run Pre-Flight Smoke Test (Gate G1)
 ```bash
 python smoke_test.py
 ```
 *Verifies both Zetaris REST SQL API and NVIDIA Nemotron connectivity.*
 
-### 4. Run CLI Investigation
-Audit a specific facility and medicine (live or offline sample mode):
+### 5. Run CLI Modes & Proactive Triage
+Audit a specific facility and medicine or execute district triage (live or offline sample mode):
 ```bash
 # Standard live run (connects to configured Zetaris / Nemotron endpoints)
 python run.py --cli --facility FAC-CHC-01 --medicine MED-001
 
-# Offline / Judge Sample Mode (runs 100% locally with zero external network dependencies)
-python run.py --cli --facility FAC-CHC-01 --medicine MED-001 --sample-mode
+# Offline / Judge Sample Mode with executive explain-why timeline
+python run.py --cli --facility FAC-DH-01 --medicine MED-007 --sample-mode --explain
+
+# Proactive District Triage Scan across all 144 facility-medicine pairs
+python run.py --triage --sample-mode --top-n 5
+
+# Visualize latest multi-agent debate trace log
+python scripts/explain_trace.py --latest
 
 # Record human officer feedback into Meterless H-MEM cross-session memory
 python run.py --record-decision --facility FAC-CHC-01 --medicine MED-001 --action-type PEER_TRANSFER --decision REJECTED --reason "Route flooded"
 ```
 
-### 5. Launch FastAPI Service
+### 6. Launch FastAPI Service
 ```bash
 python run.py
 ```
 - Interactive Swagger UI: `http://localhost:8000/docs`
-- Execute run: `POST http://localhost:8000/run`
+- Execute deep run: `POST http://localhost:8000/run`
+- Proactive district triage: `GET http://localhost:8000/triage?top_n=10`
 - Record officer decision: `POST http://localhost:8000/decision`
 
-### 6. Run Test Suite & Backtest Evaluation
+### 7. Run Test Suite & Backtest Evaluation
 ```bash
-# Run unit & agent tests
+# Run unit & agent tests (78 tests across 7 test suites)
 python -m pytest tests/
 
-# Run 180-day comparative backtest
+# Run 180-day comparative multi-seed backtest
 python scripts/run_backtest.py
 ```
 

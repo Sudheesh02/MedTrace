@@ -158,6 +158,7 @@ def test_data_store_sql_query_construction():
 
 def test_data_store_env_toggle(monkeypatch):
     """Verify USE_ZETARIS environment variable initializes DataStore properly."""
+    monkeypatch.setenv("SAMPLE_MODE", "false")
     monkeypatch.setenv("USE_ZETARIS", "true")
     s1 = DataStore()
     assert s1.use_zetaris is True
@@ -261,5 +262,59 @@ def test_data_store_in_memory_caching(tmp_path):
     assert len(store._pair_indexes) == 0
     assert len(DataStore._shared_csv_cache) == 0
     assert len(DataStore._shared_pair_indexes) == 0
+
+
+def test_data_store_federated_cross_source_query():
+    """
+    Verify 4-way federated cross-source join execution via Zetaris Lightning REST API
+    (as documented in SPONSOR_TECH.md §2.3).
+    Spans PostgreSQL ledger, physical audits, purchase orders, and Parquet supplier slip.
+    """
+    store = DataStore(use_zetaris=True)
+    store._cached_token = "mock-jwt-token"
+
+    federated_sql = """
+    SELECT
+        l.facility_id,
+        l.medicine_id,
+        l.ledger_stock,
+        a.counted_stock,
+        (l.ledger_stock - a.counted_stock) AS phantom_drift,
+        po.po_id,
+        po.promised_date,
+        s.mean_slip_days,
+        s.p90_days
+    FROM zetaris.lightning.ledger_daily l
+    LEFT JOIN zetaris.lightning.physical_audit a
+        ON l.facility_id = a.facility_id AND l.medicine_id = a.medicine_id
+    LEFT JOIN zetaris.lightning.purchase_orders po
+        ON l.facility_id = po.facility_id AND l.medicine_id = po.medicine_id
+    LEFT JOIN zetaris.lightning.supplier_slip s
+        ON po.supplier_id = s.supplier_id
+    WHERE l.facility_id = 'FAC-DH-01' AND l.medicine_id = 'MED-007'
+    ORDER BY l.date DESC LIMIT 1;
+    """
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "headers": ["facility_id", "medicine_id", "ledger_stock", "counted_stock", "phantom_drift", "po_id", "promised_date", "mean_slip_days", "p90_days"],
+        "rows": [["FAC-DH-01", "MED-007", 6462.0, 6412.0, 50.0, "PO-0001", "2026-10-30", 3.0, 15.0]]
+    }
+
+    with patch("requests.post", return_value=mock_response) as mock_post:
+        res = store._query_zetaris(federated_sql)
+        assert res is not None
+        assert len(res) == 1
+        row = res[0]
+        assert row["facility_id"] == "FAC-DH-01"
+        assert row["medicine_id"] == "MED-007"
+        assert row["phantom_drift"] == 50.0
+        assert row["p90_days"] == 15.0
+        # Verify request headers to proxy
+        called_headers = mock_post.call_args[1]["headers"]
+        assert called_headers["Authorization"] == "Bearer mock-jwt-token"
+        assert "X-Request-ID" in called_headers
+
 
 

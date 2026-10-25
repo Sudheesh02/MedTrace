@@ -235,3 +235,55 @@ def test_api_decision_validation_errors(client):
     })
     assert res_dec.status_code == 400
     assert "Invalid decision" in res_dec.json()["detail"]
+
+
+def test_api_run_unhandled_exception_returns_500(client, monkeypatch):
+    """Verify that unexpected orchestrator crashes return HTTP 500 rather than masked HTTP 200."""
+    from run import orchestrator
+
+    def mock_fail(*args, **kwargs):
+        raise RuntimeError("Simulated unexpected database or pipeline failure")
+
+    monkeypatch.setattr(orchestrator, "run_investigation", mock_fail)
+    response = client.post("/run", json={"facility_id": "FAC-DH-01", "medicine_id": "MED-007"})
+    assert response.status_code == 500
+    assert "Simulated unexpected database or pipeline failure" in response.json()["detail"]
+
+
+def test_cli_subprocess_execution_modes():
+    """Verify end-to-end subprocess execution across all CLI entry modes."""
+    import subprocess
+    import sys
+
+    # 1. Standard investigation with --explain
+    res_cli = subprocess.run(
+        [sys.executable, "run.py", "--cli", "--sample-mode", "--facility", "FAC-DH-01", "--medicine", "MED-007", "--explain"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_cli.returncode == 0
+    assert "MEDTRACE ACTION PACK SUMMARY" in res_cli.stdout
+    assert "MEDTRACE MULTI-AGENT REASONING & AUDIT TIMELINE" in res_cli.stdout
+    assert "Number Auditor" in res_cli.stdout
+
+    # 2. Triage scanning mode
+    res_triage = subprocess.run(
+        [sys.executable, "run.py", "--triage", "--sample-mode", "--top-n", "3"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_triage.returncode == 0
+    assert "MEDTRACE PROACTIVE DISTRICT TRIAGE LEADERBOARD" in res_triage.stdout
+    assert "CRITICAL" in res_triage.stdout
+
+    # 3. Interactive decision recording mode
+    res_rec = subprocess.run(
+        [sys.executable, "run.py", "--record-decision", "--sample-mode", "--facility", "FAC-CHC-01", "--medicine", "MED-001", "--action-type", "PEER_TRANSFER", "--decision", "APPROVED"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_rec.returncode == 0
+    assert "Successfully recorded officer decision in H-MEM" in res_rec.stdout

@@ -748,3 +748,31 @@ def test_triage_planner_identifies_top_at_risk_items():
     # Ensure items are sorted descending by urgency score
     scores = [item["urgency_score"] for item in district_res["top_urgent_items"]]
     assert scores == sorted(scores, reverse=True)
+
+
+def test_explain_trace_visualizer_renders_cleanly(capsys):
+    """
+    Verify that scripts/explain_trace.py parses real orchestrator trace logs and renders
+    the executive multi-agent debate timeline without unhandled exceptions.
+    """
+    from scripts.explain_trace import render_trace, find_latest_trace
+
+    orch = MedTraceOrchestrator(use_zetaris=False)
+    pack = orch.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-007")
+
+    assert os.path.exists(pack.trace_file)
+    render_trace(pack.trace_file)
+
+    captured = capsys.readouterr()
+    out = captured.out
+    assert "MEDTRACE MULTI-AGENT REASONING & AUDIT TIMELINE" in out
+    assert "[ReconcilerAgent] Grounded Audit Complete:" in out
+    assert "MULTI-AGENT ADVERSARIAL DEBATE: ROUND 1" in out
+    assert "[SkepticAgent & Number Auditor] Round 1 Evaluation:" in out
+    assert "[ActionPlannerAgent] Prioritized Interventions Formulated:" in out
+    assert "[Number Auditor] Action Plan Verification: [AUDIT PASSED]" in out
+
+    latest = find_latest_trace()
+    assert latest is not None
+    assert os.path.exists(latest)
+

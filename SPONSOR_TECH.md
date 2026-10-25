@@ -176,15 +176,19 @@ python -m pytest tests/test_world_model.py -q
 
 # Verify Meterless H-MEM API & CLI Officer Decision Feedback
 python -m pytest tests/test_api.py -q
-# Result: 9 passed
+# Result: 12 passed
 
 # Verify Multi-Agent Loops with NVIDIA Nemotron Reasoning Traces
 python -m pytest tests/test_agents.py -q
-# Result: 18 passed
+# Result: 24 passed
 
-# Full End-to-End Test Baseline
+# Verify Zetaris Federated DataStore Caching & Cross-Source Queries
+python -m pytest tests/test_data_store.py -q
+# Result: 9 passed
+
+# Full End-to-End Test Baseline (78 passed across 7 test suites)
 python -m pytest tests/ -q
-# Result: 65 passed in ~34s
+# Result: 78 passed in ~52s
 ```
 
 All sponsor requirements are 100% verified, production-hardened, and judge-ready.

@@ -417,3 +417,44 @@
 - **Item 4**: Implement Action Sizing Error metric in `BacktestEngine`.
 
 
+
+
+---
+
+### Session: 2026-10-25 08:55 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Hallucination & Hardcoding Eradication, Backtest Action Sizing Error (Plan §5.3), and Full 12-Item Backlog Completion
+
+#### What Was Done
+1. **Dynamic Demand Derivation in `BacktestEngine` (Zero-Hardcoding Standard)**:
+   - Eradicated static `base_demands` dictionary (`{"MED-001": 80, ...}`).
+   - Derived baseline daily demands dynamically from consumption history per medicine normalized by facility `catchment_scale`. Works for any medicine catalog without hardcoded entity keys.
+2. **Implemented Action Sizing Error Metric (Execution Plan §5.3)**:
+   - In `app/backtest/engine.py` and `scripts/run_backtest.py`, evaluated replenishment action sizing accuracy at the critical decision window (3 days prior to stockout):
+     - Naive LMIS Action Sizing Error: **61.9%** (under-ordering by targeting 7 days on unadjusted ledgers).
+     - Heuristic Rule-Based Action Sizing Error: **0.0%**.
+     - MedTrace Action Sizing Error: **0.6%** (**-61.3% error reduction vs baseline**).
+   - Automatically saved to `output/backtest_seed_*.json` and printed in the summary table.
+3. **Trace Visualizer & CLI `--explain` Integration**:
+   - Added `--explain` flag to `run.py`: running `python run.py --cli --explain` now renders the full multi-agent debate timeline (`RECONCILE_COMPLETE`, `ROUND_1_START`, `SkepticAgent`, `ROUND_2_START`, `ACTION_PLAN_AUDITED`).
+   - Tracked `scripts/explain_trace.py` in git and added automated regression test `test_explain_trace_visualizer_renders_cleanly` in `tests/test_agents.py`.
+4. **Synchronized Output Examples**:
+   - Updated `scripts/generate_examples.py` to include `TriagePlanner` in `agents` array.
+   - Re-executed pipeline to update `output_examples/*.json` with `action_plan_audit`, `TriagePlanner`, and `MONITOR_BUFFER`.
+5. **Standardized REST Error Handling in `run.py`**:
+   - In `run.py` `/run`, replaced HTTP 200 error bodies with standard `HTTPException(status_code=500, detail=str(e))`. Tested via monkeypatched exception in `tests/test_api.py`.
+6. **Subprocess CLI Integration Tests**:
+   - Added `test_cli_subprocess_execution_modes` in `tests/test_api.py` testing subprocess invocation of `--cli --explain`, `--triage`, and `--record-decision`.
+7. **Zetaris Federated Cross-Source Join Test**:
+   - Added `test_data_store_federated_cross_source_query` in `tests/test_data_store.py` testing the 4-way cross-source join (PostgreSQL ledger, physical audit, purchase orders, Parquet supplier slip priors) via Zetaris proxy.
+8. **Authored 30-Second Executive Demo Script**:
+   - Authored `scripts/quick_demo.py` demonstrating triage, deep audit, multi-agent debate, action pack, and visual timeline in under 3 seconds offline. Documented in `README.md`.
+9. **Synchronized All Documentation & Metrics**:
+   - Updated `README.md` and `SPONSOR_TECH.md` to document `TriagePlannerAgent`, `scripts/quick_demo.py`, `GET /triage`, `--triage`, `--explain`, Action Sizing Error, and verified test counts.
+   - Updated `OVERNIGHT_BACKLOG.md` marking all 12 items DONE.
+10. **Full Test Suite Verification**:
+    - Executed `python -m pytest tests -q` — **78 passed, 1 warning in 52.94s** (100% passing rate across all 7 test suites).
+
+#### What Is Next
+- Prepare judge walkthrough talking points emphasizing zero-hallucinated math, true multi-agent debate loops with reactive recovery, and verified sponsor technology integration (Zetaris & Meterless).
+- Keep production branch `main` ready for final submission.

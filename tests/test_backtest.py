@@ -31,16 +31,38 @@ def test_backtest_runs_reproducibly_on_seed_1():
     assert anom["recall_pct"] >= 90.0
     assert anom["f1_score_pct"] >= 90.0
 
+    # Verify action sizing error (Plan Section 5.3)
+    assert "action_sizing_error_pct" in metrics
+    sizing = metrics["action_sizing_error_pct"]
+    assert sizing["medtrace"] < sizing["naive_lmis"]
+    assert sizing["medtrace"] <= 5.0
+    assert sizing["naive_lmis"] >= 50.0
+
 def test_anomaly_detection_varies_with_input_seed():
     """Verify that backtest evaluation is dynamically computed and not hardcoded."""
     engine_s1 = BacktestEngine(sim_dir="data/simulated")
     res1 = engine_s1.run_backtest(seed=1, sim_dir="data/simulated")
 
     sim_dir_s2 = "data/simulated_seed_2"
-    if os.path.exists(sim_dir_s2):
-        engine_s2 = BacktestEngine(sim_dir=sim_dir_s2)
-        res2 = engine_s2.run_backtest(seed=2, sim_dir=sim_dir_s2)
-        
-        # Lead times must reflect the different simulation trajectories
-        assert res1["metrics"]["early_warning_lead_time_days"]["medtrace"] != \
-               res2["metrics"]["early_warning_lead_time_days"]["medtrace"]
+    if not os.path.exists(sim_dir_s2):
+        from scripts.generate_facility_simulation import generate_simulation
+        generate_simulation(seed=2, out_dir=sim_dir_s2)
+
+    engine_s2 = BacktestEngine(sim_dir=sim_dir_s2)
+    res2 = engine_s2.run_backtest(seed=2, sim_dir=sim_dir_s2)
+    
+    # Lead times and anomaly distributions must reflect different simulation trajectories
+    assert res1["metrics"]["early_warning_lead_time_days"]["medtrace"] != \
+           res2["metrics"]["early_warning_lead_time_days"]["medtrace"]
+    assert res1["total_actual_stockouts"] > 0
+    assert res2["total_actual_stockouts"] > 0
+
+def test_backtest_dynamic_demand_derivation_without_hardcoded_keys():
+    """Verify that BacktestEngine dynamically derives base demands from consumption without hardcoding."""
+    engine = BacktestEngine(sim_dir="data/simulated")
+    # Query facilities and medicines dynamically
+    meds = engine.store.get_medicines()
+    assert len(meds) >= 12
+    res = engine.run_backtest(seed=1, sim_dir="data/simulated")
+    # Sizing error must be computed strictly from real data
+    assert res["metrics"]["action_sizing_error_pct"]["medtrace"] < 2.0
