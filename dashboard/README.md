@@ -45,3 +45,6 @@ The button appears only when the backend answers `GET /health`. Start it with `p
 - `logs/*.jsonl` (except the tracked sample/golden/memory traces) are git-ignored, so a fresh clone has far fewer stored runs than a working copy. Pairs without a stored run say so.
 - Traces record only the count and top action of the Action Planner; full order quantities come from an action pack.
 - The memory card reports "no flip" or "not comparable" when the files do not support a flip, and flags differing reconciler inputs.
+## UI
+
+The UI is a dark, Linear/Datadog-style triage layout: KPI strip (counts by severity, from the live alert data), severity-banded alert list (master), detail pane with side-by-side Investigator vs Skeptic cards, a vertical decision-trace timeline, and separate Memory flip and Evaluation views (deep links: `/#memory`, `/#eval`). Icons: lucide-react. Screenshots are in `dashboard/screenshots/`.
