@@ -60,7 +60,7 @@ class InvestigatorAgent:
                 quar_disc.get("description", "Quality lockup confirmed.")
             ]
             h1_refuting = ["Quarantine released following lab certificate of analysis (CoA) re-test."]
-            h1_query = f"SELECT batch_id, quantity, expiry_date, quarantined FROM zetaris.lightning.batches WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}' AND quarantined = true"
+            h1_query = f"SELECT batch_id, quantity, expiry_date, quarantined FROM MEDTRACE_LH.batches WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}' AND quarantined = true"
         elif uom_disc:
             h1_title = "Unit-of-Measure Multiplier Discrepancy (Pack vs Tablet)"
             h1_cause = f"Packaging multiplier mismatch caused delivery receipt to overstate inventory relative to dispensing units."
@@ -70,7 +70,7 @@ class InvestigatorAgent:
                 f"Ledger balance overstates physical usable inventory by {stock_eval['audit_drift']} units."
             ]
             h1_refuting = ["Physical count confirms receipt was unpacked into individual tablets."]
-            h1_query = f"SELECT po.po_id, po.quantity, d.received_qty FROM zetaris.lightning.purchase_orders po JOIN zetaris.lightning.deliveries d ON po.po_id = d.po_id WHERE po.facility_id = '{fac_id}' AND po.medicine_id = '{med_id}'"
+            h1_query = f"SELECT po.po_id, po.quantity, d.received_qty FROM MEDTRACE_LH.purchase_orders po JOIN MEDTRACE_LH.deliveries d ON po.po_id = d.po_id WHERE po.facility_id = '{fac_id}' AND po.medicine_id = '{med_id}'"
         elif anoms["ghost_stock"]:
             h1_title = "Phantom Stock Drift in Warehouse Ledger"
             h1_cause = f"Physical audit confirms ledger overstates true physical stock by {stock_eval['audit_drift']} units."
@@ -82,14 +82,14 @@ class InvestigatorAgent:
                 f"Ledger drift variance of {stock_eval['audit_drift']} units recorded."
             ]
             h1_refuting = ["Unlogged receipt from another facility arrived post-audit."]
-            h1_query = f"SELECT counted_stock, date FROM zetaris.lightning.physical_audit WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}' ORDER BY date DESC LIMIT 1"
+            h1_query = f"SELECT counted_stock, date FROM MEDTRACE_LH.physical_audit WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}' ORDER BY date DESC LIMIT 1"
         else:
             h1_title = "Minor Administrative Stock Drift"
             h1_cause = "Normal variance between daily dispensing logs and warehouse ledger."
             h1_likelihood = 0.25
             h1_evidence = ["Audit drift is within standard tolerance (<5 units)."]
             h1_refuting = ["Audit drift exceeds monthly dispensing rate."]
-            h1_query = f"SELECT counted_stock FROM zetaris.lightning.physical_audit WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}'"
+            h1_query = f"SELECT counted_stock FROM MEDTRACE_LH.physical_audit WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}'"
 
         # -------------------------------------------------------------
         # 2. Hypothesis 2: Upstream Supplier Delay / Transit Failure
@@ -106,7 +106,7 @@ class InvestigatorAgent:
                 f"Creates immediate replenishment gap of {shortfall['gap_days']} days."
             ]
             h2_refuting = ["Carrier tracking confirms delivery scheduled within 24 hours."]
-            h2_query = f"SELECT po_id, supplier_id, order_date, promised_date, status FROM zetaris.lightning.purchase_orders WHERE facility_id = '{fac_id}' AND status = 'DISPATCHED'"
+            h2_query = f"SELECT po_id, supplier_id, order_date, promised_date, status FROM MEDTRACE_LH.purchase_orders WHERE facility_id = '{fac_id}' AND status = 'DISPATCHED'"
         elif slip_disc or anoms["supplier_delay_risk"]:
             h2_title = "Upstream Supplier Lead Time Slippage"
             h2_cause = slip_disc.get("description") if slip_disc else f"Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window."
@@ -120,14 +120,14 @@ class InvestigatorAgent:
             if slip_disc:
                 h2_evidence.append(slip_disc.get("description"))
             h2_refuting = ["Supplier confirms expedited dispatch with guaranteed logistics priority."]
-            h2_query = f"SELECT vendor, shipment_mode, mean_slip_days, p90_days FROM zetaris.lightning.supplier_slip LIMIT 5"
+            h2_query = f"SELECT vendor, shipment_mode, mean_slip_days, p90_days FROM MEDTRACE_LH.supplier_slip LIMIT 5"
         else:
             h2_title = "Standard Supplier Lead Time Slippage"
             h2_cause = "Routine delivery transit delays within expected tolerance."
             h2_likelihood = 0.30
             h2_evidence = ["Supplier order is within normal 5-8 day delivery window."]
             h2_refuting = ["Vendor reports logistics fleet disruption."]
-            h2_query = f"SELECT promised_date, order_date FROM zetaris.lightning.purchase_orders WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}'"
+            h2_query = f"SELECT promised_date, order_date FROM MEDTRACE_LH.purchase_orders WHERE facility_id = '{fac_id}' AND medicine_id = '{med_id}'"
 
         # -------------------------------------------------------------
         # 3. Hypothesis 3: External Supply Disruption or Epidemiological Surge

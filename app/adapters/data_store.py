@@ -70,20 +70,25 @@ class DataStore:
         if not self.password or not self.username:
             return None
 
-        login_url = f"{self.rest_url}/auth/login" if self.rest_url else f"{self.base_url}/api/auth/login"
-        try:
-            res = requests.post(
-                login_url,
-                json={"username": self.username, "password": self.password},
-                timeout=3
-            )
-            if res.status_code == 200:
-                data = res.json()
-                self._cached_token = data.get("idToken") or data.get("token")
-                self.zetaris_org = str(data.get("orgId", self.zetaris_org))
-                return self._cached_token
-        except Exception:
-            pass
+        login_urls = []
+        if self.rest_url:
+            login_urls.append(f"{self.rest_url}/auth/login")
+        login_urls.append(f"{self.base_url}/api/auth/login")
+        for login_url in login_urls:
+            try:
+                res = requests.post(
+                    login_url,
+                    json={"username": self.username, "password": self.password},
+                    timeout=3
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    self._cached_token = data.get("idToken") or data.get("token")
+                    self.zetaris_org = str(data.get("orgId", self.zetaris_org))
+                    if self._cached_token:
+                        return self._cached_token
+            except Exception:
+                continue
         return None
 
     def _query_zetaris(self, sql: str) -> Optional[List[Dict[str, Any]]]:
@@ -175,14 +180,14 @@ class DataStore:
 
     def get_facilities(self) -> List[Dict[str, Any]]:
         if self.use_zetaris:
-            res = self._query_zetaris("SELECT * FROM zetaris.lightning.facilities")
+            res = self._query_zetaris("SELECT * FROM MEDTRACE_LH.facilities")
             if res:
                 return res
         return self._read_csv(os.path.join(self.sim_dir, "facilities.csv"))
 
     def get_medicines(self) -> List[Dict[str, Any]]:
         if self.use_zetaris:
-            res = self._query_zetaris("SELECT * FROM zetaris.lightning.medicine_master")
+            res = self._query_zetaris("SELECT * FROM MEDTRACE_LH.medicine_master")
             if res:
                 return res
         return self._read_csv("data/real/medicine_master.csv")
@@ -207,7 +212,7 @@ class DataStore:
 
     def get_suppliers(self) -> List[Dict[str, Any]]:
         if self.use_zetaris:
-            res = self._query_zetaris("SELECT * FROM zetaris.lightning.suppliers")
+            res = self._query_zetaris("SELECT * FROM MEDTRACE_LH.suppliers")
             if res:
                 return res
         return self._read_csv(os.path.join(self.sim_dir, "suppliers.csv"))
@@ -224,7 +229,7 @@ class DataStore:
             if medicine_id:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
-            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.batches{where_sql}")
+            res = self._query_zetaris(f"SELECT * FROM MEDTRACE_LH.batches{where_sql}")
             rows = res if res is not None else (
                 self._get_rows_by_pair(os.path.join(self.sim_dir, "batches.csv"), facility_id, medicine_id)
                 if (facility_id and medicine_id) else self._read_csv(os.path.join(self.sim_dir, "batches.csv"))
@@ -263,7 +268,7 @@ class DataStore:
         self._sanitize_id(medicine_id)
         if self.use_zetaris:
             res = self._query_zetaris(
-                f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
+                f"SELECT * FROM MEDTRACE_LH.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
             )
             if res:
                 latest = dict(res[0])
@@ -284,7 +289,7 @@ class DataStore:
             raise ValueError(f"Invalid date format for SQL query: {date_str}")
         if self.use_zetaris:
             res = self._query_zetaris(
-                f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' AND date = '{date_str}' LIMIT 1"
+                f"SELECT * FROM MEDTRACE_LH.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' AND date = '{date_str}' LIMIT 1"
             )
             if res:
                 res_row = dict(res[0])
@@ -303,7 +308,7 @@ class DataStore:
         self._sanitize_id(medicine_id)
         if self.use_zetaris:
             res = self._query_zetaris(
-                f"SELECT * FROM zetaris.lightning.physical_audit WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
+                f"SELECT * FROM MEDTRACE_LH.physical_audit WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
             )
             if res:
                 latest = dict(res[0])
@@ -323,7 +328,7 @@ class DataStore:
             raise ValueError(f"Invalid days parameter for SQL query: {days}")
         if self.use_zetaris:
             res = self._query_zetaris(
-                f"SELECT * FROM zetaris.lightning.consumption_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT {days}"
+                f"SELECT * FROM MEDTRACE_LH.consumption_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT {days}"
             )
             if res:
                 res.reverse()
@@ -344,7 +349,7 @@ class DataStore:
         self._sanitize_id(medicine_id)
         if self.use_zetaris:
             res = self._query_zetaris(
-                f"SELECT * FROM zetaris.lightning.purchase_orders WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}'"
+                f"SELECT * FROM MEDTRACE_LH.purchase_orders WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}'"
             )
             if res:
                 return res
@@ -363,7 +368,7 @@ class DataStore:
             if medicine_id:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
-            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.deliveries{where_sql}")
+            res = self._query_zetaris(f"SELECT * FROM MEDTRACE_LH.deliveries{where_sql}")
             rows = res if res is not None else (
                 self._get_rows_by_pair(os.path.join(self.sim_dir, "deliveries.csv"), facility_id, medicine_id)
                 if (facility_id and medicine_id) else self._read_csv(os.path.join(self.sim_dir, "deliveries.csv"))
@@ -397,7 +402,7 @@ class DataStore:
             if medicine_id:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
-            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.transfers{where_sql}")
+            res = self._query_zetaris(f"SELECT * FROM MEDTRACE_LH.transfers{where_sql}")
             rows = res if res is not None else self._read_csv(os.path.join(self.sim_dir, "transfers.csv"))
         else:
             rows = self._read_csv(os.path.join(self.sim_dir, "transfers.csv"))
@@ -419,7 +424,7 @@ class DataStore:
                 raise ValueError(f"Invalid characters in vendor name: {vendor}")
         if self.use_zetaris:
             where_sql = f" WHERE vendor = '{vendor}'" if vendor else ""
-            res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.supplier_slip{where_sql}")
+            res = self._query_zetaris(f"SELECT * FROM MEDTRACE_LH.supplier_slip{where_sql}")
             if res is not None:
                 return res
         return self._read_csv("data/real/supplier_slip.csv")

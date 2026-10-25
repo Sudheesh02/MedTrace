@@ -285,12 +285,12 @@ def test_data_store_federated_cross_source_query():
         po.promised_date,
         s.mean_slip_days,
         s.p90_days
-    FROM zetaris.lightning.ledger_daily l
-    LEFT JOIN zetaris.lightning.physical_audit a
+    FROM MEDTRACE_LH.ledger_daily l
+    LEFT JOIN MEDTRACE_LH.physical_audit a
         ON l.facility_id = a.facility_id AND l.medicine_id = a.medicine_id
-    LEFT JOIN zetaris.lightning.purchase_orders po
+    LEFT JOIN MEDTRACE_LH.purchase_orders po
         ON l.facility_id = po.facility_id AND l.medicine_id = po.medicine_id
-    LEFT JOIN zetaris.lightning.supplier_slip s
+    LEFT JOIN MEDTRACE_LH.supplier_slip s
         ON po.supplier_id = s.supplier_id
     WHERE l.facility_id = 'FAC-DH-01' AND l.medicine_id = 'MED-007'
     ORDER BY l.date DESC LIMIT 1;
