@@ -50,7 +50,14 @@ class ActionPlannerAgent:
                     # Check if peer stock is locked under quarantine
                     peer_batches = self.data_store.get_batches(peer_id, medicine_id)
                     quar_at_peer = sum(float(b.get("quantity", 0)) for b in peer_batches if str(b.get("quarantined", "")).lower() == "true")
-                    usable_peer = max(0.0, peer_stock - quar_at_peer)
+                    # Check if peer facility has physical audit drift (phantom stock)
+                    peer_audit = self.data_store.get_latest_physical_audit(peer_id, medicine_id)
+                    peer_drift = 0.0
+                    if peer_audit:
+                        peer_counted = float(peer_audit.get("counted_stock", peer_stock))
+                        if peer_stock > peer_counted:
+                            peer_drift = peer_stock - peer_counted
+                    usable_peer = max(0.0, peer_stock - quar_at_peer - peer_drift)
                     if usable_peer > best_surplus:
                         best_surplus = usable_peer
                         best_source_facility = peer_id
@@ -103,6 +110,31 @@ class ActionPlannerAgent:
                 }
             ))
 
+        # Check if local inventory is secure (Zero shortfall scenario)
+        if shortfall == 0:
+            mon_feasibility = 0.98 if audit_drift == 0 else 0.92
+            mon_justification = (
+                f"Inventory levels are secure ({trust_cover:.1f} days of cover). Routine monitoring active; "
+                f"safety buffer intact; emergency transfer and local purchase quotas remain on standby."
+                if audit_drift == 0 else
+                f"Following {audit_drift:.0f}-unit ledger debit adjustment, verified usable stock covers {trust_cover:.1f} days. "
+                f"Routine buffer monitoring active; emergency quotas remain on standby."
+            )
+            recommendations.append(ActionRecommendation(
+                action_id=f"ACT-MON-{facility_id}-{medicine_id}",
+                action_type=ActionType.MONITOR_BUFFER,
+                facility_id=facility_id,
+                medicine_id=medicine_id,
+                recommended_units=0.0,
+                feasibility_score=mon_feasibility,
+                justification=mon_justification,
+                number_provenance={
+                    "shortfall_units": 0.0,
+                    "gap_days": 0.0,
+                    "trust_cover_days": trust_cover
+                }
+            ))
+
         # Check peer transfer feasibility
         transfer_penalty = 0.20 if any("PEER_TRANSFER" in p for p in rejected_patterns) else 0.0
         can_transfer = (best_source_facility is not None and best_surplus >= max(50.0, shortfall))
@@ -117,7 +149,7 @@ class ActionPlannerAgent:
                 transfer_justification = f"No peer facility holds surplus of {medicine_id}; inter-facility transfer unavailable."
         else:
             transfer_justification = f"No emergency stock transfer required: Facility holds {trust_cover:.1f} days of verified usable cover, exceeding safety threshold. Inter-facility transfer queue on standby."
-            transfer_feasibility = 0.50
+            transfer_feasibility = 0.20
 
         recommendations.append(ActionRecommendation(
             action_id=f"ACT-TRF-{facility_id}-{medicine_id}",
@@ -142,7 +174,7 @@ class ActionPlannerAgent:
             expedite_feasibility = round(max(0.1, 0.75 - expedite_penalty), 2)
         else:
             expedite_justification = f"Standard procurement cycle: No expedited dispatch required; existing inventory covers {trust_cover:.1f} days."
-            expedite_feasibility = 0.40
+            expedite_feasibility = 0.15
 
         recommendations.append(ActionRecommendation(
             action_id=f"ACT-EXP-{facility_id}-{medicine_id}",
@@ -166,7 +198,7 @@ class ActionPlannerAgent:
             emerg_feasibility = round(max(0.1, 0.60 - emerg_penalty), 2)
         else:
             emerg_justification = f"Zero emergency procurement required: Local stock is adequate ({trust_cover:.1f} days of cover); emergency quota preserved."
-            emerg_feasibility = 0.30
+            emerg_feasibility = 0.10
 
         recommendations.append(ActionRecommendation(
             action_id=f"ACT-EMERG-{facility_id}-{medicine_id}",

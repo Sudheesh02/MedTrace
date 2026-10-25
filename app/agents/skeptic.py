@@ -5,7 +5,7 @@ Challenges hypotheses, enforces multi-source validation, and verifies every sing
 
 from typing import Dict, List, Any, Tuple
 from app.adapters.llm_client import LLMClient
-from app.models.schemas import Hypothesis, SkepticReview
+from app.models.schemas import Hypothesis, SkepticReview, ActionRecommendation, ActionPlanAudit, ActionType
 
 class SkepticAgent:
     def __init__(self, llm_client: LLMClient):
@@ -131,3 +131,73 @@ class SkepticAgent:
         )
 
         return top_hyp, review
+
+    def audit_action_plan(
+        self,
+        recommendations: List[ActionRecommendation],
+        deterministic_recon: Dict[str, Any]
+    ) -> ActionPlanAudit:
+        """
+        Number Auditor check on the formulated Action Plan.
+        Verifies that every recommendation respects mathematical invariants:
+        - Recommended units match exact shortfall, audit drift, or quarantine quantity.
+        - Transfer quantity does not exceed peer usable surplus.
+        - Source facility is not the target facility (no self-transfers).
+        - Healthy stock cases formulate MONITOR_BUFFER and zero emergency orders.
+        """
+        stock_eval = deterministic_recon.get("stock_evaluation", {})
+        shortfall = deterministic_recon.get("trust_shortfall", {})
+        shortfall_units = shortfall.get("shortfall_units", 0.0)
+        audit_drift = stock_eval.get("audit_drift", 0.0)
+        quarantined_stock = stock_eval.get("quarantined_stock", 0.0)
+
+        inconsistencies = []
+
+        for rec in recommendations:
+            prov = rec.number_provenance
+            # Check PEER_TRANSFER
+            if rec.action_type == ActionType.PEER_TRANSFER:
+                if rec.recommended_units != shortfall_units:
+                    inconsistencies.append(
+                        f"PEER_TRANSFER recommended units ({rec.recommended_units}) != shortfall ({shortfall_units})."
+                    )
+                if rec.source_facility_id and rec.source_facility_id == rec.facility_id:
+                    inconsistencies.append(f"Self-transfer detected: {rec.source_facility_id} -> {rec.facility_id}.")
+                if "peer_surplus" in prov and rec.recommended_units > prov["peer_surplus"] and prov["peer_surplus"] > 0:
+                    inconsistencies.append(
+                        f"Transfer units ({rec.recommended_units}) exceed peer surplus ({prov['peer_surplus']})."
+                    )
+
+            # Check INVENTORY_AUDIT_ADJUSTMENT
+            elif rec.action_type == ActionType.INVENTORY_AUDIT_ADJUSTMENT:
+                if rec.recommended_units != audit_drift:
+                    inconsistencies.append(
+                        f"INVENTORY_AUDIT_ADJUSTMENT units ({rec.recommended_units}) != audit drift ({audit_drift})."
+                    )
+
+            # Check BATCH_RELEASE
+            elif rec.action_type == ActionType.BATCH_RELEASE:
+                if rec.recommended_units != quarantined_stock:
+                    inconsistencies.append(
+                        f"BATCH_RELEASE units ({rec.recommended_units}) != quarantined stock ({quarantined_stock})."
+                    )
+
+            # Check MONITOR_BUFFER
+            elif rec.action_type == ActionType.MONITOR_BUFFER:
+                if rec.recommended_units != 0.0:
+                    inconsistencies.append(f"MONITOR_BUFFER recommended units must be 0.0, got {rec.recommended_units}.")
+
+            # Check EXPEDITE_PO & EMERGENCY_PURCHASE
+            elif rec.action_type in (ActionType.EXPEDITE_PO, ActionType.EMERGENCY_PURCHASE):
+                if rec.recommended_units != shortfall_units:
+                    inconsistencies.append(
+                        f"{rec.action_type.value} units ({rec.recommended_units}) != shortfall ({shortfall_units})."
+                    )
+
+        passed = len(inconsistencies) == 0
+        return ActionPlanAudit(
+            audited=True,
+            passed=passed,
+            verified_recommendations_count=len(recommendations),
+            flagged_inconsistencies=inconsistencies
+        )

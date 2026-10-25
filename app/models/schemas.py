@@ -50,6 +50,13 @@ class ActionType(str, Enum):
     EMERGENCY_PURCHASE = "EMERGENCY_PURCHASE"
     BATCH_RELEASE = "BATCH_RELEASE"
     INVENTORY_AUDIT_ADJUSTMENT = "INVENTORY_AUDIT_ADJUSTMENT"
+    MONITOR_BUFFER = "MONITOR_BUFFER"
+
+class ActionPlanAudit(BaseModel):
+    audited: bool = True
+    passed: bool
+    verified_recommendations_count: int
+    flagged_inconsistencies: List[str] = Field(default_factory=list)
 
 class ActionRecommendation(BaseModel):
     action_id: str
@@ -77,5 +84,6 @@ class ActionPack(BaseModel):
     recommendations: List[ActionRecommendation]
     skeptic_rounds: int
     trace_file: str
+    action_plan_audit: Optional[Any] = None
     escalated_to_human: bool = False
     escalation_reason: Optional[str] = None

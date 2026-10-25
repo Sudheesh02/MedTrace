@@ -158,6 +158,17 @@ class MedTraceOrchestrator:
             "token_usage": plan_usage
         })
 
+        # 5. Number Auditor Verification of Action Plan
+        action_plan_audit = self.skeptic.audit_action_plan(
+            recommendations=recommendations,
+            deterministic_recon=recon["deterministic_reconciliation"]
+        )
+        log_step("SkepticAgent", "ACTION_PLAN_AUDITED", {
+            "passed": action_plan_audit.passed,
+            "verified_count": action_plan_audit.verified_recommendations_count,
+            "flagged_inconsistencies": action_plan_audit.flagged_inconsistencies
+        })
+
         det_rec = recon["deterministic_reconciliation"]
         # Determine whether early warning intercepted an actual stockout risk
         is_stockout_risk = (
@@ -193,6 +204,7 @@ class MedTraceOrchestrator:
             recommendations=recommendations,
             skeptic_rounds=rounds,
             trace_file=trace_file,
+            action_plan_audit=action_plan_audit,
             escalated_to_human=escalated_to_human,
             escalation_reason=escalation_reason
         )
