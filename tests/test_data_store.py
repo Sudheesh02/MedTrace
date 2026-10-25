@@ -209,3 +209,57 @@ def test_data_store_configurable_simulation_dir(tmp_path, monkeypatch):
     assert len(facs_env) == 1
     assert facs_env[0]["facility_id"] == "FAC-CUSTOM-01"
 
+def test_data_store_in_memory_caching(tmp_path):
+    """
+    Verify DataStore in-memory CSV caching and O(1) pair indexing:
+    1. Caches parsed rows and pair indexes across repeated reads.
+    2. Returns isolated copies so mutations do not taint cached rows.
+    3. clear_cache() resets instance and shared caches cleanly.
+    4. TriagePlannerAgent district scan completes in <0.5 seconds.
+    """
+    import time
+    from app.agents.triage_planner import TriagePlannerAgent
+
+    store = DataStore(use_zetaris=False)
+    store.clear_cache()
+
+    # Initial state: caches empty
+    assert len(store._csv_cache) == 0
+    assert len(store._pair_indexes) == 0
+
+    # 1. Fetch ledger & consumption
+    ledger1 = store.get_latest_ledger("FAC-DH-01", "MED-007")
+    assert ledger1 is not None
+    assert len(store._csv_cache) > 0
+    assert len(store._pair_indexes) > 0
+
+    # 2. Verify mutation isolation (modifying returned dict does not alter subsequent calls)
+    orig_stock = ledger1["ledger_stock"]
+    ledger1["ledger_stock"] = 999999.0
+    ledger2 = store.get_latest_ledger("FAC-DH-01", "MED-007")
+    assert ledger2["ledger_stock"] == orig_stock
+
+    # 3. Verify batches isolation
+    batches1 = store.get_batches("FAC-DH-01", "MED-007")
+    assert len(batches1) > 0
+    orig_qty = batches1[0]["quantity"]
+    batches1[0]["quantity"] = -42.0
+    batches2 = store.get_batches("FAC-DH-01", "MED-007")
+    assert batches2[0]["quantity"] == orig_qty
+
+    # 4. Verify TriagePlannerAgent performance with warm cache (<0.5s)
+    planner = TriagePlannerAgent(store)
+    t0 = time.time()
+    res = planner.scan_district()
+    elapsed = time.time() - t0
+    assert res["total_evaluated"] == 144
+    assert elapsed < 0.5, f"Expected scan_district() < 0.5s, got {elapsed:.3f}s"
+
+    # 5. Verify clear_cache() resets both caches
+    store.clear_cache()
+    assert len(store._csv_cache) == 0
+    assert len(store._pair_indexes) == 0
+    assert len(DataStore._shared_csv_cache) == 0
+    assert len(DataStore._shared_pair_indexes) == 0
+
+

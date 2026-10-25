@@ -387,3 +387,33 @@
   - Item 5: Synchronize test counts and architecture diagrams in `SPONSOR_TECH.md` and `README.md`.
   - Item 6: Create `tests/conftest.py` for default sample mode isolation.
 
+---
+
+### Session: 2026-10-25 08:30 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 1 — Item 1 Implementation (In-Memory CSV Caching & O(1) Pair Indexing in `DataStore`)
+
+#### What Was Done
+1. **Engineered In-Memory CSV Caching & Fast Pair Indexing in `DataStore`**:
+   - In [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), implemented `self._csv_cache` and `self._pair_indexes` backed by shared class-level caches `_shared_csv_cache` and `_shared_pair_indexes`.
+   - Updated `_read_csv(self, rel_path: str, use_cache: bool = True)` to return cached table representations.
+   - Added `_get_rows_by_pair(self, rel_path: str, facility_id: str, medicine_id: str)` providing $O(1)$ indexed lookup by `(facility_id, medicine_id)` across daily ledger, consumption, audit, batches, and purchase orders, eliminating repetitive linear scans over 25,920 rows.
+   - Preserved mutation isolation across all getters (`get_batches`, `get_latest_ledger`, `get_ledger_on_date`, `get_latest_physical_audit`, `get_recent_consumption`, `get_purchase_orders`, `get_deliveries`, `get_transfers`) by returning shallow-copied dicts so callers modifying numerical fields do not mutate cached structures.
+   - Provided `clear_cache(self)` and `@classmethod clear_shared_cache(cls)` for clean test isolation.
+2. **Benchmarked Dramatic Triage & District Scan Performance**:
+   - Measured `TriagePlannerAgent.scan_district()` (144 facility-medicine pairs across 12 facilities and 12 medicines):
+     - **Before**: 21.23 seconds (>7.4 million rows parsed).
+     - **After (First Run)**: 0.164 seconds (**130x speedup**).
+     - **After (Warm Run)**: 0.040 seconds (**530x speedup**).
+3. **Automated Unit Test Coverage**:
+   - In [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py), added `test_data_store_in_memory_caching` verifying cache population, mutation isolation, sub-0.5s triage performance, and complete cache clearance.
+4. **Backlog & Test Suite Verification**:
+   - Marked Item 1 as DONE in [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md).
+   - Executed full test suite: **73 passed, 1 warning in 39.65s** (100% passing rate, down from 85.74s).
+
+#### What Is Next
+- **Item 2 (Next Highest Priority)**: Synchronize `output_examples/*.json` and `scripts/generate_examples.py` (add `action_plan_audit`, `TriagePlanner`, and `MONITOR_BUFFER`).
+- **Item 3**: Integrate `scripts/explain_trace.py` with CLI flag `--explain` in `run.py`.
+- **Item 4**: Implement Action Sizing Error metric in `BacktestEngine`.
+
+

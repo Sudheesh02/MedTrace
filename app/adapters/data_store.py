@@ -8,10 +8,13 @@ import csv
 import json
 import uuid
 import requests
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 
 class DataStore:
+    _shared_csv_cache: Dict[str, List[Dict[str, Any]]] = {}
+    _shared_pair_indexes: Dict[str, Dict[Tuple[str, str], List[Dict[str, Any]]]] = {}
+
     def __init__(self, use_zetaris: Optional[bool] = None, sim_dir: Optional[str] = None):
         sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
         if use_zetaris is None:
@@ -28,7 +31,21 @@ class DataStore:
         self.username = os.environ.get("ZETARIS_USERNAME", "admin@zetaris.com")
         self.password = os.environ.get("ZETARIS_PASSWORD", "<REDACTED>")
         self._cached_token = None
+        self._csv_cache: Dict[str, List[Dict[str, Any]]] = {}
+        self._pair_indexes: Dict[str, Dict[Tuple[str, str], List[Dict[str, Any]]]] = {}
         self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    @classmethod
+    def clear_shared_cache(cls) -> None:
+        """Clear the class-level shared CSV cache and pair indexes."""
+        cls._shared_csv_cache.clear()
+        cls._shared_pair_indexes.clear()
+
+    def clear_cache(self) -> None:
+        """Clear all in-memory cached CSV tables and indexes for this instance and shared cache."""
+        self._csv_cache.clear()
+        self._pair_indexes.clear()
+        DataStore.clear_shared_cache()
 
     def _get_token(self) -> Optional[str]:
         if self.zetaris_key and self.zetaris_key != "your-zetaris-api-key":
@@ -86,16 +103,44 @@ class DataStore:
             pass
         return None
 
-    def _read_csv(self, rel_path: str) -> List[Dict[str, Any]]:
-        full_path = os.path.join(self.base_dir, rel_path)
+    def _read_csv(self, rel_path: str, use_cache: bool = True) -> List[Dict[str, Any]]:
+        full_path = os.path.normpath(os.path.join(self.base_dir, rel_path))
+        if use_cache:
+            if full_path in self._csv_cache:
+                return self._csv_cache[full_path]
+            if full_path in DataStore._shared_csv_cache:
+                self._csv_cache[full_path] = DataStore._shared_csv_cache[full_path]
+                return self._csv_cache[full_path]
+
         if not os.path.exists(full_path):
             return []
         rows = []
         with open(full_path, "r", encoding="utf-8", errors="replace") as f:
             reader = csv.DictReader(f)
             for r in reader:
-                rows.append(r)
+                rows.append(dict(r))
+        if use_cache:
+            self._csv_cache[full_path] = rows
+            DataStore._shared_csv_cache[full_path] = rows
         return rows
+
+    def _get_rows_by_pair(self, rel_path: str, facility_id: str, medicine_id: str) -> List[Dict[str, Any]]:
+        """Fast O(1) indexed lookup of cached CSV rows for a given (facility_id, medicine_id) pair."""
+        full_path = os.path.normpath(os.path.join(self.base_dir, rel_path))
+        if full_path not in self._pair_indexes:
+            if full_path in DataStore._shared_pair_indexes:
+                self._pair_indexes[full_path] = DataStore._shared_pair_indexes[full_path]
+            else:
+                rows = self._read_csv(rel_path)
+                idx: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+                for r in rows:
+                    fid = r.get("facility_id")
+                    mid = r.get("medicine_id")
+                    if fid and mid:
+                        idx.setdefault((fid, mid), []).append(r)
+                self._pair_indexes[full_path] = idx
+                DataStore._shared_pair_indexes[full_path] = idx
+        return self._pair_indexes[full_path].get((facility_id, medicine_id), [])
 
     def get_facilities(self) -> List[Dict[str, Any]]:
         if self.use_zetaris:
@@ -127,9 +172,15 @@ class DataStore:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
             res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.batches{where_sql}")
-            rows = res if res is not None else self._read_csv(os.path.join(self.sim_dir, "batches.csv"))
+            rows = res if res is not None else (
+                self._get_rows_by_pair(os.path.join(self.sim_dir, "batches.csv"), facility_id, medicine_id)
+                if (facility_id and medicine_id) else self._read_csv(os.path.join(self.sim_dir, "batches.csv"))
+            )
         else:
-            rows = self._read_csv(os.path.join(self.sim_dir, "batches.csv"))
+            rows = (
+                self._get_rows_by_pair(os.path.join(self.sim_dir, "batches.csv"), facility_id, medicine_id)
+                if (facility_id and medicine_id) else self._read_csv(os.path.join(self.sim_dir, "batches.csv"))
+            )
 
         ref_date = as_of_date or datetime(2026, 10, 24)
         filtered = []
@@ -138,20 +189,20 @@ class DataStore:
                 continue
             if medicine_id and r.get("medicine_id") != medicine_id:
                 continue
-            # convert boolean
-            r["quarantined"] = (str(r.get("quarantined", "")).lower() == "true")
-            r["quantity"] = float(r.get("quantity", 0))
+            row_copy = dict(r)
+            row_copy["quarantined"] = (str(r.get("quarantined", "")).lower() == "true")
+            row_copy["quantity"] = float(r.get("quantity", 0))
             # Calculate days_to_expiry dynamically from expiry_date
             exp_str = r.get("expiry_date")
             if exp_str:
                 try:
                     exp_dt = datetime.strptime(exp_str, "%Y-%m-%d")
-                    r["days_to_expiry"] = (exp_dt - ref_date).days
+                    row_copy["days_to_expiry"] = (exp_dt - ref_date).days
                 except Exception:
-                    r["days_to_expiry"] = 999
+                    row_copy["days_to_expiry"] = 999
             else:
-                r["days_to_expiry"] = 999
-            filtered.append(r)
+                row_copy["days_to_expiry"] = 999
+            filtered.append(row_copy)
         return filtered
 
     def get_latest_ledger(self, facility_id: str, medicine_id: str) -> Optional[Dict[str, Any]]:
@@ -160,13 +211,12 @@ class DataStore:
                 f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
             )
             if res:
-                latest = res[0]
+                latest = dict(res[0])
                 latest["ledger_stock"] = float(latest.get("ledger_stock", 0))
                 return latest
-        rows = self._read_csv(os.path.join(self.sim_dir, "ledger_daily.csv"))
-        matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
-        if matching:
-            latest = matching[-1]
+        rows = self._get_rows_by_pair(os.path.join(self.sim_dir, "ledger_daily.csv"), facility_id, medicine_id)
+        if rows:
+            latest = dict(rows[-1])
             latest["ledger_stock"] = float(latest.get("ledger_stock", 0))
             return latest
         return None
@@ -177,13 +227,15 @@ class DataStore:
                 f"SELECT * FROM zetaris.lightning.ledger_daily WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' AND date = '{date_str}' LIMIT 1"
             )
             if res:
-                res[0]["ledger_stock"] = float(res[0].get("ledger_stock", 0))
-                return res[0]
-        rows = self._read_csv(os.path.join(self.sim_dir, "ledger_daily.csv"))
+                res_row = dict(res[0])
+                res_row["ledger_stock"] = float(res_row.get("ledger_stock", 0))
+                return res_row
+        rows = self._get_rows_by_pair(os.path.join(self.sim_dir, "ledger_daily.csv"), facility_id, medicine_id)
         for r in rows:
-            if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id and r.get("date") == date_str:
-                r["ledger_stock"] = float(r.get("ledger_stock", 0))
-                return r
+            if r.get("date") == date_str:
+                res_row = dict(r)
+                res_row["ledger_stock"] = float(res_row.get("ledger_stock", 0))
+                return res_row
         return None
 
     def get_latest_physical_audit(self, facility_id: str, medicine_id: str) -> Optional[Dict[str, Any]]:
@@ -192,13 +244,12 @@ class DataStore:
                 f"SELECT * FROM zetaris.lightning.physical_audit WHERE facility_id = '{facility_id}' AND medicine_id = '{medicine_id}' ORDER BY date DESC LIMIT 1"
             )
             if res:
-                latest = res[0]
+                latest = dict(res[0])
                 latest["counted_stock"] = float(latest.get("counted_stock", 0))
                 return latest
-        rows = self._read_csv(os.path.join(self.sim_dir, "physical_audit.csv"))
-        matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
-        if matching:
-            latest = matching[-1]
+        rows = self._get_rows_by_pair(os.path.join(self.sim_dir, "physical_audit.csv"), facility_id, medicine_id)
+        if rows:
+            latest = dict(rows[-1])
             latest["counted_stock"] = float(latest.get("counted_stock", 0))
             return latest
         return None
@@ -213,12 +264,14 @@ class DataStore:
                 for r in res:
                     r["units_issued"] = float(r.get("units_issued", 0))
                 return res
-        rows = self._read_csv(os.path.join(self.sim_dir, "consumption_daily.csv"))
-        matching = [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
-        recent = matching[-days:] if len(matching) > days else matching
+        rows = self._get_rows_by_pair(os.path.join(self.sim_dir, "consumption_daily.csv"), facility_id, medicine_id)
+        recent = rows[-days:] if len(rows) > days else rows
+        result = []
         for r in recent:
-            r["units_issued"] = float(r.get("units_issued", 0))
-        return recent
+            row_copy = dict(r)
+            row_copy["units_issued"] = float(row_copy.get("units_issued", 0))
+            result.append(row_copy)
+        return result
 
     def get_purchase_orders(self, facility_id: str, medicine_id: str) -> List[Dict[str, Any]]:
         if self.use_zetaris:
@@ -227,8 +280,8 @@ class DataStore:
             )
             if res:
                 return res
-        rows = self._read_csv(os.path.join(self.sim_dir, "purchase_orders.csv"))
-        return [r for r in rows if r.get("facility_id") == facility_id and r.get("medicine_id") == medicine_id]
+        rows = self._get_rows_by_pair(os.path.join(self.sim_dir, "purchase_orders.csv"), facility_id, medicine_id)
+        return [dict(r) for r in rows]
 
     def get_deliveries(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if self.use_zetaris:
@@ -239,9 +292,15 @@ class DataStore:
                 where_clauses.append(f"medicine_id = '{medicine_id}'")
             where_sql = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
             res = self._query_zetaris(f"SELECT * FROM zetaris.lightning.deliveries{where_sql}")
-            rows = res if res is not None else self._read_csv(os.path.join(self.sim_dir, "deliveries.csv"))
+            rows = res if res is not None else (
+                self._get_rows_by_pair(os.path.join(self.sim_dir, "deliveries.csv"), facility_id, medicine_id)
+                if (facility_id and medicine_id) else self._read_csv(os.path.join(self.sim_dir, "deliveries.csv"))
+            )
         else:
-            rows = self._read_csv(os.path.join(self.sim_dir, "deliveries.csv"))
+            rows = (
+                self._get_rows_by_pair(os.path.join(self.sim_dir, "deliveries.csv"), facility_id, medicine_id)
+                if (facility_id and medicine_id) else self._read_csv(os.path.join(self.sim_dir, "deliveries.csv"))
+            )
 
         filtered = []
         for r in rows:
@@ -249,8 +308,9 @@ class DataStore:
                 continue
             if medicine_id and r.get("medicine_id") != medicine_id:
                 continue
-            r["received_qty"] = float(r.get("received_qty", 0))
-            filtered.append(r)
+            row_copy = dict(r)
+            row_copy["received_qty"] = float(row_copy.get("received_qty", 0))
+            filtered.append(row_copy)
         return filtered
 
     def get_transfers(self, facility_id: Optional[str] = None, medicine_id: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -272,8 +332,9 @@ class DataStore:
                 continue
             if medicine_id and r.get("medicine_id") != medicine_id:
                 continue
-            r["quantity"] = float(r.get("quantity", 0))
-            filtered.append(r)
+            row_copy = dict(r)
+            row_copy["quantity"] = float(row_copy.get("quantity", 0))
+            filtered.append(row_copy)
         return filtered
 
     def get_supplier_slip_priors(self, vendor: Optional[str] = None) -> List[Dict[str, Any]]:

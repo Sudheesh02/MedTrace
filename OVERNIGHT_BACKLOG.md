@@ -70,7 +70,7 @@ The following items from previous cycles have been implemented, verified with pa
 
 ### Item 1: In-Memory CSV Caching in `DataStore` to Eliminate 23s Triage Bottleneck
 - **Priority**: P0 (Product & UX 10 pts, Technical Depth 20 pts)
-- **Status**: [ ] PROPOSED
+- **Status**: [x] DONE (Benchmarked: scan_district dropped from 21.2s to 0.16s first run / 0.04s warm run; test suite from 85.7s to 39.6s; 73 passed)
 - **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py)
 - **Problem**: `DataStore._read_csv` reads from disk every time it is called. In `TriagePlannerAgent.scan_district()`, 144 facility-medicine pairs read `ledger_daily.csv` (25,920 rows) and `consumption_daily.csv` (25,920 rows) 144 times, parsing >7.4 million rows. This causes `scan_district()` to take ~23.6s and inflates the test suite runtime to >80s.
 - **Action**:
