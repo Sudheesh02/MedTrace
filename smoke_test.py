@@ -24,6 +24,7 @@ def need(*names):
         assert os.environ.get(name), f"{name} is missing from .env"
 
 def zetaris_sql():
+    rest_url = os.environ.get("ZETARIS_REST_URL", "").rstrip("/")
     base_url = os.environ.get("ZETARIS_BASE_URL", "http://localhost:3000").rstrip("/")
     token = os.environ.get("ZETARIS_API_KEY")
     org_id = os.environ.get("ZETARIS_ORG_ID", "1")
@@ -33,35 +34,64 @@ def zetaris_sql():
         password = os.environ.get("ZETARIS_PASSWORD")
         if not password or password in ("YourPassword", "your-password-here"):
             raise ValueError("ZETARIS_PASSWORD is not set in .env. Configure valid Zetaris credentials to verify live SQL endpoint.")
-        login_res = requests.post(
-            f"{base_url}/api/auth/login",
-            json={"username": username, "password": password},
-            timeout=10
-        )
-        login_res.raise_for_status()
-        login_data = login_res.json()
-        token = login_data.get("idToken") or login_data.get("token")
-        org_id = str(login_data.get("orgId", org_id))
-        assert token, "Failed to retrieve access token from login"
+        login_urls = []
+        if rest_url:
+            login_urls.append(f"{rest_url}/auth/login")
+            login_urls.append(f"{rest_url.replace('/api/v1.0', '')}/api/auth/login")
+        login_urls.append(f"{base_url}/api/auth/login")
 
-    # Query using Zetaris UI proxy endpoint
-    url = f"{base_url}/api/proxy/sql-editor/sqls/run-query"
-    response = requests.post(
-        url,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "X-Org-ID": str(org_id),
-            "X-Request-ID": str(uuid.uuid4()),
-        },
-        json={
-            "sql": "SELECT 1 AS num",
-            "limit": 1
-        },
-        timeout=15,
-    )
-    response.raise_for_status()
-    data = response.json().get("data")
-    assert data and str(data[0][0]) == "1", f"Unexpected response: {response.text[:80]}"
+        token = None
+        for l_url in login_urls:
+            try:
+                login_res = requests.post(
+                    l_url,
+                    json={"username": username, "password": password},
+                    timeout=10
+                )
+                if login_res.status_code == 200:
+                    login_data = login_res.json()
+                    token = login_data.get("idToken") or login_data.get("token")
+                    org_id = str(login_data.get("orgId", org_id))
+                    if token:
+                        break
+            except Exception:
+                continue
+        assert token, "Failed to retrieve access token from Zetaris login"
+
+    # Query using candidate endpoints (Participant Setup Guide port 8888 or UI proxy port 3000)
+    candidate_urls = []
+    if rest_url:
+        candidate_urls.append(f"{rest_url}/sql-editor/sqls/run")
+        candidate_urls.append(f"{rest_url}/sql-editor/sqls/run-query")
+    candidate_urls.append(f"{base_url}/api/proxy/sql-editor/sqls/run-query")
+    candidate_urls.append(f"{base_url}/sql-editor/sqls/run")
+
+    last_error = None
+    for url in candidate_urls:
+        try:
+            response = requests.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "X-Org-ID": str(org_id),
+                    "X-Request-ID": str(uuid.uuid4()),
+                },
+                json={
+                    "sql": "SELECT 1 AS num",
+                    "limit": 1
+                },
+                timeout=15,
+            )
+            if response.status_code == 200:
+                data = response.json().get("data")
+                assert data and str(data[0][0]) == "1", f"Unexpected response: {response.text[:80]}"
+                return
+            else:
+                last_error = f"HTTP {response.status_code}: {response.text[:100]}"
+        except Exception as e:
+            last_error = str(e)
+            continue
+    raise RuntimeError(f"All Zetaris SQL candidate endpoints failed. Last error: {last_error}")
 
 def power_model():
     meterless_token = os.environ.get("METERLESS_RUNTIME_TOKEN")

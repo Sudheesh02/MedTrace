@@ -352,5 +352,38 @@ def test_data_store_sql_identifier_sanitization():
         DataStore._sanitize_id("FAC-01 UNION SELECT * FROM users")
 
 
+def test_data_store_zetaris_rest_url_dual_endpoint(monkeypatch):
+    """
+    Verify Participant Setup Guide compliance:
+    When ZETARIS_REST_URL is configured (e.g. port 8888 /api/v1.0),
+    DataStore attempts queries against /sql-editor/sqls/run before falling back to UI proxy.
+    """
+    monkeypatch.setenv("ZETARIS_REST_URL", "http://localhost:8888/api/v1.0")
+    monkeypatch.setenv("ZETARIS_API_KEY", "test-token-123")
+    store = DataStore(use_zetaris=True)
+    assert store.rest_url == "http://localhost:8888/api/v1.0"
+
+    queried_urls = []
+
+    def mock_post(url, headers=None, json=None, timeout=None):
+        queried_urls.append(url)
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "columns": ["num"],
+            "data": [[1]]
+        }
+        return mock_resp
+
+    with patch("requests.post", side_effect=mock_post):
+        rows = store._query_zetaris("SELECT 1 AS num")
+        assert rows is not None
+        assert rows == [{"num": 1}]
+        assert len(queried_urls) >= 1
+        # Primary candidate is the official Participant Setup Guide direct run endpoint
+        assert "http://localhost:8888/api/v1.0/sql-editor/sqls/run" in queried_urls[0]
+
+
+
 
 

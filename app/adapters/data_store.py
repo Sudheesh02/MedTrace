@@ -26,6 +26,7 @@ class DataStore:
             self.use_zetaris = use_zetaris
         self.sim_dir = sim_dir or os.getenv("SIM_DIR", "data/simulated")
         self.base_url = os.environ.get("ZETARIS_BASE_URL", "http://localhost:3000").rstrip("/")
+        self.rest_url = os.environ.get("ZETARIS_REST_URL", "").rstrip("/")
         self.zetaris_key = os.environ.get("ZETARIS_API_KEY", "")
         self.zetaris_org = os.environ.get("ZETARIS_ORG_ID", "1")
         self.username = os.environ.get("ZETARIS_USERNAME", "admin@zetaris.com")
@@ -64,11 +65,13 @@ class DataStore:
             return self._cached_token
         if not self.password or not self.username:
             return None
+
+        login_url = f"{self.rest_url}/auth/login" if self.rest_url else f"{self.base_url}/api/auth/login"
         try:
             res = requests.post(
-                f"{self.base_url}/api/auth/login",
+                login_url,
                 json={"username": self.username, "password": self.password},
-                timeout=10
+                timeout=3
             )
             if res.status_code == 200:
                 data = res.json()
@@ -85,7 +88,11 @@ class DataStore:
         token = self._get_token()
         if not token:
             return None
-        url = f"{self.base_url}/api/proxy/sql-editor/sqls/run-query"
+
+        # Dual-endpoint compatibility: Participant Setup Guide (port 8888 /api/v1.0) & UI proxy (port 3000)
+        primary_url = f"{self.rest_url}/sql-editor/sqls/run" if self.rest_url else f"{self.base_url}/api/proxy/sql-editor/sqls/run-query"
+        fallback_url = f"{self.base_url}/sql-editor/sqls/run" if not self.rest_url else f"{self.base_url}/api/proxy/sql-editor/sqls/run-query"
+
         headers = {
             "Authorization": f"Bearer {token}",
             "X-Org-ID": str(self.zetaris_org),
@@ -95,24 +102,32 @@ class DataStore:
             "sql": sql,
             "limit": 5000
         }
-        try:
-            res = requests.post(url, headers=headers, json=body, timeout=30)
-            if res.status_code == 200:
-                res_data = res.json()
-                raw_headers = res_data.get("headers") or res_data.get("columns") or []
-                headers_list = []
-                for h in raw_headers:
-                    if isinstance(h, dict):
-                        headers_list.append(h.get("name") or h.get("columnName") or str(h))
-                    else:
-                        headers_list.append(str(h))
-                rows = res_data.get("data") or res_data.get("rows") or []
-                if rows and isinstance(rows[0], dict):
-                    return rows
-                elif rows and headers_list:
-                    return [dict(zip(headers_list, row)) for row in rows]
-        except Exception:
-            pass
+
+        for url in [primary_url, fallback_url]:
+            try:
+                res = requests.post(url, headers=headers, json=body, timeout=5)
+                if res.status_code == 200:
+                    res_data = res.json()
+                    raw_headers = res_data.get("headers") or res_data.get("columns") or []
+                    headers_list = []
+                    for h in raw_headers:
+                        if isinstance(h, dict):
+                            headers_list.append(h.get("name") or h.get("columnName") or str(h))
+                        else:
+                            headers_list.append(str(h))
+                    rows = res_data.get("data") or res_data.get("rows") or []
+                    if rows and isinstance(rows[0], dict):
+                        return rows
+                    elif rows and headers_list:
+                        return [dict(zip(headers_list, row)) for row in rows]
+                elif res.status_code != 404:
+                    # Non-404 error (e.g. auth failure or bad request), don't retry route
+                    break
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                # Host is down or port closed; immediately break to allow fast offline fallback
+                break
+            except Exception:
+                break
         return None
 
     def _read_csv(self, rel_path: str, use_cache: bool = True) -> List[Dict[str, Any]]:
