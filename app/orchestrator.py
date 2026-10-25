@@ -18,6 +18,7 @@ from app.agents.reconciler import ReconcilerAgent
 from app.agents.investigator import InvestigatorAgent
 from app.agents.skeptic import SkepticAgent
 from app.agents.action_planner import ActionPlannerAgent
+from app.agents.triage_planner import TriagePlannerAgent
 from app.models.schemas import ActionPack
 
 class MedTraceOrchestrator:
@@ -34,7 +35,8 @@ class MedTraceOrchestrator:
         self.context_builder = ContextBuilderService(self.world_store)
         self.hmem = hmem or HMemEngine()
 
-        # Agents
+        # Agents (Phase 3.2: 5 agents)
+        self.triage_planner = TriagePlannerAgent(self.data_store, self.llm_client)
         self.reconciler = ReconcilerAgent(self.data_store, self.ingest_service)
         self.investigator = InvestigatorAgent(self.llm_client)
         self.skeptic = SkepticAgent(self.llm_client)
@@ -256,3 +258,9 @@ class MedTraceOrchestrator:
             "all_preferences": self.hmem.long_term_beliefs["officer_action_preferences"],
             "rejected_patterns": self.hmem.long_term_beliefs["rejected_patterns"][-5:]
         }
+
+    def triage_district(self, facility_id: Optional[str] = None, top_n: int = 10) -> Dict[str, Any]:
+        """
+        Executes proactive district-wide inventory triage scanning via TriagePlannerAgent.
+        """
+        return self.triage_planner.scan_district(facility_id=facility_id, top_n=top_n)

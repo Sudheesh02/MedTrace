@@ -716,3 +716,35 @@ def test_action_plan_audit_trace_integration():
     audited_events = [e for e in events if e.get("action") == "ACTION_PLAN_AUDITED"]
     assert len(audited_events) == 1
     assert audited_events[0]["details"]["passed"] is True
+
+
+def test_triage_planner_identifies_top_at_risk_items():
+    """
+    Verify that TriagePlannerAgent scans network inventory and returns a prioritized
+    leaderboard separating Critical stockouts from nominal buffer items.
+    """
+    from app.agents.triage_planner import TriagePlannerAgent
+    from app.adapters.data_store import DataStore
+    from app.adapters.llm_client import LLMClient
+
+    ds = DataStore(use_zetaris=False)
+    triage_agent = TriagePlannerAgent(ds, LLMClient())
+
+    # 1. Test single facility scan
+    single_res = triage_agent.scan_district(facility_id="FAC-DH-01", top_n=5)
+    assert single_res["total_evaluated"] == 12  # 12 medicines
+    assert len(single_res["top_urgent_items"]) <= 5
+    # Most urgent items should have higher urgency scores
+    if len(single_res["top_urgent_items"]) > 1:
+        assert single_res["top_urgent_items"][0]["urgency_score"] >= single_res["top_urgent_items"][1]["urgency_score"]
+
+    # 2. Test full district scan
+    district_res = triage_agent.scan_district(top_n=10)
+    assert district_res["total_evaluated"] == 144  # 12 facilities * 12 medicines
+    assert district_res["critical_count"] > 0
+    assert district_res["warning_count"] > 0
+    assert len(district_res["top_urgent_items"]) == 10
+
+    # Ensure items are sorted descending by urgency score
+    scores = [item["urgency_score"] for item in district_res["top_urgent_items"]]
+    assert scores == sorted(scores, reverse=True)

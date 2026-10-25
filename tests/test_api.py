@@ -58,7 +58,26 @@ def test_api_run_valid_investigation(client):
     assert 0.0 <= pack["p_stockout_risk"] <= 1.0
     assert len(pack["recommendations"]) >= 2
     assert "agents" in data
-    assert len(data["agents"]) == 6
+    assert len(data["agents"]) == 7
+
+def test_api_triage_endpoint(client):
+    """Verify GET /triage executes proactive district portfolio triage scanning."""
+    response = client.get("/triage?top_n=5")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "triage" in data
+    triage = data["triage"]
+    assert triage["total_evaluated"] >= 12
+    assert "critical_count" in triage
+    assert "warning_count" in triage
+    assert "top_urgent_items" in triage
+    assert len(triage["top_urgent_items"]) <= 5
+    for item in triage["top_urgent_items"]:
+        assert "facility_id" in item
+        assert "medicine_id" in item
+        assert "urgency_tier" in item
+        assert item["urgency_tier"] in ("CRITICAL", "WARNING", "SECURE")
 
 def test_api_run_invalid_facility_returns_404(client):
     payload = {

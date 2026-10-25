@@ -63,6 +63,14 @@ def api_record_decision(req: DecisionRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/triage")
+def api_triage(facility_id: Optional[str] = None, top_n: int = 10):
+    try:
+        res = orchestrator.triage_district(facility_id=facility_id, top_n=top_n)
+        return {"status": "success", "triage": res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/run")
 def api_run(req: RunRequest):
     start_time = time.time()
@@ -83,6 +91,7 @@ def api_run(req: RunRequest):
             "execution_time_seconds": duration,
             "output": pack.model_dump(),
             "agents": [
+                {"name": "TriagePlanner", "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"},
                 {"name": "Reconciler", "role": "Audits ledger vs physical audit vs batch expiry"},
                 {"name": "WorldModel", "role": "Maintains shared canonical grounded entities & relations"},
                 {"name": "Investigator", "role": "Generates >= 3 competing hypotheses with evidence queries"},
@@ -113,12 +122,32 @@ def main():
     parser.add_argument("--action-type", default="PEER_TRANSFER", help="Action type to decide on (e.g. PEER_TRANSFER, EXPEDITE_PO)")
     parser.add_argument("--decision", choices=["APPROVED", "REJECTED", "approved", "rejected"], default="APPROVED", help="Decision (APPROVED or REJECTED)")
     parser.add_argument("--reason", default="Manual officer judgment", help="Reason for decision")
+    parser.add_argument("--triage", action="store_true", help="Execute proactive district-wide inventory triage scan")
+    parser.add_argument("--top-n", type=int, default=5, help="Number of urgent items to display in triage")
     args = parser.parse_args()
 
     if args.sample_mode:
         os.environ["SAMPLE_MODE"] = "true"
         orchestrator.llm_client.sample_mode = True
         orchestrator.data_store.use_zetaris = False
+
+    if args.triage:
+        print("[*] Running MedTrace Proactive District Triage Scan...")
+        res = orchestrator.triage_district(facility_id=args.facility if args.facility != "FAC-DH-01" else None, top_n=args.top_n)
+        print("\n" + "="*80)
+        print("MEDTRACE PROACTIVE DISTRICT TRIAGE LEADERBOARD")
+        print("="*80)
+        print(f"Total Evaluated: {res['total_evaluated']} facility-medicine pairs")
+        print(f"Status: {res['critical_count']} CRITICAL | {res['warning_count']} WARNING | {res['secure_count']} SECURE")
+        print("-" * 80)
+        print(f"{'Facility':<18} | {'Medicine':<16} | {'Cover':<8} | {'Shortfall':<10} | {'Status':<10}")
+        print("-" * 80)
+        for item in res["top_urgent_items"]:
+            print(f"{item['facility_id']:<18} | {item['generic_name'][:16]:<16} | {item['trust_cover_days']:>5.1f} d | {item['shortfall_units']:>6.1f} u | {item['urgency_tier']:<10}")
+        print("="*80)
+        if res.get("qualitative_synthesis"):
+            print(f"Executive Synthesis:\n{res['qualitative_synthesis']}\n")
+        return
 
     if args.record_decision:
         print(f"[*] Recording Officer Decision in H-MEM: Facility={args.facility}, Medicine={args.medicine}, Action={args.action_type}, Decision={args.decision.upper()}...")
