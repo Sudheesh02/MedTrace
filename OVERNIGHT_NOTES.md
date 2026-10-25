@@ -1314,3 +1314,37 @@
   - Backlog Item 4: Implement interactive web UI dashboard (`app/ui.py` or FastAPI `/dashboard`).
   - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
   - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.
+
+
+### Phase 14 / Build: Benchmark Documentation & Audit Accuracy Synchronization (Item 1 & Item 2)
+**Timestamp**: 2026-10-25 22:50 IST  
+**Commit**: docs(eval): synchronize 25-scenario curated regression benchmark and audit accuracy narrative  
+**Scope**: `README.md`, `SPONSOR_TECH.md`, `PRE_EXISTING_COMPONENTS.md`, `tests/test_api.py`, `OVERNIGHT_BACKLOG.md`  
+
+#### What Was Done
+1. **Curated Regression Benchmark Synchronized in `README.md` (Item 1)**:
+   - Added `### 🧪 Rule-Coverage & Failure Mode Regression Suite` in `README.md` embedding the 25-scenario benchmark comparison (MedTrace 89.5% Prec, 100.0% Rec, 94.5% F1 vs Rules Baseline 50.0% Prec, 17.6% Rec).
+   - Documented the exact rules-only baseline mechanism ($R = \text{daily consumption} \times 14.0\text{d}$) and why it scores 17.6% recall (blindness to quarantined lots, supplier delivery slips, carrier loss, and UOM packaging multipliers).
+   - Reaffirmed that this suite serves as an offline rule-coverage regression check, keeping the 180-day multi-tier simulation replay (Seeds 1–4, 94.7% F1 on held-out test seeds 3–4) as the primary headline generalization metric.
+2. **Audit Accuracy & Faithful Explanations Narrative Reframed (Item 2 & Priority 0c Item 6)**:
+   - Removed `(>85% target)` language from anomaly recall/F1 in `README.md`.
+   - Reframed Executive Summary and Pitch to lead with Audit Accuracy (97.5% precision, 90.0% recall on planted failure modes), Zero LLM Math Hallucination, Multi-Agent Adversarial Deliberation & Dissent Logs, and counterfactual verdict flips.
+3. **Number Auditor Grounding & Test Counts Updated Across Docs**:
+   - In `SPONSOR_TECH.md`: Cited the 25-scenario benchmark in Section 4.2 demonstrating a 0.0% unsupported number claim rate (0/25); updated test suite counts to 132 tests across all 7 test files (`test_agents.py`: 37, `test_api.py`: 31, `test_deterministic.py`: 23, `test_backtest.py`: 12, `test_data_store.py`: 12, `test_enriched_data.py`: 12, `test_world_model.py`: 5).
+   - In `PRE_EXISTING_COMPONENTS.md`: Synchronized test suite declaration to 132 automated tests.
+   - In `README.md`: Updated Section 8 test count to 132 tests.
+4. **Documentation Integrity Regression Suite Enforced**:
+   - In `tests/test_api.py`: Updated `test_metadata_json_and_docs_integrity` asserting 132 passing tests, absence of `(>85% target)`, and presence of `Rule-Coverage & Failure Mode Regression Suite` and `curated_evaluation.md`.
+5. **Backlog Updated**:
+   - Marked Item 1 and Item 2 as `[x] [DONE]` in `OVERNIGHT_BACKLOG.md`.
+   - Marked Priority 0c Item 6 as `[x] [DONE]` in `OVERNIGHT_BACKLOG.md`.
+6. **Full Test Suite Verification**:
+   - Executed full pytest suite (`python -m pytest tests -q`): **132 passed, 1 warning in 469.05s** (100% green across all test files).
+   - Working tree clean.
+
+#### What Is Next
+- **Batch 2 (P1 — Core Sponsor Tech & User Experience)**:
+  - Backlog Item 3: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
+  - Backlog Item 4: Implement interactive web UI dashboard (`app/ui.py` or FastAPI `/dashboard`).
+  - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+  - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.

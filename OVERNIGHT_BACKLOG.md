@@ -36,7 +36,7 @@
 3. [x] [DONE] Verdict-flip card in --explain: print the minimum missing/changed evidence that would reverse the conclusion, plus the dissent log (Skeptic objections) and the memory fact that changed the call. Implemented in `scripts/explain_trace.py`, wired into `run.py` (`--explain` and `--verdict-flip`) and FastAPI endpoints (`GET /trace/latest` and `GET /trace/verdict-flip`). Verified by `test_explain_trace_renders_verdict_flip_card` and `test_explain_trace_rich_and_plain_modes` in `tests/test_api.py`.
 4. [x] [DONE] Terminal explain view using the 'rich' library: color-coded, readable evidence chain (ledger line -> physical count -> debate excerpt -> action). Implemented in `scripts/explain_trace.py` with 4 colored panels and automatic ASCII fallback for non-TTY stdout. Verified by `test_explain_trace_rich_and_plain_modes` in `tests/test_api.py`.
 5. [x] [DONE] Small honest evaluation: 20 hand-crafted clinical scenarios (5 Clean Controls, 4 Phantom Drift, 3 Quarantined Batches, 3 Chronic Supplier Slips, 3 PO Transit Losses, 2 Unit-of-Measure Mismatches) in `app/backtest/curated_benchmark.py` and `scripts/run_curated_eval.py`. Evaluates MedTrace against rules-only baseline (MedTrace: 100% precision, 100% recall, 100% F1, 100% correct abstention on clean stock, 0.0% unsupported claim rate via Number Auditor; Baseline: 60.0% precision, 20.0% recall, 30.0% F1). Synthetic benchmark labeled clearly in `output/curated_evaluation.md` and CLI. Verified by `test_curated_benchmark_evaluation_execution` in `tests/test_backtest.py`.
-6. [ ] Reframe docs: drop lead-time and 'F1' as headline; lead with audit accuracy and explanation faithfulness; call the debate a dissent log unless a verdict flip is shown.
+6. [x] [DONE] Reframe docs: drop lead-time and 'F1' as headline; lead with audit accuracy and explanation faithfulness; call the debate a dissent log unless a verdict flip is shown. Implemented in README.md executive summary and benchmark sections.
 Never touch .env; never push.
 
 # PRIORITY 0b (user-requested, DO NOT DELETE until done and verified): REAL EDA + DATA CLEANING + RERUN EVERYTHING
@@ -154,7 +154,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 1: Synchronize Curated Benchmark & Regression Suite into `README.md` & `SPONSOR_TECH.md`
 - **Priority**: P0 (Monitor 21:15 Override, Impact 30 pts, Technical 20 pts)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
 - **Problem**: The Curated Multi-Agent Benchmark (`app/backtest/curated_benchmark.py`, `output/curated_evaluation.md`) was expanded to 25 clinical scenarios (with 5 adversarial edge cases, yielding 89.5% Precision, 100.0% Recall, 94.5% F1, 100% correct abstention on clean cases, and 0.0% unsupported claims via Number Auditor, decisively defeating the rules baseline at 50% Prec / 17.6% Rec). However, `README.md` completely omits this evaluation! Per Monitor directive: Do NOT headline this as general accuracy; present it under a concise "Rule-Coverage & Failure Mode Regression Suite" section while keeping the 180-day multi-tier backtest simulation replay (Seeds 1–4, 94.7% F1 on held-out test seeds 3–4) as the primary headline metric. Update test counts across docs from 128 to 132 tests.
 - **Action**:
@@ -171,7 +171,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 2: Reframe README Narrative Around Audit Accuracy, Faithful Explanations & Remove Target Language
 - **Priority**: P0 (Priority 0c Item 6, Monitor 12:20/13:45 Directives, Docs Honesty)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
 - **Problem**: `README.md` lines 71-72 still retain `(>85% target)` language. The prompt and monitor instruct to drop lead-time and 'F1' as the headline, lead with audit accuracy, faithful explanations, and zero hallucinated math, and document that planted anomaly detection is a rule-coverage audit on synthetic multi-tier data.
 - **Action**:
@@ -343,3 +343,10 @@ To verify the full test suite baseline at any time:
 python -m pytest tests -q
 ```
 Current Baseline Status: **132 passed, 1 warning in ~270s** (100% passing rate across all 8 test suites; clean working tree).
+
+## CORRECTIVE (free LLM council, verified in code - do not delete)
+- [ ] A. SQL injection: app/adapters/data_store.py builds Zetaris SQL with f-strings on facility_id/medicine_id/vendor; _sanitize_id exists but is never called. Apply it (or a strict regex allowlist) to every interpolated id, add a test with a quote in the id.
+- [ ] B. Hardcoded fallbacks: standard_prices dict in get_medicine_unit_price, base_demand 30.0/15.0 in reconciler, epi multiplier 1.35 default. Either derive from data or label them clearly in output and README as assumptions.
+- [ ] C. Backtest anomaly detection: confirm the F1 94.7 percent number uses the full pipeline or say plainly which detector it measures; add a note in README.
+- [ ] D. Number Auditor regex only matches units/tablets/packs; extend to capsules, vials, strips, boxes, bare quantities, with tests.
+

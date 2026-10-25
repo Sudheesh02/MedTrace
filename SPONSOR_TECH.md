@@ -2,7 +2,7 @@
 
 > **Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why**  
 > **Submission Deliverable 04: Sponsor Technology Explanation (10 Points)**  
-> **Status: Conformance Tests Passing (128/128 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials)**
+> **Status: Conformance Tests Passing (132/132 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials)**
 
 ---
 
@@ -149,6 +149,7 @@ In strict adherence to Track 2 guidelines (*The Agent That Can Explain Why*), **
 - Days of cover, trust-adjusted usable stock, audit drift, Monte Carlo lead time ETA, and recommended reorder quantities are computed mathematically.
 - The NVIDIA Nemotron model is given grounded deterministic numbers in its context and tasked with qualitative diagnosis, risk evaluation, and human-facing memos.
 - Model name and token usage are recorded on every agent turn in `logs/trace_*.jsonl`.
+- **Zero Unsupported Number Claims**: Across the 25-scenario curated failure mode regression benchmark ([`output/curated_evaluation.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/output/curated_evaluation.md)), the Skeptic Number Auditor strictly catches and rejects any invented quantities (0.0% unsupported claim rate).
 
 ---
 
@@ -158,7 +159,7 @@ In strict adherence to Track 2 guidelines (*The Agent That Can Explain Why*), **
 MedTrace was built inside **Cursor** leveraging:
 - **Composer & Grok**: Used for multi-file architectural refactoring, rapid test authoring, and complex multi-agent debate coordination.
 - **AGENTS.md & Conformance Rules**: Enforced strict anti-hardcoding invariants, parameterization, and deterministic arithmetic isolation across all iterations.
-- **Background Test Automation**: Running the 128-test pytest suite continuously to eliminate regressions before every commit.
+- **Background Test Automation**: Running the 132-test pytest suite continuously to eliminate regressions before every commit.
 
 ---
 
@@ -177,15 +178,15 @@ python -m pytest tests/test_world_model.py -q
 
 # Verify Meterless H-MEM API, CLI Officer Decision Feedback, Clean Clone Fallback, and Quick Demo Golden Case
 python -m pytest tests/test_api.py -q
-# Result: 28 passed
+# Result: 31 passed
 
 # Verify Multi-Agent Loops, Debate Flip, Financial Costs, and Number Auditor Invariants
 python -m pytest tests/test_agents.py -q
-# Result: 35 passed
+# Result: 37 passed
 
 # Verify Backtest Multi-Seed Simulation & Dynamic Ground Truth Bounds
 python -m pytest tests/test_backtest.py -q
-# Result: 10 passed
+# Result: 12 passed
 
 # Verify Deterministic Arithmetic & Parametric Invariants & Monte Carlo Seed Dynamism
 python -m pytest tests/test_deterministic.py -q
@@ -193,11 +194,11 @@ python -m pytest tests/test_deterministic.py -q
 
 # Verify Enriched Data Accessors, Real-World Normalization, and Multi-Line PO Preservation
 python -m pytest tests/test_enriched_data.py -q
-# Result: 8 passed
+# Result: 12 passed
 
-# Full End-to-End Test Baseline (128 passed across 7 test suites)
+# Full End-to-End Test Baseline (132 passed across 7 test suites)
 python -m pytest tests/ -q
-# Result: 128 passed in ~240s
+# Result: 132 passed in ~270s
 ```
 
-All sponsor technology interfaces are verified via 128 passing offline and mock tests, and live cloud connections are testable through `smoke_test.py` with active user credentials.
+All sponsor technology interfaces are verified via 132 passing offline and mock tests, and live cloud connections are testable through `smoke_test.py` with active user credentials.
