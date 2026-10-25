@@ -871,3 +871,34 @@
 - **Item 3 (Next Highest Priority — P0)**: Executive Verdict-Flip Card & Dissent Log in CLI `--explain`.
 - **Item 4 (P1)**: Color-coded terminal explain view with `rich` library and graceful plain text fallback.
 - **Item 5 (P1)**: Curated multi-agent benchmark suite (15–25 hand-crafted clinical scenarios) comparing debate vs rules baseline.
+
+
+---
+
+### Session: 2026-10-25 16:15 IST
+**Role**: Senior Reviewer & Hackathon Judge Auditor  
+**Phase**: Comprehensive Project Audit & Backlog Prioritization (Audit Routine)
+
+#### What Was Done
+1. **Audited Complete Codebase Against README Claims & Hackathon Rubric**:
+   - **README vs Real Code**: Verified evaluation numbers against `output/backtest_summary.md` and `output/backtest_seed_*.json`. Confirmed 100% test pass rate across 120 tests in 7 test suites. Identified that baseline anomaly detector is restricted to `DEMAND_SPIKE`, artificially capping baseline recall at 10% (1/10) by construction on planted seeds.
+   - **Multi-Agent Deliberation Loop**: Audited Investigator, Skeptic, ActionPlanner, Reconciler, and Meterless H-MEM decision-changing feedback loop. Confirmed Test H3 verifies decision flipping between `MONITOR_BUFFER` and `PEER_TRANSFER`. Identified missing counterfactual "Verdict-Flip Card" and explicit dissent log in CLI `--explain`.
+   - **Data Layer & USAID Deduplication Audit**: Discovered root cause of 36% row drop (3,732 rows) in `clean_usaid_deliveries()`: `dedup_key = (po_id, d_sched, d_deliv, vendor, mode)` ignores product description and line item IDs, accidentally discarding distinct medicines in the same shipment PO (e.g. Row 422 Saquinavir vs Row 423 Stavudine; Row 960 Lamivudine/Zidovudine vs Row 961 Lamivudine).
+   - **Backtest Evaluation Invariants**: Evaluated anomaly scoring logic. Detected that anomaly matching only matches `(type, fac, med)` set across the 180-day replay without requiring detection day to fall within $\pm 7$ days of the planted schedule for precision/recall/F1. Flagged missing raw counts `(TP/FP/FN)` in markdown summary tables.
+   - **API, Dockerfile & Production Quality**: Verified FastAPI OpenAPI schema, Docker Compose parameterized `${POSTGRES_PASSWORD:?set in .env}`, non-compose `ENV USE_ZETARIS=false` defaults, and isolated test suites. Flagged lack of interactive web UI (Streamlit `app/ui.py`) and live openFDA adapter with cache-aside pattern.
+2. **Refreshed Prioritized Overnight Backlog (`OVERNIGHT_BACKLOG.md`)**:
+   - Preserved all Priority 0 sections, monitor corrective items, and baseline architecture at the top.
+   - Formulated exactly 12 concrete, small, prioritized items replacing completed/stale entries.
+   - P0: (1) Verdict-Flip Card & Dissent Log in CLI `--explain`, (2) Color-coded terminal explain view via `rich`, (3) Fix USAID delivery deduplication key and document in `DATA_AUDIT.md`.
+   - P1: (4) Automated matplotlib EDA charts, (5) Recalibrate simulation distributions & update docs, (6) Backtest rigor: generic baseline z-score detector & timing-bounded matching, (7) Curated multi-agent benchmark suite (20 scenarios), (8) Dynamic narrative strings in `quick_demo.py` & test trace isolation, (9) Reframe README narrative around audit accuracy and zero-math provenance.
+   - P2: (10) Lightweight interactive web UI (`app/ui.py`), (11) Live openFDA REST API adapter with cache-aside, (12) Dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+3. **Application Code Guardrail**:
+   - Zero application code was modified in this audit turn, strictly respecting the prompt directive.
+4. **Baseline Verification**:
+   - Re-verified complete test suite: 120 tests passing in ~239s (`tests/`).
+
+#### What Is Next
+- **Batch 1 (Immediate Next Priority — P0)**:
+  - Item 1: Executive Verdict-Flip Card & Counterfactual Dissent Log in CLI `--explain` (`scripts/explain_trace.py`).
+  - Item 2: Color-Coded Terminal Explain View with `rich` library and graceful plain text fallback.
+  - Item 3: Fix USAID delivery deduplication key in `scripts/process_real_data.py`, document 3 raw duplicate examples in `DATA_AUDIT.md`, and rerun backtest on cleaned data.
