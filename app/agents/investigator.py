@@ -4,6 +4,7 @@ Formulates >= 3 competing hypotheses explaining why a shortage is forming.
 Grounds each hypothesis in evidence queries and refutation criteria.
 """
 
+import json
 from typing import Dict, List, Any, Optional
 from app.adapters.llm_client import LLMClient
 from app.models.schemas import Hypothesis
@@ -226,17 +227,62 @@ class InvestigatorAgent:
             )
         ]
 
-        # Call LLM client to enrich reasoning
+        # Call LLM client to evaluate candidate hypotheses and enrich qualitative reasoning
         prompt = f"""
-        Investigator Agent Review for {fac_id} - {med_id} ({gname}):
+        Investigator Agent Root-Cause Analysis for {fac_id} - {med_id} ({gname}):
         - Ledger Stock: {stock_eval['ledger_stock']} units
         - Usable Physical Stock: {stock_eval['usable_stock']} units
         - Trust Cover Days: {recon['trust_cover_days']} days (Naive: {recon['naive_cover_days']} days)
         - Shortfall Units: {shortfall['shortfall_units']} units
-        - Skeptic Critique: {skeptic_feedback or 'Initial Round'}
-        Formulated hypotheses: {[h.title for h in hypotheses]}
+        - Detected Discrepancies: {[d.get('description') for d in discrepancies]}
+        - Skeptic Critique: {skeptic_feedback or 'Initial Round (No previous critique)'}
+
+        Candidate Hypotheses:
+        1. H1-INTERNAL-AUDIT: {h1_title} (Initial Likelihood: {h1_likelihood:.2f})
+           Cause: {h1_cause}
+        2. H2-SUPPLIER-TRANSIT: {h2_title} (Initial Likelihood: {h2_likelihood:.2f})
+           Cause: {h2_cause}
+        3. H3-EXTERNAL-SURGE: {h3_title} (Initial Likelihood: {h3_likelihood:.2f})
+           Cause: {h3_cause}
+
+        Instructions:
+        Evaluate which hypothesis best explains the root cause based strictly on the grounded evidence and Skeptic feedback.
+        Return a valid JSON object with:
+        {{
+            "preferred_hypothesis_id": "H1-INTERNAL-AUDIT" | "H2-SUPPLIER-TRANSIT" | "H3-EXTERNAL-SURGE",
+            "likelihood_adjustments": {{
+                "H1-INTERNAL-AUDIT": float,
+                "H2-SUPPLIER-TRANSIT": float,
+                "H3-EXTERNAL-SURGE": float
+            }},
+            "qualitative_rationale": "Detailed explanation connecting evidence to hypothesis."
+        }}
         """
         llm_res = self.llm_client.generate(prompt=prompt, system_prompt="You are a clinical supply chain investigator.")
         self.last_llm_response = llm_res
+
+        # Parse structured JSON feedback from LLM if present
+        try:
+            raw_text = llm_res.get("text", "")
+            if "{" in raw_text and "}" in raw_text:
+                json_str = raw_text[raw_text.find("{"):raw_text.rfind("}")+1]
+                parsed = json.loads(json_str)
+                if isinstance(parsed, dict):
+                    pref_id = parsed.get("preferred_hypothesis_id")
+                    adj = parsed.get("likelihood_adjustments", {})
+                    rationale = parsed.get("qualitative_rationale")
+
+                    for hyp in hypotheses:
+                        if isinstance(adj, dict) and hyp.hypothesis_id in adj:
+                            try:
+                                val = float(adj[hyp.hypothesis_id])
+                                hyp.likelihood = max(0.05, min(0.98, round(val, 2)))
+                            except (ValueError, TypeError):
+                                pass
+                        if rationale and hyp.hypothesis_id == pref_id:
+                            hyp.supporting_evidence.append(f"Investigator qualitative synthesis: {rationale}")
+        except Exception:
+            # Fall back cleanly to deterministic evidence likelihoods
+            pass
 
         return hypotheses

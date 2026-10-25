@@ -79,6 +79,8 @@ def api_triage(facility_id: Optional[str] = None, top_n: int = 10):
 @app.post("/run")
 def api_run(req: RunRequest):
     start_time = time.time()
+    orig_sample_mode = orchestrator.llm_client.sample_mode
+    orig_use_zetaris = orchestrator.data_store.use_zetaris
     if req.options and req.options.get("sample_mode") is not None:
         force_sample = bool(req.options.get("sample_mode"))
         orchestrator.llm_client.sample_mode = force_sample
@@ -110,6 +112,10 @@ def api_run(req: RunRequest):
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if req.options and req.options.get("sample_mode") is not None:
+            orchestrator.llm_client.sample_mode = orig_sample_mode
+            orchestrator.data_store.use_zetaris = orig_use_zetaris
 
 def main():
     parser = argparse.ArgumentParser(description="MedTrace Agent Runner")
@@ -200,7 +206,7 @@ def main():
     else:
         port = int(os.getenv("PORT", args.port))
         print(f"[*] Starting MedTrace HTTP Server on 0.0.0.0:{port}...")
-        uvicorn.run("run.py:app", host="0.0.0.0", port=port, reload=False)
+        uvicorn.run("run:app", host="0.0.0.0", port=port, reload=False)
 
 if __name__ == "__main__":
     main()

@@ -910,3 +910,182 @@ def test_traced_model_equals_response_model_and_flags_in_all_trace_lines(monkeyp
         assert e["fallback"] is True
 
 
+def test_number_auditor_rejects_hallucinated_numbers_not_in_evidence_pack():
+    """
+    Verify Number Auditor zero-hallucination guardrail:
+    If an LLM or hypothesis asserts quantitative claims that do NOT exist in the deterministic
+    evidence pack (e.g. claiming 9999 units or 850 units when ground truth drift is 50),
+    the Number Auditor must detect the ungrounded number, flag it, and reject the hypothesis.
+    """
+    from app.agents.skeptic import SkepticAgent
+    from app.adapters.llm_client import LLMClient
+    from app.models.schemas import Hypothesis
+
+    skeptic = SkepticAgent(LLMClient())
+    deterministic_recon = {
+        "stock_evaluation": {
+            "ledger_stock": 500.0,
+            "usable_stock": 450.0,
+            "audit_drift": 50.0,
+            "quarantined_stock": 0.0,
+            "expiring_stock": 0.0
+        },
+        "trust_shortfall": {
+            "shortfall_units": 60.0,
+            "gap_days": 3.0,
+            "delivery_day": 6.0
+        },
+        "trust_cover_days": 22.5,
+        "naive_cover_days": 25.0,
+        "understated_gap_percent": 10.0,
+        "demand_evaluation": {
+            "base_daily_rate": 20.0,
+            "adjusted_daily_demand": 20.0
+        }
+    }
+
+    # Case 1: Grounded hypothesis with valid numbers from evidence pack
+    grounded_hyp = Hypothesis(
+        hypothesis_id="H1-INTERNAL-AUDIT",
+        title="Phantom Stock Drift in Warehouse Ledger",
+        cause="Physical audit confirms ledger overstates true physical stock by 50.0 units.",
+        likelihood=0.90,
+        supporting_evidence=["Audit count confirms 450.0 physical units vs 500.0 on ledger."],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+    top_hyp1, review1 = skeptic.review_and_audit([grounded_hyp], deterministic_recon, round_number=1)
+    assert review1.audited_numbers_valid is True
+    assert review1.accepted is True
+
+    # Case 2: Hallucinated hypothesis asserting 9999 units (not in evidence pack)
+    hallucinated_hyp = Hypothesis(
+        hypothesis_id="H1-INTERNAL-AUDIT",
+        title="Phantom Stock Drift in Warehouse Ledger",
+        cause="Physical audit confirms catastrophic loss of 9999.0 units.",
+        likelihood=0.90,
+        supporting_evidence=["Hallucinated shrinkage of 850.0 units claimed by ungrounded model."],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+    top_hyp2, review2 = skeptic.review_and_audit([hallucinated_hyp], deterministic_recon, round_number=1)
+    assert review2.audited_numbers_valid is False
+    assert review2.accepted is False
+    assert review2.confidence_score <= 0.35
+    assert any("not grounded in the deterministic evidence pack" in note for note in review2.flagged_inconsistencies)
+    assert "9999.0" in review2.critique_notes or "850.0" in review2.critique_notes
+
+
+def test_multi_agent_debate_flips_winning_hypothesis():
+    """
+    Verify multi-agent adversarial debate dynamics:
+    1. In Round 1, an ambiguous case causes H2 (Supplier Transit) to lead with likelihood 0.82
+       over H1 (Phantom Drift) at 0.80 (Delta = 0.02 <= 0.15).
+    2. Skeptic challenges Round 1 top hypothesis due to lack of differential elimination.
+    3. Investigator re-evaluates evidence under Skeptic critique: physical shelf count confirms
+       immediate leakage on shelves, refuting external transit delay.
+    4. Investigator revises: H1 is promoted to 0.88 and H2 is demoted to 0.35.
+    5. In Round 2, Skeptic evaluates revised hypotheses: H1 is now the clear winner and is accepted!
+    6. Verifies that debate actively FLIPPED the winner between rounds based on critique.
+    """
+    from app.agents.investigator import InvestigatorAgent
+    from app.agents.skeptic import SkepticAgent
+    from app.adapters.llm_client import LLMClient
+    from app.models.schemas import Hypothesis
+
+    llm = LLMClient()
+    inv = InvestigatorAgent(llm)
+    skeptic = SkepticAgent(llm)
+
+    recon_data = {
+        "facility_id": "FAC-CHC-01",
+        "medicine_id": "MED-001",
+        "generic_name": "Amoxicillin",
+        "deterministic_reconciliation": {
+            "stock_evaluation": {
+                "ledger_stock": 250.0,
+                "usable_stock": 170.0,
+                "audit_drift": 80.0,
+                "quarantined_stock": 0.0,
+                "expiring_stock": 0.0
+            },
+            "demand_evaluation": {"base_daily_rate": 25.0, "adjusted_daily_demand": 25.0},
+            "trust_cover_days": 6.8,
+            "naive_cover_days": 10.0,
+            "trust_shortfall": {"shortfall_units": 55.0, "gap_days": 2.2, "delivery_day": 9.0},
+            "naive_shortfall": {"shortfall_units": 0.0, "gap_days": 0.0, "delivery_day": 6.0},
+            "understated_gap_percent": 100.0,
+            "anomalies_detected": {
+                "ghost_stock": True,
+                "quarantined_batches": False,
+                "expiring_batches": False,
+                "supplier_delay_risk": True,
+                "demand_spike": False,
+                "global_shortage": False,
+                "uom_mismatch": False
+            }
+        },
+        "discrepancies": [
+            {"anomaly_type": "GHOST_STOCK", "description": "80 units missing on shelf.", "impact_units": 80.0},
+            {"anomaly_type": "PO_DISPATCHED_NOT_RECEIVED", "description": "Supplier slip adds +3 days.", "impact_units": 55.0}
+        ]
+    }
+
+    # Simulate Round 1 initial state where H2 was slightly ahead of H1
+    r1_hyps = [
+        Hypothesis(
+            hypothesis_id="H2-SUPPLIER-TRANSIT",
+            title="Upstream Supplier Lead Time Slippage",
+            cause="Empirical supplier slip priors indicate typical delivery delays push arrival.",
+            likelihood=0.82,
+            supporting_evidence=["Historical vendor slip adds delay."],
+            refuting_evidence=[],
+            confirming_query="SELECT * FROM supplier_slip"
+        ),
+        Hypothesis(
+            hypothesis_id="H1-INTERNAL-AUDIT",
+            title="Phantom Stock Drift in Warehouse Ledger",
+            cause="Physical audit confirms ledger overstates true physical stock by 80.0 units.",
+            likelihood=0.80,
+            supporting_evidence=["80.0 units missing from shelf."],
+            refuting_evidence=[],
+            confirming_query="SELECT * FROM physical_audit"
+        ),
+        Hypothesis(
+            hypothesis_id="H3-EXTERNAL-SURGE",
+            title="General Market Supply Constriction",
+            cause="Market tightening.",
+            likelihood=0.20,
+            supporting_evidence=[],
+            refuting_evidence=[],
+            confirming_query="SELECT 1"
+        )
+    ]
+
+    # Skeptic evaluates Round 1
+    det_recon = recon_data["deterministic_reconciliation"]
+    top_r1, review_r1 = skeptic.review_and_audit(r1_hyps, det_recon, round_number=1)
+
+    # In Round 1: Top candidate is H2, but Skeptic REJECTS due to close Delta (0.02 <= 0.15)
+    assert top_r1.hypothesis_id == "H2-SUPPLIER-TRANSIT"
+    assert review_r1.accepted is False
+    assert "close competing hypothesis" in review_r1.critique_notes.lower()
+    assert len(review_r1.flagged_inconsistencies) >= 1
+
+    # Round 2: Investigator receives Skeptic critique and executes differential elimination
+    r2_hyps = inv.investigate(recon_data, {}, skeptic_feedback=review_r1.critique_notes)
+    h1_r2 = next(h for h in r2_hyps if h.hypothesis_id == "H1-INTERNAL-AUDIT")
+    h2_r2 = next(h for h in r2_hyps if h.hypothesis_id == "H2-SUPPLIER-TRANSIT")
+
+    # Skeptic evaluates Round 2
+    top_r2, review_r2 = skeptic.review_and_audit(r2_hyps, det_recon, round_number=2)
+
+    # In Round 2: Top candidate is now H1! Winner FLIPPED from H2 to H1!
+    assert top_r2.hypothesis_id == "H1-INTERNAL-AUDIT"
+    assert h1_r2.likelihood > h2_r2.likelihood
+    assert review_r2.accepted is True
+    assert "approved" in review_r2.critique_notes.lower()
+    assert top_r1.hypothesis_id != top_r2.hypothesis_id, "Debate must flip the winning hypothesis between rounds!"
+
+
+

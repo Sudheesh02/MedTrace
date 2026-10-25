@@ -102,7 +102,7 @@ class LLMClient:
     def _sample_fallback(self, prompt: str, system_prompt: Optional[str] = None, error_msg: Optional[str] = None) -> Dict[str, Any]:
         """Rule-based offline generator ensuring judges can run end-to-end without credentials."""
         prompt_lower = prompt.lower()
-        if "investigate" in prompt_lower or "hypothesis" in prompt_lower or "hypotheses" in prompt_lower:
+        if "investigate" in prompt_lower or "hypothesis" in prompt_lower or "hypotheses" in prompt_lower or "candidate" in prompt_lower:
             fallback_text = (
                 "Investigator qualitative synthesis: Root cause analysis indicates a divergence between "
                 "recorded facility inventory, quality hold registries, and upstream delivery schedules. "

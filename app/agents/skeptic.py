@@ -3,6 +3,7 @@ Skeptic & Number Auditor Agent (app/agents/skeptic.py)
 Challenges hypotheses, enforces multi-source validation, and verifies every single number against deterministic truth.
 """
 
+import re
 from typing import Dict, List, Any, Tuple
 from app.adapters.llm_client import LLMClient
 from app.models.schemas import Hypothesis, SkepticReview, ActionRecommendation, ActionPlanAudit, ActionType
@@ -51,6 +52,38 @@ class SkepticAgent:
         if abs(stock_eval["usable_stock"] - expected_usable) > 0.01:
             inconsistencies.append(f"Usable stock invariant failed: expected {expected_usable}, got {stock_eval['usable_stock']}.")
             numbers_valid = False
+
+        # Mathematical Invariant 3: Number Auditor Grounding Check (Zero-Hallucination Guardrail)
+        # Verify that all explicit numerical quantities claimed in top_hyp.cause or supporting_evidence
+        # are strictly grounded in the deterministic reconciliation numbers.
+        grounded_numbers = {
+            round(float(stock_eval.get("ledger_stock", 0.0)), 1),
+            round(float(stock_eval.get("usable_stock", 0.0)), 1),
+            round(float(stock_eval.get("audit_drift", 0.0)), 1),
+            round(float(stock_eval.get("quarantined_stock", 0.0)), 1),
+            round(float(stock_eval.get("expiring_stock", 0.0)), 1),
+            round(float(shortfall.get("shortfall_units", 0.0)), 1),
+            round(float(shortfall.get("gap_days", 0.0)), 1),
+            round(float(shortfall.get("delivery_day", 0.0)), 1),
+            round(float(deterministic_recon.get("trust_cover_days", 0.0)), 1),
+            round(float(deterministic_recon.get("naive_cover_days", 0.0)), 1),
+            round(float(deterministic_recon.get("understated_gap_percent", 0.0)), 1),
+        }
+        demand_eval = deterministic_recon.get("demand_evaluation", {})
+        if demand_eval:
+            grounded_numbers.add(round(float(demand_eval.get("base_daily_rate", 0.0)), 1))
+            grounded_numbers.add(round(float(demand_eval.get("adjusted_daily_demand", 0.0)), 1))
+
+        text_to_audit = f"{top_hyp.cause} {' '.join(top_hyp.supporting_evidence)}"
+        claimed_quantities = re.findall(r"(\d+(?:\.\d+)?)\s*(?:units?|tablets?|packs?|physical units)", text_to_audit, re.IGNORECASE)
+        for q_str in claimed_quantities:
+            q_val = round(float(q_str), 1)
+            if q_val > 0 and q_val not in grounded_numbers:
+                inconsistencies.append(
+                    f"Number Auditor: Claimed quantity {q_val} units in hypothesis '{top_hyp.title}' "
+                    f"is not grounded in the deterministic evidence pack."
+                )
+                numbers_valid = False
 
         # 2. Adversarial Challenge & Differential Elimination (Execution Plan Phase 3.4)
         # In Round 1, challenge if:

@@ -29,7 +29,7 @@ class DataStore:
         self.zetaris_key = os.environ.get("ZETARIS_API_KEY", "")
         self.zetaris_org = os.environ.get("ZETARIS_ORG_ID", "1")
         self.username = os.environ.get("ZETARIS_USERNAME", "admin@zetaris.com")
-        self.password = os.environ.get("ZETARIS_PASSWORD", "<REDACTED>")
+        self.password = os.environ.get("ZETARIS_PASSWORD", "")
         self._cached_token = None
         self._csv_cache: Dict[str, List[Dict[str, Any]]] = {}
         self._pair_indexes: Dict[str, Dict[Tuple[str, str], List[Dict[str, Any]]]] = {}
@@ -47,11 +47,23 @@ class DataStore:
         self._pair_indexes.clear()
         DataStore.clear_shared_cache()
 
+    @staticmethod
+    def _sanitize_id(identifier: str) -> str:
+        """Sanitize SQL identifiers to guard against injection in dynamic queries."""
+        if not identifier:
+            return ""
+        import re
+        if not re.match(r"^[A-Za-z0-9_-]+$", str(identifier)):
+            raise ValueError(f"Invalid characters in SQL identifier: {identifier}")
+        return str(identifier)
+
     def _get_token(self) -> Optional[str]:
         if self.zetaris_key and self.zetaris_key != "your-zetaris-api-key":
             return self.zetaris_key
         if self._cached_token:
             return self._cached_token
+        if not self.password or not self.username:
+            return None
         try:
             res = requests.post(
                 f"{self.base_url}/api/auth/login",

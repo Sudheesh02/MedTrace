@@ -488,3 +488,38 @@
 #### What Is Next
 - **Priority 0 Item 2**: Fix uvicorn.run to `"run:app"`; ensure `POST /run` returns standard 500 status on unexpected exceptions; remove global orchestrator state.
 - **Priority 0 Item 3**: Make the LLM matter: investigator ranks hypotheses from evidence pack as JSON, skeptic LLM raises challenges, Number Auditor rejects numbers not in evidence pack, test where debate flips the winner.
+
+---
+
+### Session: 2026-10-25 09:45 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Hallucination & Hardcoding Eradication, Number Auditor Zero-Hallucination Guardrail, and Multi-Agent Debate Flip
+
+#### What Was Done
+1. **Zero-Hardcoding & Security Hardening in `DataStore`**:
+   - Eradicated hardcoded `"<REDACTED>"` default password from [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py); `self.password` defaults to `os.environ.get("ZETARIS_PASSWORD", "")`, immediately returning `None` without unauthenticated or hardcoded login requests.
+   - Added static identifier sanitizer `DataStore._sanitize_id` validating identifiers with strict regex (`^[A-Za-z0-9_-]+$`) to prevent SQL injection in dynamic queries.
+2. **Standardized `uvicorn.run` & Request State Isolation**:
+   - Changed `uvicorn.run("run.py:app", ...)` to `"run:app"` in [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py).
+   - In `api_run`, saved original `sample_mode` and `use_zetaris` and restored them in a `finally` block to prevent option leakage across API sessions.
+3. **Structured LLM Evaluation & Number Auditor Guardrail**:
+   - In [`app/agents/investigator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/investigator.py), prompted LLM for structured JSON hypothesis evaluation, parsing rankings, likelihood adjustments, and qualitative rationale into candidate hypotheses.
+   - In [`app/agents/skeptic.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/skeptic.py), implemented Mathematical Invariant 3: Number Auditor scans all explicit quantitative claims in candidate hypotheses against the deterministic evidence pack, immediately rejecting any ungrounded or invented numbers.
+4. **Multi-Agent Adversarial Debate Flip**:
+   - Validated that when ambiguous cases trigger Skeptic Round 1 challenge, Investigator incorporates differential critique, refutes competitor hypotheses, and promotes the grounded root cause, actively flipping the winning hypothesis between Round 1 and Round 2.
+5. **Replaced Constant Assertions with Real Dynamic Behavior**:
+   - In [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py), replaced local constant calculations with parameterized multi-seed backtest execution verifying action sizing error across simulation seeds 1, 2, and 3.
+6. **Engineered New Automated Tests**:
+   - Added `test_data_store_empty_password_does_not_attempt_zetaris_login` and `test_data_store_sql_identifier_sanitization` in [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py).
+   - Added `test_number_auditor_rejects_hallucinated_numbers_not_in_evidence_pack` and `test_multi_agent_debate_flips_winning_hypothesis` in [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py).
+   - Added `test_naive_and_medtrace_formulas_share_same_horizon_across_seeds` in [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py).
+7. **Documentation Synchronization**:
+   - Updated test counts across [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md), and [`PRE_EXISTING_COMPONENTS.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/PRE_EXISTING_COMPONENTS.md) to reflect **88 passed tests**.
+   - Updated [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md) marking Priority 0 Items 2, 3, and 4 as completed.
+8. **Test Suite Verification**:
+   - Executed `python -m pytest tests -q` — **88 passed, 1 warning in 82.37s** (100% passing rate).
+
+#### What Is Next
+- Implement Priority 0 Item 5: Review benchmark calibration on held-out test seeds 3-4 and report audit/root-cause accuracy.
+- Implement Priority 0 Item 6: Final truth pass across sponsor technology claims and documentation.
+- Implement Priority 0 Item 7: Track a sanitized sample trace in `logs/` for offline judge exploration.

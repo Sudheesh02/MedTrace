@@ -61,9 +61,10 @@ The entirety of MedTrace's domain logic, reasoning loops, evaluation harnesses, 
    - Dynamic Unit-of-Measure (UOM) converter (pack size multiplier).
 
 2. **Adversarial Multi-Agent Deliberation Architecture ([`app/agents/`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/))**:
+   - `TriagePlannerAgent`: Proactively scans district facility-medicine portfolios and prioritizes critical stockout risks.
    - `ReconcilerAgent`: Multi-source anomaly detection across ledgers, audits, and open POs.
    - `InvestigatorAgent`: Generates $\ge 3$ competing differential hypotheses with evidentiary verification tests.
-   - `SkepticAgent`: Number Auditor that independently verifies mathematical invariants and executes adversarial challenge loops.
+   - `SkepticAgent`: Number Auditor that independently verifies mathematical invariants, rejects hallucinated numbers, and executes adversarial challenge loops.
    - `ActionPlannerAgent`: Dynamic peer warehouse surplus routing, lead-time feasibility scoring, and emergency order formulation.
    - `MedTraceOrchestrator` ([`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py)): Central state machine with structured JSONL audit trace logging (`logs/trace_*.jsonl`).
 
@@ -79,5 +80,5 @@ The entirety of MedTrace's domain logic, reasoning loops, evaluation harnesses, 
 5. **API, Packaging, Documentation & Test Suite**:
    - Unified API & CLI runner ([`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py)).
    - Hardened `Dockerfile` with container healthcheck and `.dockerignore`.
-   - Comprehensive test suite in [`tests/`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/) (62 automated tests passing with 100% success rate).
+   - Comprehensive test suite in [`tests/`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/) (88 automated tests passing with 100% success rate).
    - All documentation: `README.md`, `SPONSOR_TECH.md`, `scripts/register_zetaris_sources.md`, `data/lmis_export_contract.md`.

@@ -68,29 +68,29 @@ def test_backtest_dynamic_demand_derivation_without_hardcoded_keys():
     assert res["metrics"]["action_sizing_error_pct"]["medtrace"] < 2.0
 
 
-def test_naive_and_medtrace_formulas_share_same_horizon():
+@pytest.mark.parametrize("test_seed", [1, 2, 3])
+def test_naive_and_medtrace_formulas_share_same_horizon_across_seeds(test_seed):
     """
-    Verify that Naive LMIS and MedTrace replenishment recommendations use the identical
-    replenishment horizon (14.0 days), differing ONLY in the stock estimate they observe:
-    - When ledger stock equals trust stock, both methods produce the exact same recommendation.
-    - When phantom stock or quarantine exists, MedTrace adjusts the order size based on true usable stock.
+    Verify dynamic behavioral calculation of action sizing errors across varying simulation seeds:
+    1. Replays backtest across seeds 1, 2, and 3.
+    2. Exercises BacktestEngine directly, verifying that action sizing error is computed
+       from empirical simulation trajectories rather than hardcoded constant assertions.
+    3. Verifies that MedTrace achieves low sizing error (<= 3.0%) across all seeds.
     """
-    consumption = 20.0
-    HORIZON = 14.0
+    sim_dir = f"data/simulated_seed_{test_seed}" if test_seed != 1 else "data/simulated"
+    if not os.path.exists(sim_dir):
+        from scripts.generate_facility_simulation import generate_simulation
+        generate_simulation(seed=test_seed, out_dir=sim_dir)
 
-    # Case 1: Clean ledger (ledger == trust == 100 units)
-    stock_clean = 100.0
-    naive_rec_clean = max(0.0, consumption * HORIZON - stock_clean)
-    medtrace_rec_clean = max(0.0, consumption * HORIZON - stock_clean)
-    assert naive_rec_clean == medtrace_rec_clean == 180.0
+    engine = BacktestEngine(sim_dir=sim_dir)
+    res = engine.run_backtest(seed=test_seed, sim_dir=sim_dir)
 
-    # Case 2: Divergent ledger (ledger = 250 units, but 150 phantom drift -> trust = 100 units)
-    ledger_stock = 250.0
-    trust_stock = 100.0
-    naive_rec = max(0.0, consumption * HORIZON - ledger_stock)  # 280 - 250 = 30 units (under-order)
-    medtrace_rec = max(0.0, consumption * HORIZON - trust_stock)  # 280 - 100 = 180 units (correct)
+    assert "action_sizing_error_pct" in res["metrics"]
+    sizing = res["metrics"]["action_sizing_error_pct"]
+    assert "medtrace" in sizing
+    assert "naive_lmis" in sizing
+    assert "heuristic_rule_based" in sizing
 
-    assert naive_rec == 30.0
-    assert medtrace_rec == 180.0
-    # Both formulas share the EXACT same 14.0 horizon multiplier
-    assert (consumption * HORIZON) == 280.0
+    # MedTrace must achieve low sizing error across all seeds
+    assert sizing["medtrace"] <= 3.0
+    assert res["total_actual_stockouts"] > 0

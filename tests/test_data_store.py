@@ -317,4 +317,40 @@ def test_data_store_federated_cross_source_query():
         assert "X-Request-ID" in called_headers
 
 
+def test_data_store_empty_password_does_not_attempt_zetaris_login(monkeypatch):
+    """
+    Verify credential security guardrail:
+    When ZETARIS_PASSWORD is not set or empty, DataStore._get_token() returns None immediately
+    without attempting an unauthenticated or hardcoded login request.
+    """
+    monkeypatch.delenv("ZETARIS_PASSWORD", raising=False)
+    monkeypatch.delenv("ZETARIS_API_KEY", raising=False)
+    store = DataStore(use_zetaris=True)
+    assert store.password == ""
+
+    with patch("requests.post") as mock_post:
+        token = store._get_token()
+        assert token is None
+        assert mock_post.call_count == 0
+
+
+def test_data_store_sql_identifier_sanitization():
+    """Verify identifier sanitization blocks SQL injection attempts."""
+    # Valid IDs pass through
+    assert DataStore._sanitize_id("FAC-DH-01") == "FAC-DH-01"
+    assert DataStore._sanitize_id("MED_007") == "MED_007"
+    assert DataStore._sanitize_id("SUP-123-A") == "SUP-123-A"
+
+    # Malicious injection strings raise ValueError
+    with pytest.raises(ValueError):
+        DataStore._sanitize_id("FAC-01; DROP TABLE batches;")
+
+    with pytest.raises(ValueError):
+        DataStore._sanitize_id("MED' OR '1'='1")
+
+    with pytest.raises(ValueError):
+        DataStore._sanitize_id("FAC-01 UNION SELECT * FROM users")
+
+
+
 

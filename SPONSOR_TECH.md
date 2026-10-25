@@ -14,7 +14,7 @@ MedTrace does not merely treat sponsors as decorative checkboxes or static promp
 
 | Sponsor | Layer | Technology Integrated | Core Function in MedTrace | Automated Verification Test |
 | :--- | :--- | :--- | :--- | :--- |
-| **Zetaris** | **Headline Data Sponsor** | Zetaris Lightning Federated SQL Engine (REST Proxy) | Federated cross-source querying spanning PostgreSQL hospital ledgers, USAID CSV/Parquet shipments, and live openFDA REST API. | [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py) (6 tests) |
+| **Zetaris** | **Headline Data Sponsor** | Zetaris Lightning Federated SQL Engine (REST Proxy) | Federated cross-source querying spanning PostgreSQL hospital ledgers, USAID CSV/Parquet shipments, and live openFDA REST API. | [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py) (11 tests) |
 | **Meterless** | **Headline Build Sponsor** | **Meterless World Model** (Engine 1) | Shared canonical entity states (`ent_inv_*`), relational graph, provenance hashing, and planted conflict tracking (Test W1 & W2). | [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py) (Test W1, W2) |
 | **Meterless** | **Headline Build Sponsor** | **Meterless H-MEM** (Engine 2) | Persistent episodic memory capturing human officer approvals, overrides, and deterministic contradiction resolution (Test H1 & H2). | [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py) (Test H1, H2) |
 | **NVIDIA** | **Headline Power Sponsor** | **NVIDIA Nemotron 3.5 Lightning** (`30b-a3b`) | High-speed qualitative synthesis, multi-agent adversarial debate, and token audit logging without LLM hallucinated arithmetic. | [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py) & `logs/trace_*.jsonl` |
@@ -166,9 +166,9 @@ MedTrace was built inside **Cursor** leveraging:
 Every sponsor technology in MedTrace is backed by automated tests:
 
 ```bash
-# Verify Zetaris REST SQL & Fallback
+# Verify Zetaris REST SQL, Fallback, Caching, and Sanitization
 python -m pytest tests/test_data_store.py -q
-# Result: 6 passed
+# Result: 11 passed
 
 # Verify Meterless World Model (W1, W2) & H-MEM (H1, H2)
 python -m pytest tests/test_world_model.py -q
@@ -178,21 +178,25 @@ python -m pytest tests/test_world_model.py -q
 python -m pytest tests/test_api.py -q
 # Result: 12 passed
 
-# Verify Multi-Agent Loops with NVIDIA Nemotron Reasoning Traces
+# Verify Multi-Agent Loops, Debate Flip, and Number Auditor Invariants
 python -m pytest tests/test_agents.py -q
-# Result: 27 passed
+# Result: 29 passed
 
-# Verify Zetaris Federated DataStore Caching & Cross-Source Queries
-python -m pytest tests/test_data_store.py -q
-# Result: 9 passed
-
-# Verify Backtest Multi-Seed Simulation & Replenishment Horizon Parity
+# Verify Backtest Multi-Seed Simulation & Replenishment Horizon Behavior
 python -m pytest tests/test_backtest.py -q
-# Result: 4 passed
+# Result: 6 passed
 
-# Full End-to-End Test Baseline (82 passed across 7 test suites)
+# Verify Deterministic Arithmetic & Parametric Invariants
+python -m pytest tests/test_deterministic.py -q
+# Result: 21 passed
+
+# Verify Enriched Data Accessors & Real-World Normalization
+python -m pytest tests/test_enriched_data.py -q
+# Result: 5 passed
+
+# Full End-to-End Test Baseline (88 passed across 7 test suites)
 python -m pytest tests/ -q
-# Result: 82 passed in ~55s
+# Result: 88 passed in ~82s
 ```
 
 All sponsor requirements are 100% verified, production-hardened, and judge-ready.
