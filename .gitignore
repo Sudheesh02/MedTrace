@@ -40,9 +40,11 @@ data/simulated_seed_*/
 # 5. Logs & Audit Traces
 logs/*
 !logs/sample_trace_*.jsonl
+!logs/golden_trace_*.jsonl
 *.log
 *.jsonl
 !logs/sample_trace_*.jsonl
+!logs/golden_trace_*.jsonl
 
 # 6. IDE, OS & System Metadata
 .vscode/

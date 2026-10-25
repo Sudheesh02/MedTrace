@@ -2,7 +2,7 @@
 
 > **Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why**  
 > **Submission Deliverable 04: Sponsor Technology Explanation (10 Points)**  
-> **Status: Conformance Tests Passing (116/116 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials)**
+> **Status: Conformance Tests Passing (117/117 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials)**
 
 ---
 
@@ -14,7 +14,7 @@ MedTrace does not merely treat sponsors as decorative checkboxes or static promp
 
 | Sponsor | Layer | Technology Integrated | Core Function in MedTrace | Automated Verification Test |
 | :--- | :--- | :--- | :--- | :--- |
-| **Zetaris** | **Headline Data Sponsor** | Zetaris Lightning Federated SQL Engine (REST Proxy) | Federated cross-source querying spanning PostgreSQL hospital ledgers, USAID CSV/Parquet shipments, and live openFDA REST API. | [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py) (11 tests) |
+| **Zetaris** | **Headline Data Sponsor** | Zetaris Lightning Federated SQL Engine (REST Proxy) | Federated cross-source querying spanning PostgreSQL hospital ledgers, USAID CSV/Parquet shipments, and live openFDA REST API. | [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py) (12 tests) |
 | **Meterless** | **Headline Build Sponsor** | **Meterless World Model** (Engine 1) | Shared canonical entity states (`ent_inv_*`), relational graph, provenance hashing, and planted conflict tracking (Test W1 & W2). | [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py) (Test W1, W2) |
 | **Meterless** | **Headline Build Sponsor** | **Meterless H-MEM** (Engine 2) | Persistent episodic memory capturing human officer approvals, overrides, and deterministic contradiction resolution (Test H1 & H2). | [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py) (Test H1, H2) |
 | **NVIDIA** | **Headline Power Sponsor** | **NVIDIA Nemotron 3.5 Lightning** (`30b-a3b`) | High-speed qualitative synthesis, multi-agent adversarial debate, and token audit logging without LLM hallucinated arithmetic. | [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py) & `logs/trace_*.jsonl` |
@@ -157,7 +157,7 @@ In strict adherence to Track 2 guidelines (*The Agent That Can Explain Why*), **
 MedTrace was built inside **Cursor** leveraging:
 - **Composer & Grok**: Used for multi-file architectural refactoring, rapid test authoring, and complex multi-agent debate coordination.
 - **AGENTS.md & Conformance Rules**: Enforced strict anti-hardcoding invariants, parameterization, and deterministic arithmetic isolation across all iterations.
-- **Background Test Automation**: Running the 116-test pytest suite continuously to eliminate regressions before every commit.
+- **Background Test Automation**: Running the 117-test pytest suite continuously to eliminate regressions before every commit.
 
 ---
 
@@ -168,35 +168,35 @@ Every sponsor technology in MedTrace is backed by automated tests:
 ```bash
 # Verify Zetaris REST SQL, Fallback, Caching, and Sanitization
 python -m pytest tests/test_data_store.py -q
-# Result: 11 passed
+# Result: 12 passed
 
 # Verify Meterless World Model (W1, W2) & H-MEM (H1, H2)
 python -m pytest tests/test_world_model.py -q
 # Result: 4 passed
 
-# Verify Meterless H-MEM API & CLI Officer Decision Feedback & Clean Clone Fallback
+# Verify Meterless H-MEM API, CLI Officer Decision Feedback, Clean Clone Fallback, and Quick Demo Golden Case
 python -m pytest tests/test_api.py -q
-# Result: 20 passed
+# Result: 27 passed
 
 # Verify Multi-Agent Loops, Debate Flip, Financial Costs, and Number Auditor Invariants
 python -m pytest tests/test_agents.py -q
-# Result: 32 passed
+# Result: 35 passed
 
 # Verify Backtest Multi-Seed Simulation & Dynamic Ground Truth Bounds
 python -m pytest tests/test_backtest.py -q
-# Result: 7 passed
+# Result: 9 passed
 
 # Verify Deterministic Arithmetic & Parametric Invariants & Monte Carlo Seed Dynamism
 python -m pytest tests/test_deterministic.py -q
-# Result: 22 passed
+# Result: 23 passed
 
 # Verify Enriched Data Accessors & Real-World Normalization
 python -m pytest tests/test_enriched_data.py -q
 # Result: 7 passed
 
-# Full End-to-End Test Baseline (116 passed across 7 test suites)
+# Full End-to-End Test Baseline (117 passed across 7 test suites)
 python -m pytest tests/ -q
-# Result: 116 passed in ~100s
+# Result: 117 passed in ~100s
 ```
 
-All sponsor technology interfaces are verified via 116 passing offline and mock tests, and live cloud connections are testable through `smoke_test.py` with active user credentials.
+All sponsor technology interfaces are verified via 117 passing offline and mock tests, and live cloud connections are testable through `smoke_test.py` with active user credentials.

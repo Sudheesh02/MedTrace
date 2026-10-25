@@ -39,10 +39,10 @@ Evaluation engine computational throughput measured across 180 simulated days (~
 
 | Simulation Seed | Transactions Replayed | Replay Duration | Processing Throughput |
 | :---: | :---: | :---: | :---: |
-| Seed 1 | 25,920 | 3.28s | 7,899.7 events/sec |
-| Seed 2 | 25,920 | 3.26s | 7,955.5 events/sec |
-| Seed 3 | 25,920 | 3.13s | 8,289.2 events/sec |
-| Seed 4 | 25,920 | 3.22s | 8,055.0 events/sec |
+| Seed 1 | 25,920 | 3.24s | 8,009.7 events/sec |
+| Seed 2 | 25,920 | 3.19s | 8,115.5 events/sec |
+| Seed 3 | 25,920 | 3.12s | 8,320.6 events/sec |
+| Seed 4 | 25,920 | 3.27s | 7,926.6 events/sec |
 
 ---
 

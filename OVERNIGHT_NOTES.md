@@ -800,3 +800,39 @@
 - **Batch 2 (Terminal UX & Multi-Agent Evaluation — P1)**:
   - Backlog Item 4: Color-coded terminal explain view using `rich` with graceful plain text fallback.
   - Backlog Item 5: Curated multi-agent benchmark suite (20 hand-crafted clinical scenarios) comparing debate vs rules baseline.
+
+
+---
+
+### Session: 2026-10-25 14:10 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 1 — Item 1 Implementation (End-to-End Golden Case in `scripts/quick_demo.py` & CLI `--case golden`)
+
+#### What Was Done
+1. **End-to-End Golden Demonstration Case (`scripts/quick_demo.py`)**:
+   - Refactored `scripts/quick_demo.py` to route by default or via `--case golden` to the high-stakes clinical quarantine case (`FAC-CHC-01` / `MED-001`, Paracetamol 500mg Tablets).
+   - Showcases the complete Track 2 clinical dilemma:
+     - Naive LMIS ledger reports 505 units (17.9 days cover, considered safe).
+     - Physical batch audit reveals 400 units locked under QA quarantine hold (DailyMed/FDA recall).
+     - Deterministic usable stock is only 105 units (3.7 days cover -> catastrophic stockout imminent).
+     - Multi-agent debate: Investigator formulates 3 hypotheses; Skeptic challenges in Round 1 on ambiguous differential; Investigator refutes transit loss with batch QA recall data; Skeptic approves in Round 2.
+     - Action Planner formulates `PEER_TRANSFER` (from `FAC-WH-02`, 24h lead time, $0.44 transit fee) + `BATCH_RELEASE` (fast-track CoA review for 400 quarantined units) + `EXPEDITE_PO`.
+   - Execution finishes in ~0.25 seconds offline with zero hallucinated arithmetic.
+   - Retains optional `--case standard` for previous `FAC-DH-01`/`MED-007` ledger drift scenario.
+2. **CLI Preset Case Support (`run.py --case golden`)**:
+   - Wired `--case golden` and `--case standard` directly into `run.py`.
+   - Running `python run.py --case golden` or `python run.py --cli --case golden` automatically configures target facility and medicine, runs the multi-agent investigation, and exports the canonical golden trace.
+3. **Canonical Tracked Golden Trace**:
+   - Generated and committed `logs/golden_trace_FAC-CHC-01_MED-001.jsonl` with `.gitignore` exception `!logs/golden_trace_*.jsonl`.
+   - Updated `scripts/explain_trace.py` fallback search order to prioritize `golden_trace_FAC-CHC-01_MED-001.jsonl`.
+   - Updated `scripts/validate_traces.py` to automatically include `golden_trace_*.jsonl` in conformance verification.
+4. **Comprehensive Automated Test Suite**:
+   - Added `test_quick_demo_golden_case_execution` in `tests/test_api.py` validating end-to-end execution of `quick_demo.py`, CLI `--case golden`, and trace file schema conformance.
+   - Synchronized test counts across `SPONSOR_TECH.md`, `PRE_EXISTING_COMPONENTS.md`, `README.md`, and `test_metadata_json_and_docs_integrity` (117 passing automated tests).
+5. **Marked Item 1 Completed in Backlog**:
+   - Updated `OVERNIGHT_BACKLOG.md` marking Item 1 and Priority 0c Item 1 as `[x] [DONE]`.
+
+#### What Is Next
+- **Batch 1 (Next Highest Priority — P0)**:
+  - Backlog Item 2: Meterless H-MEM decision-changing feedback loop (wire `supplier_delays` into Reconciler and Action Planner, add Test H3).
+  - Backlog Item 3: Executive Verdict-Flip Card & Dissent Log in CLI `--explain`.

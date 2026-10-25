@@ -180,7 +180,7 @@ python run.py
 
 ### 8. Run Test Suite & Backtest Evaluation
 ```bash
-# Run unit & agent tests (103 tests across 7 test suites)
+# Run unit & agent tests (117 tests across 7 test suites)
 python -m pytest tests/
 
 # Run 180-day comparative multi-seed backtest

@@ -17,7 +17,12 @@ def find_latest_trace(logs_dir: str = "logs") -> Optional[str]:
         files.sort(key=os.path.getmtime, reverse=True)
         return files[0]
     
-    # On clean clones prior to dynamic runs, fall back to tracked judge sample trace
+    # On clean clones prior to dynamic runs, fall back to tracked judge golden or sample trace
+    golden_trace = os.path.join(logs_dir, "golden_trace_FAC-CHC-01_MED-001.jsonl")
+    if os.path.exists(golden_trace):
+        print(f"[i] No dynamic trace logs found; rendering tracked golden trace ({os.path.basename(golden_trace)}) for judge evaluation.")
+        return golden_trace
+
     sample_trace = os.path.join(logs_dir, "sample_trace_FAC-DH-01_MED-007.jsonl")
     if os.path.exists(sample_trace):
         print(f"[i] No dynamic trace logs found; rendering tracked sample trace ({os.path.basename(sample_trace)}) for judge evaluation.")

@@ -198,6 +198,7 @@ def main():
     parser.add_argument("--cli", action="store_true", help="Run single investigation in CLI mode")
     parser.add_argument("--facility", default="FAC-DH-01", help="Target facility ID")
     parser.add_argument("--medicine", default="MED-007", help="Target medicine ID")
+    parser.add_argument("--case", choices=["golden", "standard"], default=None, help="Preset clinical scenario: 'golden' (FAC-CHC-01/MED-001 quarantine stockout) or 'standard' (FAC-DH-01/MED-007)")
     parser.add_argument("--port", type=int, default=8000, help="API server port")
     parser.add_argument("--sample-mode", action="store_true", help="Force sample mode offline execution")
     parser.add_argument("--record-decision", action="store_true", help="Record an officer approval/rejection decision into H-MEM")
@@ -215,6 +216,17 @@ def main():
         os.environ["SAMPLE_MODE"] = "true"
         orchestrator.llm_client.sample_mode = True
         orchestrator.data_store.use_zetaris = False
+
+    if args.case == "golden":
+        args.facility = "FAC-CHC-01"
+        args.medicine = "MED-001"
+        args.cli = True
+        print("[*] Preset Case Loaded: GOLDEN CASE (FAC-CHC-01 / MED-001 Paracetamol 500mg QA Quarantine Hold)")
+    elif args.case == "standard":
+        args.facility = "FAC-DH-01"
+        args.medicine = "MED-007"
+        args.cli = True
+        print("[*] Preset Case Loaded: STANDARD CASE (FAC-DH-01 / MED-007 Metformin 500mg)")
 
     if args.auto_triage:
         print("[*] Proactive District Triage Scan initiated via TriagePlannerAgent...")
@@ -295,6 +307,11 @@ def main():
             print(f"- Estimated Financial Cost: ${top_act.estimated_cost_usd:.2f} USD")
         print(f"- Justification: {top_act.justification}")
         print(f"\nTrace log written to: {pack.trace_file}")
+        if getattr(args, "case", None) == "golden":
+            import shutil
+            golden_trace_path = os.path.join(orchestrator.logs_dir, "golden_trace_FAC-CHC-01_MED-001.jsonl")
+            shutil.copyfile(pack.trace_file, golden_trace_path)
+            print(f"[+] Canonical Golden Trace saved: {golden_trace_path}")
         print("="*60)
         if args.explain:
             from scripts.explain_trace import render_trace

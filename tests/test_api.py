@@ -317,9 +317,10 @@ def test_metadata_json_and_docs_integrity():
     assert "101-test" not in sponsor_doc
     assert "103-test" not in sponsor_doc
     assert "115-test" not in sponsor_doc
-    assert "116-test pytest suite" in sponsor_doc
+    assert "116-test" not in sponsor_doc
+    assert "117-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "116/116 Automated Tests Verified" in sponsor_doc
+    assert "117/117 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -329,7 +330,8 @@ def test_metadata_json_and_docs_integrity():
     assert "88 automated tests" not in pre_existing_doc
     assert "103 automated tests" not in pre_existing_doc
     assert "115 automated tests" not in pre_existing_doc
-    assert "116 automated tests passing" in pre_existing_doc
+    assert "116 automated tests" not in pre_existing_doc
+    assert "117 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:
@@ -581,5 +583,70 @@ def test_dockerfile_configuration():
     assert "SAMPLE_MODE=true" in content
     assert "USE_ZETARIS=false" in content
     assert "PORT=8000" in content
+
+
+def test_quick_demo_golden_case_execution():
+    """
+    Priority 0c Item 1 & Backlog Item 1:
+    Verifies scripts/quick_demo.py executes the end-to-end golden quarantine case:
+    - Target: FAC-CHC-01, MED-001 (Paracetamol 500mg)
+    - 400 quarantined units subject to QA hold, 3.7 days usable stock cover
+    - Round 1 Skeptic adversarial challenge -> Round 2 Investigator refutation & revision
+    - Action plan: PEER_TRANSFER + BATCH_RELEASE
+    - Validates tracked logs/golden_trace_FAC-CHC-01_MED-001.jsonl
+    - Validates run.py --case golden CLI preset
+    """
+    import subprocess
+    import sys
+    import json
+    import os
+
+    # 1. Execute quick_demo.py (defaults to golden case)
+    res_demo = subprocess.run(
+        [sys.executable, "scripts/quick_demo.py", "--case", "golden"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_demo.returncode == 0, f"quick_demo.py failed:\n{res_demo.stderr}\n{res_demo.stdout}"
+    assert "MEDTRACE: EXECUTIVE JUDGE DEMONSTRATION" in res_demo.stdout
+    assert "FAC-CHC-01" in res_demo.stdout
+    assert "Paracetamol" in res_demo.stdout
+    assert "QA quarantine hold" in res_demo.stdout
+    assert "MULTI-AGENT ADVERSARIAL DEBATE: ROUND 1" in res_demo.stdout
+    assert "MULTI-AGENT ADVERSARIAL DEBATE: ROUND 2" in res_demo.stdout
+    assert "PEER_TRANSFER" in res_demo.stdout
+    assert "BATCH_RELEASE" in res_demo.stdout
+    assert "Canonical Golden Trace committed & saved" in res_demo.stdout
+
+    # 2. Verify tracked golden trace exists and has valid events
+    golden_trace_path = os.path.join("logs", "golden_trace_FAC-CHC-01_MED-001.jsonl")
+    assert os.path.exists(golden_trace_path), "golden_trace_FAC-CHC-01_MED-001.jsonl must exist"
+    with open(golden_trace_path, "r", encoding="utf-8") as f:
+        events = [json.loads(line) for line in f if line.strip()]
+    assert len(events) >= 10
+    actions = [e["action"] for e in events]
+    assert "START_RUN" in actions
+    assert "RECONCILE_COMPLETE" in actions
+    assert "ROUND_1_START" in actions
+    assert "ROUND_1_EVALUATION" in actions
+    assert "ROUND_2_START" in actions
+    assert "ROUND_2_EVALUATION" in actions
+    assert "ACTIONS_RECOMMENDED" in actions
+    assert "ACTION_PLAN_AUDITED" in actions
+
+    # 3. Verify CLI --case golden in run.py
+    res_cli = subprocess.run(
+        [sys.executable, "run.py", "--cli", "--case", "golden", "--sample-mode"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    assert res_cli.returncode == 0, f"run.py --case golden failed:\n{res_cli.stderr}\n{res_cli.stdout}"
+    assert "Preset Case Loaded: GOLDEN CASE" in res_cli.stdout
+    assert "Target: Facility FAC-CHC-01 | Medicine MED-001" in res_cli.stdout
+    assert "Winning Hypothesis: Batch Quality Assurance Quarantine & Regulatory Recall" in res_cli.stdout
+    assert "PEER_TRANSFER" in res_cli.stdout
+
 
 

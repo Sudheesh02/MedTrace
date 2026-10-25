@@ -1,5 +1,5 @@
-﻿# PRIORITY 0c (from a 4-model LLM council, DO NOT DELETE until done): ONE GOLDEN CASE + SPONSOR PROOF + EXPLAIN UX
-1. Golden case end to end: a quarantined batch or unit-of-measure mismatch where the ledger looks sufficient but usable stock is not. Source records -> reconciliation -> competing explanations (Investigator vs Skeptic) -> deterministic action -> cited explanation. Must run in under 90 seconds via one command (scripts/quick_demo.py or similar) and its trace must be committed (sanitized).
+# PRIORITY 0c (from a 4-model LLM council, DO NOT DELETE until done): ONE GOLDEN CASE + SPONSOR PROOF + EXPLAIN UX
+1. [x] [DONE] Golden case end to end: a quarantined batch or unit-of-measure mismatch where the ledger looks sufficient but usable stock is not. Source records -> reconciliation -> competing explanations (Investigator vs Skeptic) -> deterministic action -> cited explanation. Must run in under 90 seconds via one command (scripts/quick_demo.py or similar) and its trace must be committed (sanitized). Verified via `scripts/quick_demo.py --case golden` and `tests/test_api.py::test_quick_demo_golden_case_execution`.
 2. Meterless must change a decision: seed a prior supplier-slip fact in H-MEM/world model, then show the SAME discrepancy classified or acted on differently with vs without that memory. Add a test and save both traces.
 3. Verdict-flip card in --explain: print the minimum missing/changed evidence that would reverse the conclusion, plus the dissent log (Skeptic objections) and the memory fact that changed the call.
 4. Terminal explain view using the 'rich' library: color-coded, readable evidence chain (ledger line -> physical count -> debate excerpt -> action). Keep existing plain JSONL output.
@@ -135,7 +135,8 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 1: End-to-End Golden Case in `scripts/quick_demo.py` & CLI (`--case golden`)
 - **Priority**: P0 (Priority 0c Item 1, Track 2 Core Story, Demo 15 pts)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
+- **Verification**: Executed in 0.23s via `scripts/quick_demo.py --case golden` and CLI `run.py --case golden`; 400 quarantined units identified; Round 1 Skeptic challenge -> Round 2 Investigator refutation -> Skeptic approval; PEER_TRANSFER and BATCH_RELEASE generated; sanitized trace committed in `logs/golden_trace_FAC-CHC-01_MED-001.jsonl`; verified by `test_quick_demo_golden_case_execution` in `tests/test_api.py`.
 - **Files**: [`scripts/quick_demo.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/quick_demo.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), `logs/golden_trace_FAC-CHC-01_MED-001.jsonl`, [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
 - **Problem**: `quick_demo.py` currently targets `FAC-DH-01`/`MED-007` (Metformin, 103.9 days cover, zero shortfall), which demonstrates ledger adjustment but fails to showcase urgent stockout prevention, peer transfer, and adversarial batch release.
 - **Action**:
