@@ -1024,3 +1024,37 @@
   - Backlog Item 7: Implement live openFDA REST API adapter with offline cache-aside in `DataStore`.
   - Backlog Item 8: Create lightweight interactive Streamlit dashboard (`app/ui.py`).
   - Backlog Item 9: Author consolidated `tests/test_sponsor_conformance.py`.
+
+
+---
+
+### Session: 2026-10-25 18:55 IST
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 1 — Item 1 Implementation (Automated Empirical EDA Figures in Matplotlib & Empirical Calibration Grounding)
+
+#### What Was Done
+1. **Authored Automated Empirical EDA Generator (`scripts/generate_eda_charts.py`)**:
+   - Implemented headless `matplotlib` generator producing 5 high-resolution figures in `reports/eda/*.png`:
+     - `supplier_slip_distribution.png`: Empirical delay histogram across 10,324 USAID delivery records and breakdown across top transport modes (Air, Truck, Ocean, Air Charter) with $p_{50}=0.0$d and $p_{90}=3.0$d annotations.
+     - `demand_seasonality_patterns.png`: Weekday dispensing cycles and 12-month annual trajectories across 4 representative clinical ATC drug classes (`N02BE`, `M01AB`, `R03`, `N05B`).
+     - `zero_demand_share.png`: Zero-inflation prevalence ranking across all 8 ATC categories, distinguishing structural clinic closures (~1.2%) from non-structural clinical intermittency (up to 67.9% for hypnotics `N05C`).
+     - `simulated_vs_real_comparison.png`: Dual distribution overlay verifying that simulated delivery slip and demand multiplier variance faithfully mirror empirical USAID and Kaggle priors without distribution drift.
+     - `stockout_lead_time_distribution.png`: Cumulative days-of-stock-cover survival curves across 25,920 simulation days and comparative anomaly detection F1 performance across Seeds 1–4 (94.7% held-out test F1 on Seeds 3–4).
+2. **Documented Grounding Findings (`reports/eda/README.md`)**:
+   - Created detailed markdown report embedding all 5 figures with empirical justifications, modal variance analysis, and explicit mappings to MedTrace simulator calibration parameters.
+3. **Automated Unit & CLI Regression Tests (`tests/test_enriched_data.py`)**:
+   - Added `test_eda_charts_generation` and `test_generate_eda_charts_cli`, verifying that all 5 PNG figures are created, exceed 15 KB, match PNG magic byte signatures, and execute cleanly via CLI.
+4. **Integrated Clean-Clone Gate (`scripts/validate_clean_clone.py`)**:
+   - Added chart generation step to clean-clone validation harness. All 8 validation gates pass cleanly in offline environments.
+5. **Marked Item 1 Done in Backlog**:
+   - Marked Item 1 as completed in `OVERNIGHT_BACKLOG.md` (closing Priority 0b Item 3).
+6. **Full Test Suite & Doc Integrity**:
+   - Updated passing test count to 126 across docs and tests.
+
+#### What Is Next
+- **Batch 1 (Next Highest Priority — P0)**:
+  - Backlog Item 2: Backtest rigor: implement generic baseline rolling z-score detector (|z| > 3.0) on consumption and ledger-vs-audit gap in `BacktestEngine`, reporting type-agnostic F1 alongside typed F1.
+  - Backlog Item 3: Enforce $\pm 7$-day detection window for anomaly True Positive credit and report raw counts $(TP/FP/FN)$ and median detection delay in `output/backtest_summary.md` and `README.md`.
+  - Backlog Item 4: Synchronize `README.md` benchmark table and text with exact numbers from `output/backtest_summary.md` and 126 passing tests.
+- **Batch 2 (Multi-Agent Benchmark & Interfaces — P1)**:
+  - Backlog Item 5: Author `app/backtest/curated_benchmark.py` and `scripts/run_curated_eval.py` (20 clinical scenarios).

@@ -85,9 +85,14 @@ def main():
             "MULTI-AGENT REASONING & AUDIT TIMELINE"
         ),
         (
-            [sys.executable, "scripts/export_action_pack.py", "--facility", "FAC-DH-01", "--medicine", "MED-007"],
+            [sys.executable, "scripts/export_action_pack.py", "--facility", "FAC-DH-01", "--medicine", "MED-007", "--output", os.path.join(os.environ.get("TEMP", "/tmp"), "validate_memo.md")],
             "Procurement Memorandum Direct Exporter (scripts/export_action_pack.py)",
             "Printable Procurement Memorandum successfully written to"
+        ),
+        (
+            [sys.executable, "scripts/generate_eda_charts.py", "--quiet"],
+            "Automated Empirical EDA Visual Figures Generator (scripts/generate_eda_charts.py)",
+            ""
         ),
         (
             [sys.executable, "-m", "pytest", "tests/test_enriched_data.py", "tests/test_data_store.py", "-q"],

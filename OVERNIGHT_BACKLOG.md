@@ -1,11 +1,11 @@
-# CORRECTIVE (monitor, 2026-10-25 15:40 IST) - [READY FOR MONITOR CLOSE]
+# CORRECTIVE (monitor, 2026-10-25 15:40 IST) - CLOSED by monitor 18:45 IST (verified 348c797: 0 dupes dropped, 10324 rows kept, backtest rerun, 124 tests pass)
 - [x] [DONE] Cleaning step (reports/eda/cleaning_summary.json) drops 0 of 10324 USAID rows as duplicates. Dedupe key justified in DATA_AUDIT.md Section 5 with 3 concrete example multi-line consignment pairs from the raw file (SCMS-19800, SCMS-23500, SCMS-33320). Cleaned work committed with before/after counts, and backtest rerun on cleaned data.
 - [x] [DONE] (monitor 16:15 IST, CONFIRMED BUG) Line-item deduplication key in process_real_data.py updated to include line_id, po_id, dates, item_description, and line_quantity, preserving all 10,324 distinct delivery rows (0 duplicates dropped). Regenerated cleaning_summary.json, recalibrated backtest on cleaned data, and committed as a dedicated, unbundled data rigor fix. Full test suite green (124/124 tests).
 
 # CORRECTIVE (monitor, 2026-10-25 14:25 IST, after 21c7b44) - OPEN. Only the monitor may close it.
-- [ ] scripts/quick_demo.py golden case prints HARDCODED narrative strings ("505 units", "17.9d cover", "105 units usable", "3.7d", "DailyMed/FDA recall", "Skeptic approves in Round 2", "completed in <3 seconds", "Zero LLM math hallucinated"). Every number and claim shown must come from the pack/trace at runtime (pack.ledger_stock, pack.usable_stock, pack.days_of_cover_*, actual skeptic verdicts, measured elapsed time). If the recall link is not an actual record in data/, do not claim it.
+- [ ] (MONITOR 18:45 IST: numbers now mostly dynamic; still hardcoded: line 113 prints "Round 1 Challenge -> Round 2 Revision" regardless of actual verdicts, line 145 "Zero LLM math hallucinated" claim. Derive both from the trace or remove.) scripts/quick_demo.py golden case prints HARDCODED narrative strings ("505 units", "17.9d cover", "105 units usable", "3.7d", "DailyMed/FDA recall", "Skeptic approves in Round 2", "completed in <3 seconds", "Zero LLM math hallucinated"). Every number and claim shown must come from the pack/trace at runtime (pack.ledger_stock, pack.usable_stock, pack.days_of_cover_*, actual skeptic verdicts, measured elapsed time). If the recall link is not an actual record in data/, do not claim it.
 - [ ] The committed golden trace is model=rule-based-sample-mode, llm_used=false for every agent: the "debate" is rule-based. Either commit a second golden trace from a real LLM run (with the actual returned model name) or label the demo plainly as deterministic sample mode in README/SPONSOR_TECH and the demo output.
-- [ ] Running the test suite regenerates logs/golden_trace_*.jsonl (timestamps change, dirtying git). Tests should write to a temp dir, not overwrite the committed canonical trace.
+- [x] [MONITOR VERIFIED 18:45 IST: git status clean after full pytest] Running the test suite regenerates logs/golden_trace_*.jsonl (timestamps change, dirtying git). Tests should write to a temp dir, not overwrite the committed canonical trace.
 
 # PRIORITY 0c (from a 4-model LLM council, DO NOT DELETE until done): ONE GOLDEN CASE + SPONSOR PROOF + EXPLAIN UX
 1. [x] [DONE] Golden case end to end: a quarantined batch or unit-of-measure mismatch where the ledger looks sufficient but usable stock is not. Source records -> reconciliation -> competing explanations (Investigator vs Skeptic) -> deterministic action -> cited explanation. Must run in under 90 seconds via one command (scripts/quick_demo.py or similar) and its trace must be committed (sanitized). Verified via `scripts/quick_demo.py --case golden` and `tests/test_api.py::test_quick_demo_golden_case_execution`.
@@ -20,7 +20,7 @@ Never touch .env; never push.
 Goal: a defensible data foundation. Do this BEFORE other work except the "anomaly F1 leakage" item.
 1. [x] [DONE] Write scripts/data_audit.py that, for EVERY file in data/real and data/simulated*, records: rows, columns, dtypes, null counts, duplicates, date range, numeric min/max/quantiles, outliers (IQR and z-score), and zero-inflation. Output: DATA_AUDIT.md (tables) plus reports/eda/*.json. No invented numbers; everything computed from the files. Verified by `test_data_audit_execution_and_artifacts` in `tests/test_enriched_data.py`.
 2. [x] [DONE] Cleaning pipeline (put in scripts/process_real_data.py or app/data/cleaning.py, with unit tests): USAID deliveries (parse dates, drop rows with missing/invalid scheduled or delivered date, handle 'Date Not Captured', dedupe, winsorize or cap extreme slip with a documented rule, require min n_records per vendor/mode group and fall back to a pooled prior below it); Kaggle demand shapes (explain/handle zero-demand days: weekends vs missing, normalize multipliers, document); openFDA/recall data (dedupe, normalize drug names). Every rule must log how many rows it removed, written into DATA_AUDIT.md.
-3. [ ] EDA charts saved to reports/eda/*.png using matplotlib (slip distribution per vendor/mode, demand seasonality and weekday pattern, zero-demand share, simulated vs real distribution comparison, stockout/lead-time distributions). Add a short written findings section: what the data shows and what it changes in the model.
+3. [x] [DONE] EDA charts saved to reports/eda/*.png using matplotlib (slip distribution per vendor/mode, demand seasonality and weekday pattern, zero-demand share, simulated vs real distribution comparison, stockout/lead-time distributions). Add a short written findings section: what the data shows and what it changes in the model. Implemented via scripts/generate_eda_charts.py (5 high-resolution figures in reports/eda/*.png), detailed empirical calibration documentation in reports/eda/README.md, verified by test_eda_charts_generation and test_generate_eda_charts_cli in tests/test_enriched_data.py, and integrated into scripts/validate_clean_clone.py.
 4. [x] [DONE] Recalibrate: regenerate data/real/supplier_slip.csv and demand_shapes.csv from the CLEANED data, re-run scripts/generate_facility_simulation.py for all seeds, then re-run scripts/run_backtest.py (tune on seeds 1-2, test on seeds 3-4), all tests, and regenerate output examples and the sample trace. Report before/after metrics honestly in DATA_AUDIT.md and README. If numbers get worse, report them as they are.
 5. [x] [DONE] Document the real-vs-simulated calibration honestly in data/README.md (which simulator parameters come from which real statistic, and which are assumptions).
 6. Commit with clear messages; never touch .env; never push.
@@ -124,8 +124,8 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 1: Automated Empirical EDA Figures in Matplotlib (`reports/eda/*.png`)
 - **Priority**: P0 (Priority 0b Item 3, Visual Evidence, Technical Depth 20 pts)
-- **Status**: [ ] [PENDING]
-- **Files**: `scripts/generate_eda_charts.py`, `reports/eda/*.png`, `reports/eda/README.md`, [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py)
+- **Status**: [x] [DONE]
+- **Files**: `scripts/generate_eda_charts.py`, `reports/eda/*.png`, `reports/eda/README.md`, [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py), [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py)
 - **Problem**: Priority 0b specifies saving EDA charts to `reports/eda/*.png` using matplotlib with a short written findings section. Currently, `reports/eda/` contains 55 JSON files but zero visual charts.
 - **Action**:
   1. Author `scripts/generate_eda_charts.py` using `matplotlib` to generate 5 high-resolution figures:
@@ -135,8 +135,10 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
      - `reports/eda/simulated_vs_real_comparison.png`: distribution overlay comparing synthetic simulation against empirical USAID/Kaggle priors.
      - `reports/eda/stockout_lead_time_distribution.png`: lead-time survival curves from backtest replay.
   2. Include an EDA findings summary in `reports/eda/README.md` explaining what the data shows and how it calibrates the simulator.
-  3. Add test in `tests/test_enriched_data.py`: `test_eda_charts_generation`.
+  3. Add test in `tests/test_enriched_data.py`: `test_eda_charts_generation` and `test_generate_eda_charts_cli`.
+  4. Integrate chart generation into `scripts/validate_clean_clone.py` (Gate G4).
 - **Acceptance Criteria**: Running `python scripts/generate_eda_charts.py` generates all 5 PNG figures in `reports/eda/` and passes unit test.
+- **Verification**: Verified via `test_eda_charts_generation` and `test_generate_eda_charts_cli` in `tests/test_enriched_data.py` (11/11 passed in 67.89s) and `scripts/validate_clean_clone.py` passing all 8 validation gates. All 5 high-resolution PNG figures generated in `reports/eda/*.png` and documented in `reports/eda/README.md`.
 
 ---
 

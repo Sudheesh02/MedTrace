@@ -321,3 +321,66 @@ def test_usaid_multiline_po_preservation(tmp_path):
     assert "Saquinavir 200mg" in items
     assert "Stavudine 1mg/ml" in items
 
+
+def test_eda_charts_generation(tmp_path):
+    """
+    Priority 0b Item 3 Gate: Verifies that scripts/generate_eda_charts.py generates
+    all 5 high-resolution empirical EDA figures in PNG format:
+    1. supplier_slip_distribution.png
+    2. demand_seasonality_patterns.png
+    3. zero_demand_share.png
+    4. simulated_vs_real_comparison.png
+    5. stockout_lead_time_distribution.png
+    """
+    import os
+    from scripts.generate_eda_charts import generate_all_eda_charts
+
+    out_dir = str(tmp_path / "eda_test_output")
+    charts = generate_all_eda_charts(data_dir="data", output_dir=out_dir)
+
+    expected_names = [
+        "supplier_slip_distribution.png",
+        "demand_seasonality_patterns.png",
+        "zero_demand_share.png",
+        "simulated_vs_real_comparison.png",
+        "stockout_lead_time_distribution.png"
+    ]
+
+    assert len(charts) == 5
+    for name in expected_names:
+        expected_path = os.path.join(out_dir, name)
+        assert os.path.exists(expected_path), f"Missing expected chart: {expected_path}"
+        # Validate file size (> 15 KB)
+        fsize = os.path.getsize(expected_path)
+        assert fsize > 15000, f"Chart {name} suspiciously small: {fsize} bytes"
+        # Validate PNG magic bytes header
+        with open(expected_path, "rb") as f:
+            header = f.read(8)
+            assert header == b"\x89PNG\r\n\x1a\n", f"File {name} is not a valid PNG image"
+
+    # Verify reports/eda/README.md exists and documents the visual findings
+    readme_path = os.path.join("reports", "eda", "README.md")
+    assert os.path.exists(readme_path), "reports/eda/README.md documentation must exist"
+    with open(readme_path, "r", encoding="utf-8") as f:
+        readme_content = f.read()
+    for name in expected_names:
+        assert name in readme_content, f"README.md must reference {name}"
+
+
+def test_generate_eda_charts_cli(tmp_path):
+    """
+    Verifies that scripts/generate_eda_charts.py executes cleanly as a standalone CLI script.
+    """
+    import sys
+    import subprocess
+    import os
+
+    cli_out = str(tmp_path / "cli_eda")
+    cmd = [sys.executable, "scripts/generate_eda_charts.py", "--output-dir", cli_out, "--quiet"]
+    res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    assert res.returncode == 0, f"CLI execution failed: {res.stderr}"
+
+    png_files = [f for f in os.listdir(cli_out) if f.endswith(".png")]
+    assert len(png_files) == 5
+
+
