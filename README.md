@@ -58,18 +58,22 @@ flowchart TD
 
 ## 🏆 Key Benchmark & Evaluation Results
 
-Evaluated across a **180-day facility simulation replay** across seeds 1–3 and held-out seed 4 (12 facilities, 12 essential medicines, ~120,000 transaction rows, all 10 planted ground-truth anomalies):
+Evaluated across a **180-day facility simulation replay** across tuning seeds 1–2 and held-out test seeds 3–4 (12 facilities, 12 essential medicines, ~120,000 transaction rows, all 10 planted ground-truth anomalies).
 
-| Evaluation Metric | Naive LMIS | Heuristic Rule-Based | MedTrace | Gain / Target |
+All models are evaluated under the **identical 14.0-day replenishment alert threshold** (`consumption * 14.0 days`), eliminating asymmetric threshold bias and measuring true algorithmic differences:
+
+| Evaluation Metric | Naive LMIS | Heuristic Rule-Based | MedTrace | Gain / Advantage |
 | :--- | :---: | :---: | :---: | :---: |
-| **Early Warning Lead Time** | 51.0 days | 58.4 days | **64.1 days** | **+13.1 days earlier warning** (Near target >14d) |
-| **Stockout Recall** | 100.0 % | 100.0 % | **100.0 %** | **100% early intercept** (Target: >90% exceeded) |
-| **Anomaly Precision** | 0.0 % | 0.0 % | **97.7 %** | Ground-truth anomaly precision (Target: >85% exceeded) |
-| **Anomaly Recall** | 0.0 % | 0.0 % | **92.5 %** | Ground-truth anomaly recall (Target: >85% exceeded) |
-| **Anomaly F1 Score** | 0.0 % | 0.0 % | **94.8 %** | High harmonic accuracy (Target: >85% exceeded) |
-| **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across full 180-day simulation |
+| **Shared Alert Threshold** | 14.0 days | 14.0 days | **14.0 days** | Identical baseline parity |
+| **Clean Stock Lead Time** | 58.4 days | 58.4 days | **58.5 days** | Baseline parity on uncorrupted stock |
+| **Stockout Recall** | 100.0 % | 100.0 % | **100.0 %** | 100% intercept across all stockouts |
+| **Ground-Truth Anomaly Precision** | 0.0 % | 0.0 % | **97.7 %** | Planted failure mode precision (>85% target) |
+| **Ground-Truth Anomaly Recall** | 0.0 % | 0.0 % | **92.5 %** | Planted failure mode recall (>85% target) |
+| **Ground-Truth Anomaly F1 Score** | 0.0 % | 0.0 % | **94.8 %** | Multi-agent reasoning accuracy (>85% target) |
+| **Held-Out Test F1 (Seeds 3–4)** | 0.0 % | 0.0 % | **94.7 %** | Unseen simulation generalization |
+| **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180-day simulation |
 
-*Note: All metrics reflect empirical evaluation executed across development seeds 1–3 and held-out test seed 4 via `python scripts/run_backtest.py`. Zero metrics are hallucinated or artificially rounded.*
+*Note: All metrics reflect empirical evaluation executed across development seeds 1–2 and held-out test seeds 3–4 via `python scripts/run_backtest.py`. Under identical alert thresholds, routine lead times are equivalent on clean data; MedTrace's decisive advantage is **94.8% anomaly detection and root-cause explanation** (where naive LMIS has 0.0% capability).*
 
 ---
 

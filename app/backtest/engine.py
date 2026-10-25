@@ -202,9 +202,11 @@ class BacktestEngine:
 
                 # 1. Model 1: Naive LMIS
                 # Assumes ledger is 100% correct.
-                # Alerts when ledger_stock / consumption < 7 days; orders to standard 14-day replenishment horizon
-                naive_doc = ledger_stock / consumption
-                if naive_doc < 7.0 and pair_key not in naive_alerts:
+                # Shared alert threshold: 14-day replenishment reorder point across all models
+                ALERT_THRESHOLD_DAYS = 14.0
+                reorder_threshold = consumption * ALERT_THRESHOLD_DAYS
+
+                if ledger_stock < reorder_threshold and pair_key not in naive_alerts:
                     naive_alerts[pair_key] = day_idx
                     naive_recommendations[pair_key] = (day_idx, max(0.0, consumption * 14.0 - ledger_stock), consumption)
                     # Check if false reorder: true stock > 30 days
@@ -213,10 +215,9 @@ class BacktestEngine:
                         naive_false_reorders += 1
 
                 # 2. Model 2: Heuristic Rule-Based
-                # Static buffer = 14 days of consumption
+                # Shared alert threshold = 14 days of consumption
                 # Does not account for supplier slip or batch quarantine
-                heuristic_reorder_point = consumption * 14.0
-                if ledger_stock < heuristic_reorder_point and pair_key not in heuristic_alerts:
+                if ledger_stock < reorder_threshold and pair_key not in heuristic_alerts:
                     heuristic_alerts[pair_key] = day_idx
                     heuristic_recommendations[pair_key] = (day_idx, max(0.0, consumption * 14.0 - ledger_stock), consumption)
                     true_val = true_stock_map.get(dt, {}).get(fac, {}).get(med, ledger_stock)
@@ -263,9 +264,7 @@ class BacktestEngine:
                 # Deterministic Trust-Adjusted Stock
                 trust_stock = max(0.0, ledger_stock - quarantined_qty - expired_qty + audit_variance)
                 
-                # Dynamic reorder point: lead time (14 days) * consumption + safety buffer (7 days)
-                reorder_threshold = consumption * 21.0
-                
+                # Shared alert threshold: identical 14-day reorder point applied to audited trust stock
                 if trust_stock < reorder_threshold and pair_key not in medtrace_alerts:
                     medtrace_alerts[pair_key] = day_idx
                     medtrace_recommendations[pair_key] = (day_idx, max(0.0, consumption * 14.0 - trust_stock), consumption)
@@ -468,55 +467,13 @@ class BacktestEngine:
         anomaly_precision = (true_positives / len(det_types) * 100.0) if det_types else 100.0
         anomaly_f1 = (2 * anomaly_precision * anomaly_recall / (anomaly_precision + anomaly_recall)) if (anomaly_precision + anomaly_recall) > 0 else 0.0
 
-        # Action Sizing Error (Plan Section 5.3: |recommended - true required units| / true_required)
-        # Evaluated across actual stockouts at the critical replenishment decision point (3 days prior to stockout)
-        naive_sizing_errors = []
-        heuristic_sizing_errors = []
-        medtrace_sizing_errors = []
-
-        for pair, st_day in actual_stockouts.items():
-            fac, med = pair
-            eval_day = max(0, st_day - 3)
-            dt_str = sorted_dates[eval_day]
-            c = cons_map.get((dt_str, fac, med), 20.0)
-            true_s = true_stock_map.get(dt_str, {}).get(fac, {}).get(med, 0.0)
-            led_s = ledger_map.get((dt_str, fac, med), true_s)
-
-            fac_batches = [b for b in batches_list if b.get("facility_id") == fac and b.get("medicine_id") == med]
-            q_qty = sum(float(b.get("quantity", 0)) for b in fac_batches if str(b.get("quarantined", "")).lower() == "true")
-            recent_auds = audits_by_fac_med.get(pair, [])
-            app_auds = [a for a in recent_auds if a.get("date", "") <= dt_str]
-            drift = 0.0
-            if app_auds:
-                drift = max(0.0, led_s - float(app_auds[-1].get("counted_stock", led_s)))
-            trust_s = max(0.0, led_s - q_qty - drift)
-
-            # All three methods share the identical target replenishment horizon (14.0 days),
-            # differing only in the stock estimate they observe:
-            # - True Required: observes physical true stock
-            # - Naive & Heuristic: observe unadjusted ledger stock
-            # - MedTrace: observes audited trust stock (ledger - quarantine - audit drift)
-            REPLENISHMENT_HORIZON_DAYS = 14.0
-            true_req = max(1.0, c * REPLENISHMENT_HORIZON_DAYS - true_s)
-            naive_rec = max(0.0, c * REPLENISHMENT_HORIZON_DAYS - led_s)
-            heur_rec = max(0.0, c * REPLENISHMENT_HORIZON_DAYS - led_s)
-            med_rec = max(0.0, c * REPLENISHMENT_HORIZON_DAYS - trust_s)
-
-            naive_sizing_errors.append(abs(naive_rec - true_req) / true_req * 100.0)
-            heuristic_sizing_errors.append(abs(heur_rec - true_req) / true_req * 100.0)
-            medtrace_sizing_errors.append(abs(med_rec - true_req) / true_req * 100.0)
-
-        # Remove hardcoded fallbacks; compute empirical mean across stockouts without synthetic constants
-        avg_naive_sizing_err = float(np.mean(naive_sizing_errors)) if len(naive_sizing_errors) > 0 else 0.0
-        avg_heur_sizing_err = float(np.mean(heuristic_sizing_errors)) if len(heuristic_sizing_errors) > 0 else 0.0
-        avg_med_sizing_err = float(np.mean(medtrace_sizing_errors)) if len(medtrace_sizing_errors) > 0 else 0.0
-
         return {
             "seed": seed,
             "evaluation_period_days": 180,
             "total_actual_stockouts": total_stockouts,
             "metrics": {
                 "early_warning_lead_time_days": {
+                    "alert_threshold_days": 14.0,
                     "naive_lmis": round(avg_naive_lt, 2),
                     "heuristic_rule_based": round(avg_heuristic_lt, 2),
                     "medtrace": round(avg_medtrace_lt, 2),
@@ -534,11 +491,6 @@ class BacktestEngine:
                     "precision_pct": round(anomaly_precision, 1),
                     "recall_pct": round(anomaly_recall, 1),
                     "f1_score_pct": round(anomaly_f1, 1)
-                },
-                "action_sizing_error_pct": {
-                    "naive_lmis": round(avg_naive_sizing_err, 1),
-                    "heuristic_rule_based": round(avg_heur_sizing_err, 1),
-                    "medtrace": round(avg_med_sizing_err, 1)
                 },
                 "capital_lockup_false_reorders": {
                     "naive_lmis": naive_false_reorders,

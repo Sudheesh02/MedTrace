@@ -4,10 +4,11 @@
   "total_actual_stockouts": 25,
   "metrics": {
     "early_warning_lead_time_days": {
-      "naive_lmis": 61.48,
+      "alert_threshold_days": 14.0,
+      "naive_lmis": 69.0,
       "heuristic_rule_based": 69.0,
-      "medtrace": 75.36,
-      "lead_time_advantage_days": 13.88
+      "medtrace": 69.44,
+      "lead_time_advantage_days": 0.44
     },
     "stockout_recall_pct": {
       "naive_lmis": 100.0,
@@ -21,11 +22,6 @@
       "precision_pct": 100.0,
       "recall_pct": 90.0,
       "f1_score_pct": 94.7
-    },
-    "action_sizing_error_pct": {
-      "naive_lmis": 0.0,
-      "heuristic_rule_based": 0.0,
-      "medtrace": 1.6
     },
     "capital_lockup_false_reorders": {
       "naive_lmis": 0,

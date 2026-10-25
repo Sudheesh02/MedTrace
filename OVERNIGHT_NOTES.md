@@ -520,6 +520,35 @@
    - Executed `python -m pytest tests -q` — **88 passed, 1 warning in 82.37s** (100% passing rate).
 
 #### What Is Next
-- Implement Priority 0 Item 5: Review benchmark calibration on held-out test seeds 3-4 and report audit/root-cause accuracy.
 - Implement Priority 0 Item 6: Final truth pass across sponsor technology claims and documentation.
 - Implement Priority 0 Item 7: Track a sanitized sample trace in `logs/` for offline judge exploration.
+
+---
+
+### Session: 2026-10-25 10:05 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Benchmark Parity & Alert Threshold Standardization (Corrective 09:50 IST & Priority 0 Item 5)
+
+#### What Was Done
+1. **Empirical Investigation of Action Sizing Metric**:
+   - Analyzed all simulation trajectories across seeds 1–4. Proved that actual stockouts in the simulation occur early (days 14–25), where `ledger_stock == true_stock`, rendering naive action sizing error 0.0% by construction.
+   - For planted anomaly pairs occurring on days 160–178, baseline stock levels in several seeds exceeded target replenishment demand (`true_req = 0.0`), rendering percentage ratios undefined or noisy.
+   - Dropped the circular `action_sizing_error_pct` metric from `BacktestEngine`, benchmark JSON outputs, and documentation as instructed, without introducing synthetic fallbacks or asymmetric formulas.
+2. **Unified Alert Threshold Parity Across All Models**:
+   - In [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), unified `naive_lmis`, `heuristic_rule_based`, and `medtrace` to evaluate under the identical shared `14.0-day` replenishment threshold (`consumption * 14.0 days`).
+   - Eliminated the artificial "+13.1 days" lead-time advantage headline, proving that under identical alert thresholds on clean uncorrupted stock, all systems alert at equivalent lead times (~58.4 days).
+3. **Reported True Ground-Truth Anomaly & Root-Cause Accuracy**:
+   - Highlighted MedTrace's decisive real-world differentiator: **94.8% anomaly detection F1 score** (97.7% precision, 92.5% recall) across 10 planted failure modes, compared to 0.0% for naive LMIS and rule heuristics.
+   - Evaluated tuning on seeds 1–2 and verified generalizability on held-out test seeds 3–4 (**94.7% F1 on held-out seeds**).
+   - Re-executed `scripts/run_backtest.py` regenerating `output/backtest_seed_*.json` for all 4 seeds.
+4. **Synchronized Documentation & Automated Unit Tests**:
+   - Updated benchmark table in [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md) and [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py).
+   - Updated [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py) with parameterized test `test_held_out_seeds_evaluation_and_threshold_parity` verifying alert threshold parity (14.0d), 100% stockout recall, and >= 90.0% anomaly F1 score on held-out test seeds.
+   - Updated [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md) marking the corrective item and Priority 0 Item 5 as completed.
+5. **Full Test Suite & Demo Verification**:
+   - Executed `python -m pytest tests -q` — **88 passed, 1 warning in 87.63s** (100% passing rate).
+   - Executed `python scripts/quick_demo.py` — 30-second judge walkthrough runs end-to-end cleanly in <3s offline.
+
+#### What Is Next
+- Implement Priority 0 Item 6: Truth pass across SPONSOR_TECH.md, PRE_EXISTING_COMPONENTS.md, metadata.json, README: correct test counts, remove tests that do not exist, remove claims such as 100% verified or via NVIDIA NIM unless true, label rule-assigned DailyMed fields and invented WHO multipliers / Monte Carlo slip as assumptions, declare the Gemini overnight automation.
+- Implement Priority 0 Item 7: Track a sample trace (un-ignore one sanitized logs/*.jsonl) and commit scripts/explain_trace.py wired to --explain.
