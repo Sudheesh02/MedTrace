@@ -1088,4 +1088,147 @@ def test_multi_agent_debate_flips_winning_hypothesis():
     assert top_r1.hypothesis_id != top_r2.hypothesis_id, "Debate must flip the winning hypothesis between rounds!"
 
 
+def test_action_planner_computes_deterministic_financial_costs():
+    """
+    Verify that ActionPlannerAgent deterministically computes estimated financial costs:
+    - PEER_TRANSFER: units * unit_price * 0.15 (inter-facility handling fee)
+    - EXPEDITE_PO: units * unit_price * 1.10 (procurement + 10% rush fee)
+    - EMERGENCY_PURCHASE: units * unit_price * 2.50 (emergency spot premium)
+    - MONITOR_BUFFER: $0.00
+    - Scales proportionally when shortfall changes (no hardcoded cost constants).
+    """
+    from app.agents.action_planner import ActionPlannerAgent
+    from app.adapters.llm_client import LLMClient
+    from app.adapters.data_store import DataStore
+    from app.engines.hmem import HMemEngine
+    from app.models.schemas import Hypothesis, ActionType
+
+    data_store = DataStore(use_zetaris=False)
+    hmem = HMemEngine()
+    planner = ActionPlannerAgent(LLMClient(), hmem, data_store=data_store)
+
+    unit_price = data_store.get_medicine_unit_price("MED-004")  # Amoxicillin ($0.12)
+    assert unit_price == 0.12
+
+    hypothesis = Hypothesis(
+        hypothesis_id="H2-SUPPLIER-TRANSIT",
+        title="Upstream Supplier Lead Time Slippage",
+        cause="Delayed delivery",
+        likelihood=0.85,
+        supporting_evidence=["Delivery delayed"],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+
+    # Test Scenario A: shortfall = 200 units
+    recon_200 = {
+        "stock_evaluation": {"usable_stock": 50.0, "ledger_stock": 50.0, "audit_drift": 0.0, "quarantined_stock": 0.0},
+        "trust_shortfall": {"shortfall_units": 200.0, "gap_days": 5.0},
+        "trust_cover_days": 2.5
+    }
+    recs_200 = planner.plan_actions("FAC-CHC-01", "MED-004", hypothesis, recon_200)
+
+    trf_200 = next(r for r in recs_200 if r.action_type == ActionType.PEER_TRANSFER)
+    exp_200 = next(r for r in recs_200 if r.action_type == ActionType.EXPEDITE_PO)
+    emg_200 = next(r for r in recs_200 if r.action_type == ActionType.EMERGENCY_PURCHASE)
+
+    expected_trf_cost_200 = round(200.0 * 0.12 * 0.15, 2)  # $3.60
+    expected_exp_cost_200 = round(200.0 * 0.12 * 1.10, 2)  # $26.40
+    expected_emg_cost_200 = round(200.0 * 0.12 * 2.50, 2)  # $60.00
+
+    assert trf_200.estimated_cost_usd == expected_trf_cost_200
+    assert exp_200.estimated_cost_usd == expected_exp_cost_200
+    assert emg_200.estimated_cost_usd == expected_emg_cost_200
+
+    # Test Scenario B: shortfall = 500 units (must scale proportionally without hardcoding)
+    recon_500 = {
+        "stock_evaluation": {"usable_stock": 20.0, "ledger_stock": 20.0, "audit_drift": 0.0, "quarantined_stock": 0.0},
+        "trust_shortfall": {"shortfall_units": 500.0, "gap_days": 10.0},
+        "trust_cover_days": 1.0
+    }
+    recs_500 = planner.plan_actions("FAC-CHC-01", "MED-004", hypothesis, recon_500)
+
+    trf_500 = next(r for r in recs_500 if r.action_type == ActionType.PEER_TRANSFER)
+    exp_500 = next(r for r in recs_500 if r.action_type == ActionType.EXPEDITE_PO)
+    emg_500 = next(r for r in recs_500 if r.action_type == ActionType.EMERGENCY_PURCHASE)
+
+    assert trf_500.estimated_cost_usd == round(500.0 * 0.12 * 0.15, 2)
+    assert exp_500.estimated_cost_usd == round(500.0 * 0.12 * 1.10, 2)
+    assert emg_500.estimated_cost_usd == round(500.0 * 0.12 * 2.50, 2)
+    assert trf_500.estimated_cost_usd > trf_200.estimated_cost_usd
+
+
+def test_reconciler_dynamic_consumption_fallback_without_history():
+    """
+    Verify that when recent consumption history is empty, ReconcilerAgent does not
+    default to a magic constant (10.0), but dynamically derives daily consumption from
+    facility catchment scale and medicine profile.
+    """
+    from app.agents.reconciler import ReconcilerAgent
+    from app.adapters.data_store import DataStore
+    from app.engines.world_model import WorldStoreService, IngestPipelineService
+    from unittest.mock import patch
+
+    store = DataStore(use_zetaris=False)
+    ingest = IngestPipelineService(WorldStoreService())
+    reconciler = ReconcilerAgent(store, ingest)
+
+    # Mock get_recent_consumption to return empty list
+    with patch.object(store, "get_recent_consumption", return_value=[]):
+        # District Hospital (catchment 1.0) with staple medicine MED-001 (Paracetamol)
+        res_dh = reconciler.reconcile_item("FAC-DH-01", "MED-001")
+        daily_dh = res_dh["deterministic_reconciliation"]["demand_evaluation"]["base_daily_rate"]
+        assert daily_dh == 30.0  # 30.0 * 1.0
+
+        # Sub-District CHC (catchment 0.35) with staple medicine MED-001 (Paracetamol)
+        res_chc = reconciler.reconcile_item("FAC-CHC-01", "MED-001")
+        daily_chc = res_chc["deterministic_reconciliation"]["demand_evaluation"]["base_daily_rate"]
+        assert daily_chc == 10.5  # 30.0 * 0.35
+        assert daily_dh > daily_chc
+
+
+def test_skeptic_action_plan_audit_rejects_negative_costs():
+    """Verify that the Number Auditor audits estimated_cost_usd and rejects negative numbers."""
+    from app.agents.skeptic import SkepticAgent
+    from app.adapters.llm_client import LLMClient
+    from app.models.schemas import ActionRecommendation, ActionType
+
+    skeptic = SkepticAgent(LLMClient())
+    recon = {
+        "stock_evaluation": {"usable_stock": 100.0, "audit_drift": 0.0, "quarantined_stock": 0.0},
+        "trust_shortfall": {"shortfall_units": 50.0, "gap_days": 2.0}
+    }
+
+    # Case 1: Valid recommendation with positive cost
+    valid_rec = ActionRecommendation(
+        action_id="ACT-1",
+        action_type=ActionType.PEER_TRANSFER,
+        facility_id="FAC-CHC-01",
+        medicine_id="MED-001",
+        recommended_units=50.0,
+        estimated_cost_usd=2.50,
+        feasibility_score=0.90,
+        justification="Valid transfer",
+        number_provenance={"shortfall_units": 50.0}
+    )
+    audit_valid = skeptic.audit_action_plan([valid_rec], recon)
+    assert audit_valid.passed is True
+
+    # Case 2: Invalid recommendation with negative cost
+    invalid_rec = ActionRecommendation(
+        action_id="ACT-2",
+        action_type=ActionType.PEER_TRANSFER,
+        facility_id="FAC-CHC-01",
+        medicine_id="MED-001",
+        recommended_units=50.0,
+        estimated_cost_usd=-15.00,
+        feasibility_score=0.90,
+        justification="Invalid negative cost",
+        number_provenance={"shortfall_units": 50.0}
+    )
+    audit_invalid = skeptic.audit_action_plan([invalid_rec], recon)
+    assert audit_invalid.passed is False
+    assert any("cannot be negative" in inc for inc in audit_invalid.flagged_inconsistencies)
+
+
 

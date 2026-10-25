@@ -38,7 +38,12 @@ class ReconcilerAgent:
         if recent_cons:
             daily_rate = sum(c["units_issued"] for c in recent_cons) / len(recent_cons)
         else:
-            daily_rate = 10.0  # safe default
+            # Derive dynamic baseline consumption from facility catchment scale and medicine profile
+            fac_meta = next((f for f in self.data_store.get_facilities() if f.get("facility_id") == facility_id), {})
+            catchment = float(fac_meta.get("catchment_scale", 1.0))
+            med_meta = next((m for m in self.data_store.get_medicines() if m.get("medicine_id") == medicine_id), {})
+            base_demand = 30.0 if "STAPLE" in str(med_meta.get("supply_group", "")).upper() else 15.0
+            daily_rate = max(1.0, round(base_demand * catchment, 2))
 
         # 3. Expected delivery timeline and empirical supplier slip
         promised_days = 6.0

@@ -168,6 +168,24 @@ class DataStore:
                 return res
         return self._read_csv("data/real/medicine_master.csv")
 
+    def get_medicine_unit_price(self, medicine_id: str) -> float:
+        """Returns standard wholesale price per dispensing unit (USD) based on NLEM/WHO standards."""
+        standard_prices = {
+            "MED-001": 0.02,  # Paracetamol 500mg tab
+            "MED-002": 0.04,  # Ibuprofen 400mg tab
+            "MED-003": 0.05,  # Diclofenac 50mg tab
+            "MED-004": 0.12,  # Amoxicillin 500mg cap
+            "MED-005": 0.25,  # Azithromycin 500mg tab
+            "MED-006": 0.45,  # Salbutamol 4mg tab
+            "MED-007": 0.06,  # Metformin 500mg tab
+            "MED-008": 0.05,  # Amlodipine 5mg tab
+            "MED-009": 0.85,  # Ceftriaxone 1g vial
+            "MED-010": 1.20,  # Artemether/Lumefantrine
+            "MED-011": 0.90,  # Oxytocin 10 IU/ml
+            "MED-012": 0.15,  # ORS sachet / Zinc
+        }
+        return standard_prices.get(medicine_id, 0.10)
+
     def get_suppliers(self) -> List[Dict[str, Any]]:
         if self.use_zetaris:
             res = self._query_zetaris("SELECT * FROM zetaris.lightning.suppliers")

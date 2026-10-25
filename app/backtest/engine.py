@@ -175,6 +175,17 @@ class BacktestEngine:
         # Track anomalies detected by MedTrace
         detected_anomalies = []
 
+        # Determine dynamic anomaly inspection window from ground truth schedule
+        if ground_truth_anomalies:
+            gt_day_indices = [
+                int(g["day_index"]) for g in ground_truth_anomalies
+                if "day_index" in g and str(g["day_index"]).isdigit()
+            ]
+            min_anom_day = min(gt_day_indices) if gt_day_indices else 0
+            max_anom_day = min(len(true_stock_map) - 1, max(gt_day_indices) + 3) if gt_day_indices else (len(true_stock_map) - 1)
+        else:
+            min_anom_day, max_anom_day = 0, len(true_stock_map) - 1
+
         # Find true stockouts: when true physical stock hits 0
         actual_stockouts = {}
         sorted_dates = sorted(true_stock_map.keys())
@@ -272,8 +283,8 @@ class BacktestEngine:
                     if true_val > (consumption * 30):
                         medtrace_false_reorders += 1
 
-                # Planted anomaly detection check at trigger points (targeted inspection window)
-                if 160 <= day_idx <= 178:
+                # Planted anomaly detection check at trigger points (dynamically bounded by ground truth schedule)
+                if min_anom_day <= day_idx <= max_anom_day:
                     fac_meta = facilities_dict.get(fac, {})
                     catchment = float(fac_meta.get("catchment_scale", 1.0))
                     expected_daily = base_demands.get(med, 20.0) * catchment

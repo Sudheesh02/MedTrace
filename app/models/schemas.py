@@ -64,6 +64,7 @@ class ActionRecommendation(BaseModel):
     facility_id: str
     medicine_id: str
     recommended_units: float
+    estimated_cost_usd: Optional[float] = 0.0
     source_facility_id: Optional[str] = None
     supplier_id: Optional[str] = None
     feasibility_score: float

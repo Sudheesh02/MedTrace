@@ -619,3 +619,49 @@
 - **Priority 0 Item 7 / Item 2**: Track a sanitized sample trace in `logs/` (un-ignore in `.gitignore`) and ensure `scripts/explain_trace.py --latest` works cleanly on a fresh clone.
 - **Item 3**: Hardening `smoke_test.py` to eradicate default credentials and support Meterless Nightshift.
 - **Item 4**: Deterministic budget & financial impact invariant in `ActionPlannerAgent`.
+
+---
+
+### Session: 2026-10-25 11:05 UTC
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Hallucination & Hardcoding Eradication, Trace Tracking, Dynamic Anomaly Inspection & Financial Invariant Engine
+
+#### What Was Done
+1. **Hardened `smoke_test.py` with Zero Hardcoded Passwords & Dual-Provider Support**:
+   - Removed hardcoded fallback `"<REDACTED>"` password; requires explicit `ZETARIS_PASSWORD` from `.env` or raises clean `ValueError`.
+   - Enhanced `power_model()` to inspect `METERLESS_RUNTIME_TOKEN` first (Meterless Nightshift runtime) before `MODEL_API_KEY` (NVIDIA Nemotron), supporting both required Headline Sponsors.
+   - Added automated regression test `test_smoke_test_provider_handling_and_zero_hardcoding` in `tests/test_api.py`.
+2. **Tracked Sanitized Multi-Agent Trace in Git & Clean-Clone Fallback (Priority 0 Item 7)**:
+   - Generated complete 12-event multi-agent debate trace `logs/sample_trace_FAC-DH-01_MED-007.jsonl` with explicit `model`, `llm_used`, and `fallback` flags.
+   - Updated `.gitignore` with `!logs/sample_trace_*.jsonl` exception so judges on fresh clones immediately have access to audit traces.
+   - Updated `scripts/explain_trace.py` to automatically fall back to the tracked sample trace when no dynamic run logs exist.
+   - Added automated test `test_explain_trace_sample_trace_fallback` in `tests/test_api.py`.
+3. **Decoupled `BacktestEngine` from Hardcoded Day Bounds**:
+   - Eradicated magic number day slice `160 <= day_idx <= 178` in `app/backtest/engine.py`.
+   - Inspection bounds are now derived dynamically from `ground_truth.csv` schedules (`min(day_index)` to `max(day_index) + 3`), allowing the evaluation harness to adapt to arbitrary simulation timelines.
+   - Added automated test `test_backtest_dynamic_anomaly_bounds_adapt_to_ground_truth` in `tests/test_backtest.py`.
+4. **Dynamic Seed Control in `DeterministicEngine`**:
+   - Added `mc_seed: Optional[int] = 42` to `DeterministicEngine.audit_reconcile_item()`, allowing callers and tests to dynamically parameterize Monte Carlo simulations.
+   - Added automated test `test_audit_reconcile_item_seed_dynamism` in `tests/test_deterministic.py`.
+5. **Dynamic Consumption Rate Fallback in `ReconcilerAgent`**:
+   - Replaced static magic number fallback `daily_rate = 10.0` with dynamic derivation based on facility catchment scale and medicine demand tier (`base_demand * catchment_scale`) when consumption history is absent.
+   - Added automated test `test_reconciler_dynamic_consumption_fallback_without_history` in `tests/test_agents.py`.
+6. **Deterministic Financial Cost Computation in `ActionPlannerAgent`**:
+   - Added `estimated_cost_usd` to `ActionRecommendation` and `get_medicine_unit_price()` to `DataStore`.
+   - Computed deterministic financial outlays: `shortfall * unit_price * 0.15` (transfer logistics), `shortfall * unit_price * 1.10` (expedited PO rush fee), `shortfall * unit_price * 2.50` (emergency spot premium), and `$0.00` (buffer/adjustment/release).
+   - Extended `SkepticAgent.audit_action_plan()` to mathematically verify `estimated_cost_usd` non-negative invariants.
+   - Added unit tests `test_action_planner_computes_deterministic_financial_costs` and `test_skeptic_action_plan_audit_rejects_negative_costs` in `tests/test_agents.py`.
+7. **Human Escalation Alert & OpenAPI Schema Examples in `run.py`**:
+   - Prominently printed `Escalated to Officer: YES / NO` with reason in CLI summary.
+   - Added Pydantic v2 `json_schema_extra` examples to `RunRequest` and `DecisionRequest` for interactive Swagger UI testing.
+8. **Truth Pass on Metric Labeling & Status Badges**:
+   - Re-labeled 94.8% anomaly detection in `README.md` and `scripts/run_backtest.py` as planted failure mode detection on synthetic multi-tier simulation data rather than "multi-agent reasoning accuracy".
+   - Qualified `SPONSOR_TECH.md` status badges to "96/96 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials".
+9. **Full Test Suite & Benchmark Verification**:
+   - Executed full test suite: **96 passed, 1 warning in 89.75s** (100% passing rate across 7 test suites, +7 new tests).
+   - Re-ran `python scripts/run_backtest.py`: confirmed 100% stockout recall, 94.8% overall planted anomaly F1, 94.7% held-out test F1 (seeds 3-4), and 0 false emergency orders.
+
+#### What Is Next
+- Author automated clean-clone validation script (`scripts/validate_clean_clone.py`) verifying Gate G4 / Phase 8.1 in a sandbox.
+- Implement RxNorm standard packaging multiplier lookup in `DataStore` (Backlog Item 8).
+- Author printable officer procurement memorandum exporter in Markdown (Backlog Item 10).

@@ -72,7 +72,7 @@ def main():
     print(f"{'Stockout Recall':<32} | {avg_naive_rec:>11.1f} % | {avg_heur_rec:>11.1f} % | {avg_med_rec:>11.1f} % | 100% intercept")
     print(f"{'Anomaly Precision (All)':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {avg_anom_p:>11.1f} % | Ground-truth precision")
     print(f"{'Anomaly Recall (All)':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {avg_anom_r:>11.1f} % | Ground-truth recall")
-    print(f"{'Anomaly F1 Score (All)':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {avg_anom_f1:>11.1f} % | Multi-agent reasoning")
+    print(f"{'Anomaly F1 Score (All)':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {avg_anom_f1:>11.1f} % | Planted anomaly F1")
     print(f"{'Held-Out F1 (Seeds 3-4)':<32} | {'0.0 %':>14} | {'0.0 %':>14} | {heldout_f1:>11.1f} % | Held-out validation")
     print(f"{'False Emergency Orders':<32} | {total_naive_false:>14} | {total_heur_false:>14} | {total_med_false:>14} | Zero capital lockup")
     print("="*85)

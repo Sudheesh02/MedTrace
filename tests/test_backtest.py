@@ -92,3 +92,24 @@ def test_held_out_seeds_evaluation_and_threshold_parity(test_seed):
     assert metrics["anomaly_detection"]["f1_score_pct"] >= 90.0
     assert metrics["capital_lockup_false_reorders"]["medtrace"] == 0
     assert res["total_actual_stockouts"] > 0
+
+
+def test_backtest_dynamic_anomaly_bounds_adapt_to_ground_truth():
+    """Verify that BacktestEngine anomaly inspection dynamically derives bounds from ground truth schedule."""
+    engine = BacktestEngine(sim_dir="data/simulated")
+    gt = engine.load_ground_truth("data/simulated")
+    assert len(gt) >= 10
+    
+    # Ground truth schedule must contain valid day indices
+    day_indices = [int(g["day_index"]) for g in gt if "day_index" in g and str(g["day_index"]).isdigit()]
+    assert len(day_indices) == len(gt)
+    min_d, max_d = min(day_indices), max(day_indices)
+    assert min_d >= 0
+    assert max_d <= 180
+
+    # Backtest execution successfully detects anomalies across the dynamically bounded window
+    res = engine.run_backtest(seed=1, sim_dir="data/simulated")
+    anom = res["metrics"]["anomaly_detection"]
+    assert anom["ground_truth_anomalies_count"] == 10
+    assert anom["true_positives"] >= 9
+    assert anom["precision_pct"] >= 90.0

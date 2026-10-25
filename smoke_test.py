@@ -30,7 +30,9 @@ def zetaris_sql():
     
     if not token or token == "your-zetaris-api-key":
         username = os.environ.get("ZETARIS_USERNAME", "admin@zetaris.com")
-        password = os.environ.get("ZETARIS_PASSWORD", "<REDACTED>")
+        password = os.environ.get("ZETARIS_PASSWORD")
+        if not password or password in ("YourPassword", "your-password-here"):
+            raise ValueError("ZETARIS_PASSWORD is not set in .env. Configure valid Zetaris credentials to verify live SQL endpoint.")
         login_res = requests.post(
             f"{base_url}/api/auth/login",
             json={"username": username, "password": password},
@@ -62,27 +64,43 @@ def zetaris_sql():
     assert data and str(data[0][0]) == "1", f"Unexpected response: {response.text[:80]}"
 
 def power_model():
-    need("MODEL_BASE_URL", "MODEL_API_KEY", "NEMOTRON_MODEL")
-    client = OpenAI(
-        base_url=os.environ["MODEL_BASE_URL"],
-        api_key=os.environ["MODEL_API_KEY"]
-    )
+    meterless_token = os.environ.get("METERLESS_RUNTIME_TOKEN")
+    if meterless_token and meterless_token not in ("your-meterless-token", "your-token-here", ""):
+        base_url = os.environ.get("METERLESS_BASE_URL", "http://127.0.0.1:8088/v1")
+        model = os.environ.get("METERLESS_MODEL") or os.environ.get("NEMOTRON_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b")
+        client = OpenAI(
+            base_url=base_url,
+            api_key=meterless_token,
+            default_headers={"meterless-app": "medtrace", "meterless-scope": "user"}
+        )
+        provider_name = f"Meterless Nightshift ({model})"
+    else:
+        need("MODEL_BASE_URL", "MODEL_API_KEY", "NEMOTRON_MODEL")
+        if os.environ.get("MODEL_API_KEY") in ("your-nvapi-key", "your-api-key-here", ""):
+            raise ValueError("MODEL_API_KEY is not configured with an active key in .env.")
+        client = OpenAI(
+            base_url=os.environ["MODEL_BASE_URL"],
+            api_key=os.environ["MODEL_API_KEY"]
+        )
+        model = os.environ["NEMOTRON_MODEL"]
+        provider_name = f"NVIDIA Nemotron ({model})"
+
     reply = client.chat.completions.create(
-        model=os.environ["NEMOTRON_MODEL"],
+        model=model,
         messages=[{"role": "user", "content": "Reply with single word: ready"}],
         max_tokens=300
     )
     assert reply.choices, "No reply from model"
     msg = reply.choices[0].message
     content = msg.content or msg.reasoning_content or ""
-    assert content, "Empty response from model"
+    assert content, f"Empty response from model via {provider_name}"
 
 def main():
     print("="*60)
     print("RUNNING MEDTRACE PRE-FLIGHT SMOKE TEST (GATE G1)")
     print("="*60)
     
-    check("Power: NVIDIA Nemotron responds", power_model)
+    check("Power: LLM Provider responds (Meterless Nightshift / NVIDIA)", power_model)
     check("Data: Zetaris REST SQL API responds", zetaris_sql)
 
     all_passed = True

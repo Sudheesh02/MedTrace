@@ -38,9 +38,11 @@ drug-shortages-0001-of-0001.json/
 data/simulated_seed_*/
 
 # 5. Logs & Audit Traces
-logs/
+logs/*
+!logs/sample_trace_*.jsonl
 *.log
 *.jsonl
+!logs/sample_trace_*.jsonl
 
 # 6. IDE, OS & System Metadata
 .vscode/

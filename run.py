@@ -31,12 +31,34 @@ class RunRequest(BaseModel):
     medicine_id: Optional[str] = "MED-007"
     options: Optional[Dict[str, Any]] = None
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "facility_id": "FAC-DH-01",
+                "medicine_id": "MED-007",
+                "options": {"sample_mode": True}
+            }
+        }
+    }
+
 class DecisionRequest(BaseModel):
     facility_id: str
     medicine_id: str
     action_type: str
     decision: str
     reason: Optional[str] = ""
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "facility_id": "FAC-CHC-01",
+                "medicine_id": "MED-001",
+                "action_type": "PEER_TRANSFER",
+                "decision": "APPROVED",
+                "reason": "Route roads clear; vehicle available"
+            }
+        }
+    }
 
 @app.get("/health")
 def health_check():
@@ -192,11 +214,14 @@ def main():
         print(f"Winning Hypothesis: {pack.winning_hypothesis.title}")
         print(f"Cause: {pack.winning_hypothesis.cause}")
         print(f"Skeptic Rounds: {pack.skeptic_rounds}")
+        print(f"Escalated to Officer: {'YES - ' + (pack.escalation_reason or 'Unresolved multi-agent debate') if pack.escalated_to_human else 'NO (Autonomous Approval)'}")
         print("\nTop Recommended Action:")
         top_act = pack.recommendations[0]
         act_type_str = top_act.action_type.value if hasattr(top_act.action_type, 'value') else str(top_act.action_type)
         print(f"- Type: {act_type_str}")
         print(f"- Recommended Quantity: {top_act.recommended_units} units")
+        if top_act.estimated_cost_usd is not None:
+            print(f"- Estimated Financial Cost: ${top_act.estimated_cost_usd:.2f} USD")
         print(f"- Justification: {top_act.justification}")
         print(f"\nTrace log written to: {pack.trace_file}")
         print("="*60)

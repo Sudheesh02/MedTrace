@@ -69,11 +69,11 @@ All models are evaluated under the **identical 14.0-day replenishment alert thre
 | **Stockout Recall** | 100.0 % | 100.0 % | **100.0 %** | 100% intercept across all stockouts |
 | **Ground-Truth Anomaly Precision** | 0.0 % | 0.0 % | **97.7 %** | Planted failure mode precision (>85% target) |
 | **Ground-Truth Anomaly Recall** | 0.0 % | 0.0 % | **92.5 %** | Planted failure mode recall (>85% target) |
-| **Ground-Truth Anomaly F1 Score** | 0.0 % | 0.0 % | **94.8 %** | Multi-agent reasoning accuracy (>85% target) |
+| **Ground-Truth Anomaly F1 Score** | 0.0 % | 0.0 % | **94.8 %** | Planted anomaly detection F1 (>85% target) |
 | **Held-Out Test F1 (Seeds 3–4)** | 0.0 % | 0.0 % | **94.7 %** | Unseen simulation generalization |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180-day simulation |
 
-*Note: All metrics reflect empirical evaluation executed across development seeds 1–2 and held-out test seeds 3–4 via `python scripts/run_backtest.py`. Under identical alert thresholds, routine lead times are equivalent on clean data; MedTrace's decisive advantage is **94.8% anomaly detection and root-cause explanation** (where naive LMIS has 0.0% capability).*
+*Note: All metrics reflect empirical evaluation executed across development seeds 1–2 and held-out test seeds 3–4 via `python scripts/run_backtest.py` on synthetic multi-tier facility simulation data with 10 planted ground-truth failure modes. Under identical alert thresholds, routine lead times are equivalent on clean data; MedTrace's decisive advantage is **94.8% detection and root-cause explanation of planted failure modes** (where naive LMIS has 0.0% capability as it lacks discrepancy auditing).*
 
 ---
 
@@ -171,7 +171,7 @@ python run.py
 
 ### 7. Run Test Suite & Backtest Evaluation
 ```bash
-# Run unit & agent tests (89 tests across 7 test suites)
+# Run unit & agent tests (96 tests across 7 test suites)
 python -m pytest tests/
 
 # Run 180-day comparative multi-seed backtest

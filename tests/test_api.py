@@ -7,6 +7,8 @@ Verifies:
 4. POST /run error handling for invalid medicine ID returning HTTP 404.
 """
 
+import os
+import json
 import pytest
 from fastapi.testclient import TestClient
 from run import app
@@ -310,9 +312,10 @@ def test_metadata_json_and_docs_integrity():
     with open("SPONSOR_TECH.md", "r", encoding="utf-8") as f:
         sponsor_doc = f.read()
     assert "61-test" not in sponsor_doc
-    assert "89-test pytest suite" in sponsor_doc
+    assert "89-test" not in sponsor_doc
+    assert "96-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "89/89 Automated Tests Verified" in sponsor_doc
+    assert "96/96 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -325,3 +328,49 @@ def test_metadata_json_and_docs_integrity():
         data_doc = f.read()
     assert "Explicit Modeling Assumptions" in data_doc
     assert "who_surveillance_multiplier = 1.35" in data_doc
+
+
+def test_smoke_test_provider_handling_and_zero_hardcoding(monkeypatch):
+    """Verify smoke_test.py enforces zero hardcoded credentials and supports both Meterless and NVIDIA."""
+    import smoke_test
+
+    # 1. Verify zero hardcoded default password in source code
+    with open("smoke_test.py", "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "<REDACTED>" not in content, "smoke_test.py must not contain hardcoded default Zetaris password"
+
+    # 2. Verify zetaris_sql raises clean ValueError when password is missing
+    monkeypatch.setenv("ZETARIS_PASSWORD", "")
+    monkeypatch.setenv("ZETARIS_API_KEY", "")
+    with pytest.raises(ValueError) as exc:
+        smoke_test.zetaris_sql()
+    assert "ZETARIS_PASSWORD is not set" in str(exc.value)
+
+    # 3. Verify power_model raises clean ValueError when NVIDIA key is placeholder
+    monkeypatch.delenv("METERLESS_RUNTIME_TOKEN", raising=False)
+    monkeypatch.setenv("MODEL_API_KEY", "your-nvapi-key")
+    with pytest.raises(ValueError) as exc_nv:
+        smoke_test.power_model()
+    assert "MODEL_API_KEY is not configured" in str(exc_nv.value)
+
+
+def test_explain_trace_sample_trace_fallback(capsys):
+    """Verify scripts/explain_trace.py falls back cleanly to tracked sample trace on fresh clones."""
+    from scripts.explain_trace import find_latest_trace, render_trace
+
+    # Verify tracked sample trace exists
+    sample_trace = "logs/sample_trace_FAC-DH-01_MED-007.jsonl"
+    assert os.path.exists(sample_trace), "Tracked judge sample trace must exist in logs/"
+
+    # Test find_latest_trace fallback with non-existent empty directory
+    res_trace = find_latest_trace("logs_empty_sandbox_test")
+    assert res_trace is None
+
+    # Test render_trace on the tracked sample trace
+    render_trace(sample_trace)
+    captured = capsys.readouterr().out
+    assert "MEDTRACE MULTI-AGENT REASONING & AUDIT TIMELINE" in captured
+    assert "ReconcilerAgent" in captured
+    assert "InvestigatorAgent" in captured
+    assert "SkepticAgent & Number Auditor" in captured
+    assert "ActionPlannerAgent" in captured

@@ -193,7 +193,8 @@ class DeterministicEngine:
         surveillance_data: Optional[Dict[str, Any]] = None,
         shortage_signal: Optional[Dict[str, Any]] = None,
         uom_info: Optional[Dict[str, Any]] = None,
-        audit_drift: Optional[float] = None
+        audit_drift: Optional[float] = None,
+        mc_seed: Optional[int] = 42
     ) -> Dict[str, Any]:
         """
         Full deterministic audit of an inventory item against multiple records.
@@ -253,7 +254,7 @@ class DeterministicEngine:
             slip_distribution=slip_dist,
             days_of_cover=trust_cover,
             num_simulations=500,
-            seed=42
+            seed=mc_seed
         )
 
         # 7. Global shortage & UOM mismatch flags

@@ -188,6 +188,16 @@ class SkepticAgent:
 
         for rec in recommendations:
             prov = rec.number_provenance
+            # Audit estimated_cost_usd non-negative invariant
+            if rec.estimated_cost_usd is not None and rec.estimated_cost_usd < 0:
+                inconsistencies.append(
+                    f"{rec.action_type.value} estimated cost cannot be negative, got ${rec.estimated_cost_usd}."
+                )
+            if rec.action_type == ActionType.MONITOR_BUFFER and rec.estimated_cost_usd != 0.0:
+                inconsistencies.append(
+                    f"MONITOR_BUFFER estimated cost must be 0.0, got ${rec.estimated_cost_usd}."
+                )
+
             # Check PEER_TRANSFER
             if rec.action_type == ActionType.PEER_TRANSFER:
                 if rec.recommended_units != shortfall_units:
