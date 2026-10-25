@@ -10,6 +10,7 @@ Verifies:
 
 import os
 import pytest
+import requests
 from unittest.mock import patch, MagicMock
 from app.adapters.data_store import DataStore
 
@@ -427,3 +428,114 @@ def test_data_store_query_methods_enforce_sql_injection_defense():
     # Test vendor injection in get_supplier_slip_priors
     with pytest.raises(ValueError, match="Invalid characters in vendor name"):
         store.get_supplier_slip_priors("SCMS' OR '1'='1")
+
+
+def test_data_store_openfda_live_and_fallback(monkeypatch):
+    """
+    Backlog Item 3:
+    1. Verifies fetch_live_openfda_shortages executes live HTTP query with 5s timeout.
+    2. Verifies in-memory cache-aside returns cached records on subsequent queries.
+    3. Verifies graceful offline fallback to local openfda_shortages.json on network error/timeout/HTTP 500.
+    4. Verifies fetch_live_openfda_recalls executes live HTTP query with 5s timeout.
+    5. Verifies graceful offline fallback to local openfda_enforcement_recalls.json on error.
+    6. Verifies SAMPLE_MODE=true bypasses network requests and serves local data cleanly.
+    """
+    store = DataStore(use_zetaris=False)
+    store.clear_cache()
+
+    # 1. Live Shortages query success (mocked HTTP 200)
+    monkeypatch.setenv("SAMPLE_MODE", "false")
+    mock_shortage_resp = MagicMock()
+    mock_shortage_resp.status_code = 200
+    mock_shortage_resp.json.return_value = {
+        "results": [
+            {
+                "generic_name": "Paracetamol 500mg",
+                "availability": "Current",
+                "status": "Available"
+            }
+        ]
+    }
+
+    with patch("requests.get", return_value=mock_shortage_resp) as mock_get:
+        res = store.fetch_live_openfda_shortages("paracetamol")
+        assert len(res) == 1
+        assert res[0]["generic_name"] == "Paracetamol 500mg"
+        assert mock_get.call_count == 1
+        url_called = mock_get.call_args[0][0]
+        assert "https://api.fda.gov/drug/shortages.json" in url_called
+        assert "search=generic_name:paracetamol" in url_called
+        assert mock_get.call_args[1]["timeout"] == 5
+
+        # 2. In-memory cache-aside: second call should NOT hit network
+        res_cached = store.fetch_live_openfda_shortages("paracetamol")
+        assert len(res_cached) == 1
+        assert mock_get.call_count == 1  # Still 1, cache hit!
+
+    # 3. Shortages fallback on Network ConnectionError
+    store.clear_cache()
+    with patch("requests.get", side_effect=requests.exceptions.ConnectionError("DNS failure")) as mock_fail:
+        # Fallback should return real local data for paracetamol or empty without crashing
+        res_fallback = store.fetch_live_openfda_shortages("paracetamol")
+        assert isinstance(res_fallback, list)
+        assert mock_fail.call_count == 1
+
+    # 4. Shortages fallback on HTTP 500 error
+    store.clear_cache()
+    mock_500 = MagicMock()
+    mock_500.status_code = 500
+    with patch("requests.get", return_value=mock_500):
+        res_500 = store.fetch_live_openfda_shortages("morphine")
+        assert isinstance(res_500, list)
+        # Amoxicillin exists in local openfda_shortages.json
+        assert any("morphine" in str(r.get("generic_name", "")).lower() for r in res_500)
+
+    # 5. Live Recalls query success (mocked HTTP 200)
+    store.clear_cache()
+    mock_recall_resp = MagicMock()
+    mock_recall_resp.status_code = 200
+    mock_recall_resp.json.return_value = {
+        "results": [
+            {
+                "product_description": "Paracetamol Tablets 500mg",
+                "reason_for_recall": "Defective packaging seal",
+                "classification": "Class II"
+            }
+        ]
+    }
+
+    with patch("requests.get", return_value=mock_recall_resp) as mock_get:
+        recalls = store.fetch_live_openfda_recalls(medicine_id="MED-001", generic_name="paracetamol")
+        assert len(recalls) == 1
+        assert recalls[0]["reason_for_recall"] == "Defective packaging seal"
+        assert mock_get.call_count == 1
+        url_called = mock_get.call_args[0][0]
+        assert "https://api.fda.gov/drug/enforcement.json" in url_called
+        assert "search=product_description:paracetamol" in url_called
+        assert mock_get.call_args[1]["timeout"] == 5
+
+        # Cache-aside on recalls
+        recalls_cached = store.fetch_live_openfda_recalls(medicine_id="MED-001", generic_name="paracetamol")
+        assert len(recalls_cached) == 1
+        assert mock_get.call_count == 1
+
+    # 6. Recalls fallback on Timeout
+    store.clear_cache()
+    with patch("requests.get", side_effect=requests.exceptions.Timeout("Connection timed out")):
+        recalls_fb = store.fetch_live_openfda_recalls(medicine_id="MED-001")
+        assert isinstance(recalls_fb, list)
+        # MED-001 has local recalls in openfda_enforcement_recalls.json
+        assert len(recalls_fb) > 0
+        assert "reason_for_recall" in recalls_fb[0]
+
+    # 7. SAMPLE_MODE=true bypasses network entirely
+    store.clear_cache()
+    monkeypatch.setenv("SAMPLE_MODE", "true")
+    with patch("requests.get") as mock_never_called:
+        sample_shortages = store.fetch_live_openfda_shortages("morphine")
+        assert len(sample_shortages) > 0
+        assert mock_never_called.call_count == 0
+
+        sample_recalls = store.fetch_live_openfda_recalls(medicine_id="MED-001")
+        assert len(sample_recalls) > 0
+        assert mock_never_called.call_count == 0

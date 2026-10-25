@@ -325,9 +325,9 @@ def test_metadata_json_and_docs_integrity():
     assert "126-test" not in sponsor_doc
     assert "127-test" not in sponsor_doc
     assert "128-test" not in sponsor_doc
-    assert "135-test pytest suite" in sponsor_doc
+    assert "136-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "135/135 Automated Tests Verified" in sponsor_doc
+    assert "136/136 Automated Tests Verified" in sponsor_doc
     assert "curated_evaluation.md" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
@@ -346,7 +346,7 @@ def test_metadata_json_and_docs_integrity():
     assert "126 automated tests" not in pre_existing_doc
     assert "127 automated tests" not in pre_existing_doc
     assert "128 automated tests" not in pre_existing_doc
-    assert "135 automated tests passing" in pre_existing_doc
+    assert "136 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:
@@ -360,7 +360,7 @@ def test_metadata_json_and_docs_integrity():
     assert "(>85% target)" not in readme_doc
     assert "Regression / Rule-Coverage Checks" in readme_doc
     assert "curated_evaluation.md" in readme_doc
-    assert "135 tests across 7 test suites" in readme_doc
+    assert "136 tests across 7 test suites" in readme_doc
 
 
 def test_smoke_test_provider_handling_and_zero_hardcoding(monkeypatch):

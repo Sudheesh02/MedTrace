@@ -1387,3 +1387,40 @@
   - Backlog Item 4: Implement interactive web UI dashboard (`app/ui.py` or FastAPI `/dashboard`).
   - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
   - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.
+
+
+### Session: 2026-10-25 23:55 IST
+**Role**: Senior Staff AI Engineer & Lead Auditor  
+**Phase**: Real-Time openFDA REST API Adapter with Offline Cache-Aside (Backlog Item 3)
+
+#### What Was Done
+1. **Real-Time openFDA REST API Integration with Offline Cache-Aside (Backlog Item 3)**:
+   - Implemented `fetch_live_openfda_shortages(medicine_name: str)` in [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py):
+     - Issues HTTP GET to `https://api.fda.gov/drug/shortages.json?search=generic_name:{medicine_name}&limit=5` with a 5-second timeout.
+     - On HTTP 200, parses records, populates dual in-memory caches (`_openfda_cache` and `_shared_openfda_cache`), and returns live drug shortage records.
+     - On network failure, DNS error, timeout, HTTP 500, or when `SAMPLE_MODE=true`, falls back seamlessly and cleanly to curated local dataset `data/real/openfda_shortages.json`.
+   - Implemented `fetch_live_openfda_recalls(medicine_id: Optional[str] = None, generic_name: Optional[str] = None)` in [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py):
+     - Queries `https://api.fda.gov/drug/enforcement.json?search=product_description:{q}&limit=5` with a 5-second timeout.
+     - Dynamically resolves generic name from medicine catalogue when only `medicine_id` is supplied.
+     - Provides identical in-memory cache-aside and clean fallback to `data/real/openfda_enforcement_recalls.json`.
+   - Enhanced `get_openfda_shortages` and `get_openfda_recalls` with optional `live: bool = False` flag for caller flexibility.
+   - Updated cache eviction in `DataStore.clear_cache()` and `DataStore.clear_shared_cache()` to reset openFDA caches.
+2. **Comprehensive Unit & Integration Testing**:
+   - Added [`test_data_store_openfda_live_and_fallback`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py) asserting:
+     - Live shortage queries with exact URL, parameter encoding, and 5s timeout enforcement.
+     - In-memory cache-aside hit behavior (second call bypasses network).
+     - Network connection error fallback without unhandled exceptions.
+     - HTTP 500 error fallback to local records.
+     - Live recall queries and timeout fallback.
+     - `SAMPLE_MODE=true` offline isolation bypassing all network requests.
+3. **Docs & Baseline Synchronization**:
+   - Marked Item 3 as `[x] [DONE]` in [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md).
+   - Synchronized test baseline across all documentation from 135 to 136 tests (`test_agents.py`: 38, `test_api.py`: 31, `test_data_store.py`: 14, `test_deterministic.py`: 23, `test_enriched_data.py`: 13, `test_backtest.py`: 12, `test_world_model.py`: 5).
+   - Updated [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md), and [`PRE_EXISTING_COMPONENTS.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/PRE_EXISTING_COMPONENTS.md).
+
+#### What Is Next
+- **Batch 2 (P1 — Core Sponsor Tech & User Experience)**:
+  - Backlog Item 4: Implement interactive web UI dashboard (`app/ui.py` or FastAPI `/dashboard`).
+  - Backlog Item 5: Author dedicated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+  - Backlog Item 6: Update `.dockerignore` with canonical trace whitelist exceptions.
+  - Backlog Item 7: Author transparent golden trace provenance documentation in `logs/README.md`.

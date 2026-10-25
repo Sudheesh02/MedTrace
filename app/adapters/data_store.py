@@ -14,6 +14,7 @@ from datetime import datetime
 class DataStore:
     _shared_csv_cache: Dict[str, List[Dict[str, Any]]] = {}
     _shared_pair_indexes: Dict[str, Dict[Tuple[str, str], List[Dict[str, Any]]]] = {}
+    _shared_openfda_cache: Dict[str, List[Dict[str, Any]]] = {}
 
     def __init__(self, use_zetaris: Optional[bool] = None, sim_dir: Optional[str] = None):
         sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
@@ -34,6 +35,7 @@ class DataStore:
         self._cached_token = None
         self._csv_cache: Dict[str, List[Dict[str, Any]]] = {}
         self._pair_indexes: Dict[str, Dict[Tuple[str, str], List[Dict[str, Any]]]] = {}
+        self._openfda_cache: Dict[str, List[Dict[str, Any]]] = {}
         self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     @classmethod
@@ -41,11 +43,13 @@ class DataStore:
         """Clear the class-level shared CSV cache and pair indexes."""
         cls._shared_csv_cache.clear()
         cls._shared_pair_indexes.clear()
+        cls._shared_openfda_cache.clear()
 
     def clear_cache(self) -> None:
         """Clear all in-memory cached CSV tables and indexes for this instance and shared cache."""
         self._csv_cache.clear()
         self._pair_indexes.clear()
+        self._openfda_cache.clear()
         DataStore.clear_shared_cache()
 
     @staticmethod
@@ -420,7 +424,126 @@ class DataStore:
                 return res
         return self._read_csv("data/real/supplier_slip.csv")
 
-    def get_openfda_shortages(self, generic_name: str) -> List[Dict[str, Any]]:
+    def fetch_live_openfda_shortages(self, medicine_name: str) -> List[Dict[str, Any]]:
+        """
+        Fetch real-time drug shortages from openFDA REST API with offline cache-aside.
+        Issues HTTP GET to https://api.fda.gov/drug/shortages.json?search=generic_name:{medicine_name}&limit=5
+        with a 5-second timeout.
+        Updates in-memory cache on HTTP 200.
+        Falls back cleanly to local data/real/openfda_shortages.json when offline, on network error/timeout,
+        or when SAMPLE_MODE=true.
+        """
+        if not medicine_name:
+            return []
+        norm_name = str(medicine_name).strip().lower()
+        cache_key = f"shortages:{norm_name}"
+        if cache_key in self._openfda_cache:
+            return [dict(r) for r in self._openfda_cache[cache_key]]
+        if cache_key in DataStore._shared_openfda_cache:
+            return [dict(r) for r in DataStore._shared_openfda_cache[cache_key]]
+
+        sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
+        if sample_mode:
+            local_res = self.get_openfda_shortages(medicine_name, live=False)
+            self._openfda_cache[cache_key] = local_res
+            DataStore._shared_openfda_cache[cache_key] = local_res
+            return local_res
+
+        import urllib.parse
+        try:
+            q = urllib.parse.quote(medicine_name.strip())
+            url = f"https://api.fda.gov/drug/shortages.json?search=generic_name:{q}&limit=5"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = data.get("results", [])
+                self._openfda_cache[cache_key] = results
+                DataStore._shared_openfda_cache[cache_key] = results
+                return [dict(r) for r in results]
+            elif resp.status_code == 404:
+                self._openfda_cache[cache_key] = []
+                DataStore._shared_openfda_cache[cache_key] = []
+                return []
+            else:
+                local_res = self.get_openfda_shortages(medicine_name, live=False)
+                self._openfda_cache[cache_key] = local_res
+                DataStore._shared_openfda_cache[cache_key] = local_res
+                return local_res
+        except Exception:
+            local_res = self.get_openfda_shortages(medicine_name, live=False)
+            self._openfda_cache[cache_key] = local_res
+            DataStore._shared_openfda_cache[cache_key] = local_res
+            return local_res
+
+    def fetch_live_openfda_recalls(self, medicine_id: Optional[str] = None, generic_name: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Fetch real-time drug enforcement recalls from openFDA REST API with offline cache-aside.
+        Issues HTTP GET to https://api.fda.gov/drug/enforcement.json?search=product_description:{q}&limit=5
+        with a 5-second timeout.
+        Updates in-memory cache on HTTP 200.
+        Falls back cleanly to local data/real/openfda_enforcement_recalls.json when offline,
+        on network error/timeout, or when SAMPLE_MODE=true.
+        """
+        norm_med = str(medicine_id or "").strip().upper()
+        norm_name = str(generic_name or "").strip().lower()
+        cache_key = f"recalls:{norm_med}:{norm_name}"
+        if cache_key in self._openfda_cache:
+            return [dict(r) for r in self._openfda_cache[cache_key]]
+        if cache_key in DataStore._shared_openfda_cache:
+            return [dict(r) for r in DataStore._shared_openfda_cache[cache_key]]
+
+        sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
+        if sample_mode:
+            local_res = self.get_openfda_recalls(medicine_id=medicine_id, generic_name=generic_name, live=False)
+            self._openfda_cache[cache_key] = local_res
+            DataStore._shared_openfda_cache[cache_key] = local_res
+            return local_res
+
+        q_term = generic_name or ""
+        if not q_term and medicine_id:
+            try:
+                meds = self.get_medicines()
+                matched = next((m for m in meds if m.get("medicine_id") == medicine_id), None)
+                if matched:
+                    q_term = matched.get("name", "")
+            except Exception:
+                pass
+
+        if not q_term:
+            local_res = self.get_openfda_recalls(medicine_id=medicine_id, generic_name=generic_name, live=False)
+            self._openfda_cache[cache_key] = local_res
+            DataStore._shared_openfda_cache[cache_key] = local_res
+            return local_res
+
+        import urllib.parse
+        try:
+            q = urllib.parse.quote(q_term.strip())
+            url = f"https://api.fda.gov/drug/enforcement.json?search=product_description:{q}&limit=5"
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = data.get("results", [])
+                self._openfda_cache[cache_key] = results
+                DataStore._shared_openfda_cache[cache_key] = results
+                return [dict(r) for r in results]
+            elif resp.status_code == 404:
+                self._openfda_cache[cache_key] = []
+                DataStore._shared_openfda_cache[cache_key] = []
+                return []
+            else:
+                local_res = self.get_openfda_recalls(medicine_id=medicine_id, generic_name=generic_name, live=False)
+                self._openfda_cache[cache_key] = local_res
+                DataStore._shared_openfda_cache[cache_key] = local_res
+                return local_res
+        except Exception:
+            local_res = self.get_openfda_recalls(medicine_id=medicine_id, generic_name=generic_name, live=False)
+            self._openfda_cache[cache_key] = local_res
+            DataStore._shared_openfda_cache[cache_key] = local_res
+            return local_res
+
+    def get_openfda_shortages(self, generic_name: str, live: bool = False) -> List[Dict[str, Any]]:
+        if live:
+            return self.fetch_live_openfda_shortages(generic_name)
         json_path = os.path.join(self.base_dir, "data/real/openfda_shortages.json")
         if not os.path.exists(json_path):
             return []
@@ -438,7 +561,9 @@ class DataStore:
         except Exception:
             return []
 
-    def get_openfda_recalls(self, medicine_id: Optional[str] = None, generic_name: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_openfda_recalls(self, medicine_id: Optional[str] = None, generic_name: Optional[str] = None, live: bool = False) -> List[Dict[str, Any]]:
+        if live:
+            return self.fetch_live_openfda_recalls(medicine_id=medicine_id, generic_name=generic_name)
         json_path = os.path.join(self.base_dir, "data/real/openfda_enforcement_recalls.json")
         if not os.path.exists(json_path):
             return []

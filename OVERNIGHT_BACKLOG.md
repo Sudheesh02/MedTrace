@@ -191,7 +191,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 3: Real-Time openFDA REST API Adapter with Offline Cache-Aside in `DataStore`
 - **Priority**: P1 (Execution Plan Phase 4.2 & 4.4, Technical Depth 20 pts, Sponsor Tech 10 pts)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py)
 - **Problem**: In `DataStore`, `get_openfda_shortages`, `get_openfda_recalls`, and `get_cross_border_shortages` currently read local JSON files from disk only. The Execution Plan specifies openFDA as a live web API data source (REAL).
 - **Action**:
@@ -202,6 +202,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
   2. Implement `fetch_live_openfda_recalls(medicine_id: str, generic_name: str)` with identical cache-aside pattern against `https://api.fda.gov/drug/enforcement.json`.
   3. Add unit tests in `tests/test_data_store.py`: `test_data_store_openfda_live_and_fallback`.
 - **Acceptance Criteria**: `DataStore` executes live queries against openFDA when online and falls back cleanly without errors in sample mode.
+  *Implementation Note*: Implemented `fetch_live_openfda_shortages` and `fetch_live_openfda_recalls` in `app/adapters/data_store.py` with 5-second timeout, in-memory cache-aside (`_openfda_cache` and `_shared_openfda_cache`), and seamless offline fallback to local curated datasets (`openfda_shortages.json` and `openfda_enforcement_recalls.json`). Added `test_data_store_openfda_live_and_fallback` in `tests/test_data_store.py` testing live HTTP queries, cache-aside hits, connection failures, HTTP 500 error handling, timeouts, and sample mode bypass.
 
 ---
 
@@ -349,7 +350,7 @@ To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
-Current Baseline Status: **135 passed, 1 warning in ~270s** (100% passing rate across all 8 test suites; clean working tree).
+Current Baseline Status: **136 passed, 1 warning in ~270s** (100% passing rate across all 8 test suites; clean working tree).
 
 ## CORRECTIVE (free LLM council, verified in code - do not delete)
 - [x] [DONE] A. SQL injection: app/adapters/data_store.py builds Zetaris SQL with f-strings on facility_id/medicine_id/vendor; _sanitize_id exists but is never called. Apply it (or a strict regex allowlist) to every interpolated id, add a test with a quote in the id.
@@ -360,5 +361,10 @@ Current Baseline Status: **135 passed, 1 warning in ~270s** (100% passing rate a
   *Implementation Note*: Disclosed in `README.md` line 78 note that the 180-day simulation replay measures the **Deterministic Engine's Multi-Source Federated Audit Detector** across 12 facilities, 12 essential medicines, and ~120,000 transaction rows. Clarified that the multi-agent LLM debate loop is evaluated on specific discrepancy alerts and curated regression benchmarks.
 - [x] [DONE] D. Number Auditor regex only matches units/tablets/packs; extend to capsules, vials, strips, boxes, bare quantities, with tests.
   *Implementation Note*: Extended Number Auditor in `app/agents/skeptic.py` with multi-pattern regex covering clinical dosage forms (`capsules`, `vials`, `strips`, `boxes`, `ampoules`, `bottles`, `doses`, `blisters`, `cartons`) and contextual bare quantities (`shortfall of X`, `counted X`, `loss of X`, `discrepancy of X`, `quarantine of X`, `missing X`, `shrinkage of X`), while excluding temporal/percentage units (`days`, `%`). Added `test_number_auditor_detects_dosage_forms_and_contextual_bare_quantities` in `tests/test_agents.py` with dynamic fixtures across varying drift/shortfall levels.
+
+
+
+## PRIORITY 0d - SIMPLE DASHBOARD (user asked 25 Oct 23:48 - do not delete)
+- [ ] Build the dashboard in Next.js (App Router, in a dashboard/ folder, reading JSON from the FastAPI backend or from output/ and logs/ trace files; user explicitly wants Next.js, NOT Streamlit). Layout: top = alert list across all facilities; open an item = Investigator vs Skeptic verdict, evidence, action plan; side 'why' panel showing the trace; plus a Meterless H-MEM card showing a decision flipping because of remembered officer feedback. Screens: (1) ranked alert list with facility/medicine, drift, severity, projected stockout date; (2) click an alert -> explain view: evidence, Investigator vs Skeptic verdict, Number Auditor result, recommended action, Monte Carlo lead-time; (3) a small honest evaluation panel (held-out F1 vs baseline, labelled 'simulated data', plus the curated rule-coverage note). All numbers must be read from the real outputs/trace files, nothing hardcoded. Add a smoke test and a README line with the run command.
 
 
