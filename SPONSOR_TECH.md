@@ -2,7 +2,7 @@
 
 > **Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why**  
 > **Submission Deliverable 04: Sponsor Technology Explanation (10 Points)**  
-> **Status: Conformance Tests Passing (136/136 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials)**
+> **Status: 146 automated tests passing offline (`SAMPLE_MODE=true`); the live path (Zetaris + Meterless Nightshift/NVIDIA Nemotron) is exercised by `smoke_test.py`, `python run.py --cli` and the live traces in `logs/live_trace_*.jsonl`.**
 
 ---
 
@@ -14,72 +14,46 @@ MedTrace does not merely treat sponsors as decorative checkboxes or static promp
 
 | Sponsor | Layer | Technology Integrated | Core Function in MedTrace | Automated Verification Test |
 | :--- | :--- | :--- | :--- | :--- |
-| **Zetaris** | **Headline Data Sponsor** | Zetaris Lightning Federated SQL Engine (REST Proxy) | Federated cross-source querying spanning PostgreSQL hospital ledgers, USAID CSV/Parquet shipments, and live openFDA REST API. | [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py) (12 tests) |
+| **Zetaris** | **Required data layer** | Zetaris Lightning SQL (local docker stack, REST proxy `run-query`), Lightning database `MEDTRACE_LH` with 10 FILESTORE tables over the facility CSVs | Every deterministic input (ledger, batches, audits, consumption, POs, deliveries, transfers, suppliers, medicine master) is read with SQL from `MEDTRACE_LH`; each run records a `DATA_SOURCE_SUMMARY` trace event with query counts and any CSV fallbacks. | [`tests/test_data_store.py`](tests/test_data_store.py), [`tests/test_zetaris_telemetry.py`](tests/test_zetaris_telemetry.py), live traces |
 | **Meterless** | **Headline Build Sponsor** | **Meterless World Model** (Engine 1) | Shared canonical entity states (`ent_inv_*`), relational graph, provenance hashing, and planted conflict tracking (Test W1 & W2). | [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py) (Test W1, W2) |
 | **Meterless** | **Headline Build Sponsor** | **Meterless H-MEM** (Engine 2) | Persistent episodic memory capturing human officer approvals, overrides, and deterministic contradiction resolution (Test H1 & H2). | [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py) (Test H1, H2) |
-| **NVIDIA** | **Headline Power Sponsor** | **NVIDIA Nemotron 3.5 Lightning** (`30b-a3b`) | High-speed qualitative synthesis, multi-agent adversarial debate, and token audit logging without LLM hallucinated arithmetic. | [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py) & `logs/trace_*.jsonl` |
+| **NVIDIA** | **Models via Nightshift** | NVIDIA Nemotron (`nvidia/nemotron-3.5-lightning-30b-a3b`, `nvidia/nemotron-3-ultra-550b-a55b`) reached through the Meterless Nightshift gateway | Qualitative synthesis, Investigator vs Skeptic debate and memo text; never arithmetic. Model name and `llm_used`/`fallback` flags are recorded on every trace event. | [`tests/test_agents.py`](tests/test_agents.py), [`tests/test_llm_client.py`](tests/test_llm_client.py), `logs/live_trace_*.jsonl` |
 | **Cursor** | **Build Sponsor** | Cursor IDE with Space XAI & Agent Pair | Architecting multi-agent loops, enforcing zero-hardcoding invariants, and executing continuous test suites. | Continuous development & CI |
 
 ---
 
 ## 2. Zetaris (Required Headline Data Sponsor — 10 Points)
 
-### 2.1 The Problem Zetaris Solves: Fragmented Public Health Intelligence
-Public health supply chains suffer from severe data fragmentation across incompatible tiers:
-1. **Facility Ledgers**: Daily transactions stored in relational tables (e.g., PostgreSQL).
-2. **Logistics & Delivery Records**: International donor shipments (USAID GHSC-PSM) distributed as tabular CSV/Parquet files.
-3. **Regulatory Disruptions**: US FDA drug shortages and recall enforcement actions published as live JSON REST endpoints.
+### 2.1 What Zetaris does in MedTrace (the real setup)
+MedTrace reads its operational data through **Zetaris Lightning SQL** running as the local docker stack from the participant guide (ui `:3000`, api, driver, postgres metastore).
 
-Traditional systems either attempt massive batch ETL into a single data lake (which quickly becomes stale) or force operators to swivel-chair across multiple dashboards.
+- [`scripts/register_zetaris_medtrace.py`](scripts/register_zetaris_medtrace.py) copies the CSVs into the driver container and creates the Lightning database **`MEDTRACE_LH`** with one `CREATE LIGHTNING FILESTORE TABLE ... FORMAT csv` table per file: `facilities` (12 rows), `medicine_master` (12), `suppliers` (4), `batches` (291), `ledger_daily` (25,920), `consumption_daily` (25,920), `physical_audit` (432), `purchase_orders` (1,288), `deliveries` (1,236), `transfers` (1).
+- `ground_truth.csv` and `true_stock_daily.csv` are deliberately **not** registered: they are evaluation labels, so the agents cannot see them.
+- `DataStore` ([`app/adapters/data_store.py`](app/adapters/data_store.py)) issues filtered `SELECT ... FROM MEDTRACE_LH.<table>` queries per facility/medicine pair.
+- Be precise about scope: this is one Lightning database over CSV filestore tables, not a multi-engine federation. Cross-table joins happen in the deterministic Python layer. The real-world reference files in `data/real/` (openFDA shortages and recalls, WHO, DailyMed, RxNorm, supplier-slip priors) are read from local files, not from Zetaris.
+- Registration steps are in [`scripts/register_zetaris_sources.md`](scripts/register_zetaris_sources.md).
 
-### 2.2 Zetaris Lightning Architecture & REST SQL Proxy
-MedTrace integrates directly with the **Zetaris Lightning REST SQL Engine** via the UI proxy endpoint:
-- **API Endpoint**: `POST {ZETARIS_BASE_URL}/api/proxy/sql-editor/sqls/run-query`
-- **Dynamic Authentication**: Automated JWT authentication via `POST /api/auth/login` caching Bearer tokens in memory.
-- **Request Headers**: Mandatory `Authorization: Bearer <token>`, `X-Org-ID: <org_id>`, and fresh `X-Request-ID: <uuid>`.
-- **Query Body**: Parameterized SQL string with explicit row limits.
-
+### 2.2 REST route and authentication
 ```python
-# Code snippet from app/adapters/data_store.py
-def _query_zetaris(self, sql: str) -> Optional[List[Dict[str, Any]]]:
-    if not self.use_zetaris:
-        return None
-    token = self._get_token()
-    if not token:
-        return None
-    url = f"{self.base_url}/api/proxy/sql-editor/sqls/run-query"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "X-Org-ID": str(self.zetaris_org),
-        "X-Request-ID": str(uuid.uuid4())
-    }
-    body = {"sql": sql, "limit": 1000}
-    res = requests.post(url, headers=headers, json=body, timeout=20)
-    ...
+# app/adapters/data_store.py (simplified)
+# 1. POST {ZETARIS_BASE_URL}/api/auth/login      -> bearer token (cached in memory)
+# 2. POST {ZETARIS_BASE_URL}/api/proxy/sql-editor/sqls/run-query
+#    headers: Authorization: Bearer <token>, X-Org-ID: <org>, X-Request-ID: <uuid>
+#    body:    {"sql": "SELECT * FROM MEDTRACE_LH.ledger_daily WHERE ...", "limit": 1000}
 ```
+If `ZETARIS_REST_URL` points at a different route, that route is tried first; a 400/404/405 moves on to the next route instead of giving up.
 
-### 2.3 Cross-Source Federated SQL Query Example
-Zetaris allows MedTrace to execute unified SQL queries joining disparate sources across storage engines without prior data movement:
+### 2.3 Proof that Zetaris is actually used (not silently bypassed)
+Every run ends with an agent event `ZetarisDataLayer` / `DATA_SOURCE_SUMMARY` in `logs/trace_<run_id>.jsonl`:
 
-```sql
-SELECT 
-    l.facility_id,
-    l.medicine_id,
-    l.ledger_stock,
-    p.counted_stock,
-    (l.ledger_stock - p.counted_stock) AS phantom_drift,
-    po.promised_date,
-    s.p90_delay_days
-FROM postgres.public.ledger_daily l
-LEFT JOIN postgres.public.physical_audit p 
-    ON l.facility_id = p.facility_id AND l.medicine_id = p.medicine_id
-LEFT JOIN postgres.public.purchase_orders po 
-    ON l.facility_id = po.facility_id AND l.medicine_id = po.medicine_id
-LEFT JOIN parquet_storage.supplier_slip s 
-    ON po.supplier_id = s.supplier_id
-WHERE l.facility_id = 'FAC-DH-01' AND l.medicine_id = 'MED-007'
-ORDER BY l.date DESC LIMIT 1;
+```json
+{"use_zetaris": true, "database": "MEDTRACE_LH", "source": "zetaris-lightning-sql",
+ "queries_attempted": 44, "queries_ok": 44, "queries_fallback_to_csv": 0,
+ "tables": {"ledger_daily": 13, "physical_audit": 12, "batches": 12, "purchase_orders": 2, "...": "..."}}
 ```
+(example from `logs/live_trace_run-2bceed1c.jsonl`, pair FAC-WH-01 / MED-006). A fallback to local CSV is still automatic, but it is now counted and visible in the trace.
+
+An honest bug record: earlier live runs were silently reading local CSV because the orchestrator ignored `USE_ZETARIS` and the `ZETARIS_REST_URL=.../api/proxy` route returned 400 without trying `run-query`. Both are fixed, with regression tests in [`tests/test_zetaris_telemetry.py`](tests/test_zetaris_telemetry.py).
 
 ### 2.4 Resilience & Offline Fallback (`SAMPLE_MODE=true`)
 To ensure judges can evaluate MedTrace anywhere (whether Zetaris Docker containers are currently spinning or offline), [`DataStore`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py) features automated graceful fallback:
@@ -139,17 +113,18 @@ flowchart LR
 
 ## 4. NVIDIA Nemotron (Power Sponsor)
 
-### 4.1 Accelerated Qualitative Reasoning
-MedTrace utilizes **NVIDIA Nemotron 3.5 Lightning** (`nvidia/nemotron-3.5-lightning-30b-a3b`) via the OpenAI-compatible endpoint interface:
-- **Base URL**: `https://integrate.api.nvidia.com/v1` (or Meterless Nightshift runtime)
-- **Role**: High-speed qualitative synthesis, formulating multi-angle hypotheses in the Investigator agent, and executing adversarial critique in the Skeptic agent.
+### 4.1 Nemotron through Meterless Nightshift
+`LLMClient` ([`app/adapters/llm_client.py`](app/adapters/llm_client.py)) uses **Meterless Nightshift as the primary provider**: the OpenAI-compatible gateway at `METERLESS_BASE_URL` (default `http://127.0.0.1:8088/v1`), authenticated with `METERLESS_RUNTIME_TOKEN`, model `meterless/auto`, headers `meterless-app` / `meterless-scope`. The NVIDIA endpoint (`MODEL_BASE_URL` / `MODEL_API_KEY`) is the secondary route. The NVIDIA key itself lives in Nightshift's Providers tab, not in this repo.
+- Live traces record Nemotron models `nvidia/nemotron-3.5-lightning-30b-a3b` and `nvidia/nemotron-3-ultra-550b-a55b` (see `logs/live_trace_*.jsonl`, fields `model`, `llm_used`, `fallback`).
+- **Role**: hypotheses in the Investigator, adversarial critique in the Skeptic, memo and action-plan wording. Reasoning-model `<think>` blocks are stripped from output (`strip_think_tags`, tested in [`tests/test_llm_client.py`](tests/test_llm_client.py)).
+- If no provider is configured or `SAMPLE_MODE=true`, a deterministic rule-based text fallback is used and every affected trace event is flagged `fallback: true`.
 
 ### 4.2 Absolute Guardrail: Zero LLM Arithmetic
 In strict adherence to Track 2 guidelines (*The Agent That Can Explain Why*), **all quantitative calculations are strictly quarantined** to [`DeterministicEngine`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engine/deterministic.py). 
 - Days of cover, trust-adjusted usable stock, audit drift, Monte Carlo lead time ETA, and recommended reorder quantities are computed mathematically.
 - The NVIDIA Nemotron model is given grounded deterministic numbers in its context and tasked with qualitative diagnosis, risk evaluation, and human-facing memos.
 - Model name and token usage are recorded on every agent turn in `logs/trace_*.jsonl`.
-- **Zero Unsupported Number Claims**: Across the 25-scenario curated failure mode regression benchmark ([`output/curated_evaluation.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/output/curated_evaluation.md)), the Skeptic Number Auditor strictly catches and rejects any invented quantities (0.0% unsupported claim rate).
+- **Number Auditor**: on the 25-scenario hand-written regression suite ([`output/curated_evaluation.md`](output/curated_evaluation.md)) no ungrounded number claims got through. That suite was written by the same author as the rules, so it is a rule-coverage / regression check, not an accuracy or generalization measure.
 
 ---
 
@@ -159,46 +134,24 @@ In strict adherence to Track 2 guidelines (*The Agent That Can Explain Why*), **
 MedTrace was built inside **Cursor** leveraging:
 - **Composer & Grok**: Used for multi-file architectural refactoring, rapid test authoring, and complex multi-agent debate coordination.
 - **AGENTS.md & Conformance Rules**: Enforced strict anti-hardcoding invariants, parameterization, and deterministic arithmetic isolation across all iterations.
-- **Background Test Automation**: Running the 136-test pytest suite continuously to eliminate regressions before every commit.
+- **Background Test Automation**: Running the pytest suite continuously to eliminate regressions before every commit.
 
 ---
 
 ## 6. Conformance & Test Suite Summary
 
-Every sponsor technology in MedTrace is backed by automated tests:
+All commands run with `SAMPLE_MODE=true` (offline, no credentials). Counts are from the final run on this repo state.
 
 ```bash
-# Verify Zetaris REST SQL, Fallback, Caching, and Sanitization
-python -m pytest tests/test_data_store.py -q
-# Result: 13 passed
-
-# Verify Meterless World Model (W1, W2) & H-MEM (H1, H2, H3)
-python -m pytest tests/test_world_model.py -q
-# Result: 5 passed
-
-# Verify Meterless H-MEM API, CLI Officer Decision Feedback, Clean Clone Fallback, and Quick Demo Golden Case
-python -m pytest tests/test_api.py -q
-# Result: 31 passed
-
-# Verify Multi-Agent Loops, Debate Flip, Financial Costs, and Number Auditor Invariants
-python -m pytest tests/test_agents.py -q
-# Result: 38 passed
-
-# Verify Backtest Multi-Seed Simulation & Dynamic Ground Truth Bounds
-python -m pytest tests/test_backtest.py -q
-# Result: 13 passed
-
-# Verify Deterministic Arithmetic & Parametric Invariants & Monte Carlo Seed Dynamism
-python -m pytest tests/test_deterministic.py -q
-# Result: 23 passed
-
-# Verify Enriched Data Accessors, Real-World Normalization, and Multi-Line PO Preservation
-python -m pytest tests/test_enriched_data.py -q
-# Result: 13 passed
-
-# Full End-to-End Test Baseline (136 passed across 7 test suites)
-python -m pytest tests/ -q
-# Result: 136 passed in ~270s
+python -m pytest tests/test_data_store.py tests/test_zetaris_telemetry.py -q   # Zetaris adapter, fallback, route fix, telemetry (14 + 3)
+python -m pytest tests/test_world_model.py -q      # Meterless World Model W1/W2 and H-MEM H1/H2/H3 (5)
+python -m pytest tests/test_llm_client.py -q       # Nightshift/NVIDIA client, <think> stripping, fallback flags (6)
+python -m pytest tests/test_api.py -q              # API, CLI, officer decision -> H-MEM adaptation (32)
+python -m pytest tests/test_agents.py -q           # debate, Number Auditor, planner invariants (38)
+python -m pytest tests/test_deterministic.py -q    # deterministic arithmetic (23)
+python -m pytest tests/test_backtest.py -q         # simulation replay harness (12)
+python -m pytest tests/test_enriched_data.py -q    # real-data accessors (13)
+python -m pytest tests/ -q                         # full suite: 146
 ```
 
-All sponsor technology interfaces are verified via 136 passing offline and mock tests, and live cloud connections are testable through `smoke_test.py` with active user credentials.
+Offline tests cannot prove the live path. Live verification is `python smoke_test.py` (Zetaris + model route), `SAMPLE_MODE=false USE_ZETARIS=true python run.py --cli --facility FAC-WH-01 --medicine MED-006`, and the committed live traces `logs/live_trace_*.jsonl` (each contains the `DATA_SOURCE_SUMMARY` event and per-event model/fallback flags).

@@ -1,7 +1,7 @@
 {
   "project_name": "MedTrace",
   "track": "Track 2: The Agent That Can Explain Why",
-  "description": "An autonomous multi-agent clinical supply chain resilience system that prevents catastrophic medicine stockouts through federated data auditing, deterministic zero-hallucination arithmetic, and competing hypothesis loops.",
+  "description": "An autonomous multi-agent clinical supply chain resilience system that prevents catastrophic medicine stockouts through multi-source data auditing, deterministic zero-LLM-arithmetic calculations, and competing-hypothesis (Investigator vs Skeptic) debate loops with human escalation and persistent officer memory.",
   "authors": [
     {
       "name": "Sudheesh02",
@@ -11,10 +11,34 @@
   "repository": "https://github.com/Sudheesh02/MedTrace",
   "sponsor_technology": {
     "zetaris": {
-      "role": "Federated Data Layer",
-      "implementation": "app/adapters/data_store.py connects to Zetaris Lightning SQL REST API to query distributed facility ledgers, batches, deliveries, and external openFDA shortages in place.",
+      "role": "Required data layer (Zetaris Lightning SQL, local docker stack)",
+      "implementation": "app/adapters/data_store.py reads every deterministic input with SQL from the Lightning database MEDTRACE_LH via POST /api/proxy/sql-editor/sqls/run-query (USE_ZETARIS=true). Each run emits a ZetarisDataLayer / DATA_SOURCE_SUMMARY trace event with queries_attempted, queries_ok and queries_fallback_to_csv.",
+      "database": "MEDTRACE_LH",
+      "tables": [
+        "facilities",
+        "medicine_master",
+        "suppliers",
+        "batches",
+        "ledger_daily",
+        "consumption_daily",
+        "physical_audit",
+        "purchase_orders",
+        "deliveries",
+        "transfers"
+      ],
+      "not_registered_on_purpose": [
+        "ground_truth.csv",
+        "true_stock_daily.csv"
+      ],
+      "registration_script": "scripts/register_zetaris_medtrace.py",
+      "setup_guide": "scripts/register_zetaris_sources.md",
+      "scope_note": "One Lightning database over CSV FILESTORE tables; reference JSON files in data/real are read locally (no cross-engine federation).",
+      "tests": [
+        "tests/test_data_store.py",
+        "tests/test_zetaris_telemetry.py"
+      ],
       "container_ready": true,
-      "verified_query": "SELECT 1 AS num"
+      "verified_query": "SELECT * FROM MEDTRACE_LH.ledger_daily WHERE facility_id = 'FAC-WH-01' AND medicine_id = 'MED-006' ORDER BY date DESC LIMIT 1"
     },
     "meterless": {
       "role": "Headless Shared State & Memory Engines",
@@ -22,19 +46,26 @@
         {
           "engine": "Meterless World Model",
           "file": "app/engines/world_model.py",
-          "purpose": "Headless shared canonical entity state across agents using content-derived stable IDs (ent_inv_*) and relational graph edges (HOLDS_INVENTORY, FOR_MEDICINE)."
+          "purpose": "Headless shared canonical entity state across agents using content-derived stable IDs (ent_inv_*) and relational graph edges (HOLDS_INVENTORY, FOR_MEDICINE).",
+          "tests": "tests/test_world_model.py (W1, W2)"
         },
         {
           "engine": "Meterless H-MEM",
           "file": "app/engines/hmem.py",
-          "purpose": "Hierarchical cross-session episodic memory tracking officer approvals, rejections, and penalties to dynamically tune action recommendations."
+          "purpose": "Hierarchical cross-session episodic memory tracking officer approvals, rejections, and penalties to dynamically tune action recommendations.",
+          "tests": "tests/test_world_model.py (H1, H2, H3) and tests/test_api.py (officer decision changes the next run)"
         }
       ],
-      "runtime": "Meterless Nightshift AI Hotspot fallback in app/adapters/llm_client.py with required headers (meterless-app, meterless-scope)"
+      "runtime": "Meterless Nightshift is the primary LLM provider (METERLESS_BASE_URL, model meterless/auto, headers meterless-app / meterless-scope) in app/adapters/llm_client.py; direct NVIDIA endpoint is the secondary route."
     },
     "nvidia": {
-      "role": "Primary LLM Power Layer",
-      "model": "nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA API / Meterless Nightshift endpoint in app/adapters/llm_client.py"
+      "role": "Nemotron models served through Meterless Nightshift",
+      "models": [
+        "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "nvidia/nemotron-3-ultra-550b-a55b"
+      ],
+      "usage": "Qualitative synthesis, Investigator vs Skeptic debate and memo text only; all arithmetic is deterministic. Model, llm_used and fallback are recorded per trace event.",
+      "model": "nvidia/nemotron-3.5-lightning-30b-a3b via Meterless Nightshift (primary route) or the NVIDIA API (secondary route) in app/adapters/llm_client.py"
     },
     "cursor": {
       "role": "Development Environment",
@@ -55,6 +86,16 @@
       "data/real/cross_border_shortages.json",
       "data/simulated/"
     ],
-    "verification_command": "python run.py --cli --sample-mode --facility FAC-CHC-01 --medicine MED-001"
+    "verification_command": "python run.py --cli --sample-mode --facility FAC-CHC-01 --medicine MED-001",
+    "live_evidence": {
+      "action_packs": "output_examples/live_*.json",
+      "traces": "logs/live_trace_*.jsonl",
+      "note": "Produced with SAMPLE_MODE=false USE_ZETARIS=true; each trace has a DATA_SOURCE_SUMMARY event."
+    },
+    "tests": {
+      "command": "python -m pytest tests/ -q (SAMPLE_MODE=true)",
+      "count": "146"
+    },
+    "benchmark_scope": "Simulated data with 10 planted anomalies; held-out seeds share the generator. Rule-coverage check, not real-world accuracy."
   }
 }

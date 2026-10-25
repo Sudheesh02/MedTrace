@@ -1,7 +1,7 @@
 # MedTrace: Deterministic Audit & Multi-Agent Inventory Intelligence
 
 > **Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why**  
-> *Preventing catastrophic essential medicine stockouts through federated data auditing, deterministic arithmetic, and adversarial multi-agent reasoning.*
+> *Preventing catastrophic essential medicine stockouts through multi-source data auditing, deterministic arithmetic, and adversarial multi-agent reasoning.*
 
 ---
 
@@ -23,16 +23,16 @@ Traditional Logistics Management Information Systems (LMIS) fail because raw inv
 
 ```mermaid
 flowchart TD
-    subgraph DataLayer [Data Federation Layer - Zetaris]
-        A1[(Facility Ledger Daily)] --> Z[Zetaris Lightning Federated SQL]
+    subgraph DataLayer [Data Layer - Zetaris Lightning SQL, database MEDTRACE_LH]
+        A1[(Facility Ledger Daily)] --> Z[Zetaris Lightning SQL<br/>10 FILESTORE tables]
         A2[(Batches & QA Holds)] --> Z
         A3[(Physical Audit Counts)] --> Z
-        A4[(USAID Deliveries & Supplier Slips)] --> Z
-        A5[openFDA API / Shortages] --> Z
+        A4[(Purchase Orders, Deliveries, Suppliers)] --> Z
     end
 
     subgraph DeterministicEngine [Deterministic Math Engine]
         Z --> D1[Trust-Adjusted Stock Engine]
+        REF[Local reference data: openFDA, WHO, DailyMed, RxNorm, supplier-slip priors] --> D1
         D1 --> D2[Monte Carlo ETA Simulator]
         D2 --> D3[Dynamic Cover & Shortfall Calculator]
     end
@@ -58,7 +58,7 @@ flowchart TD
 
 ## 🏆 Key Benchmark & Evaluation Results
 
-Evaluated across a **180-day facility simulation replay** across tuning seeds 1–2 and held-out test seeds 3–4 (12 facilities, 12 essential medicines, ~120,000 transaction rows, all 10 planted ground-truth anomalies).
+Evaluated across a **180-day facility simulation replay** across tuning seeds 1–2 and held-out test seeds 3–4 (12 facilities, 12 essential medicines, ~25,920 ledger rows per seed (about 81,000 rows across all simulated tables per seed), all 10 planted ground-truth anomalies).
 
 All models are evaluated under the **identical 14.0-day replenishment alert threshold** (`consumption * 14.0 days`), eliminating asymmetric threshold bias and measuring true algorithmic differences:
 
@@ -75,13 +75,15 @@ All models are evaluated under the **identical 14.0-day replenishment alert thre
 | **Held-Out Test F1 (Seeds 3–4)** | 23.4% | 23.4% | **94.7%** | Unseen simulation generalization |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180-day simulation |
 
-*Note: All metrics reflect empirical evaluation executed across development seeds 1–2 and held-out test seeds 3–4 via `python scripts/run_backtest.py` on synthetic multi-tier facility simulation data with 10 planted ground-truth failure modes evaluated across all 180 simulation days with zero window leakage. This 180-day replay measures the **Deterministic Engine's Multi-Source Federated Audit Detector** across 12 facilities, 12 essential medicines, and ~120,000 transaction rows (directly auditing ledger drift, batch quarantines, expiration horizons, PO tracking, and consumption z-scores). Under identical alert thresholds, routine lead times are equivalent on clean data (74.2 days); traditional LMIS baselines equipped with rolling z-score and audit discrepancy detectors achieve 23.5% typed F1 (blind to batch quarantines, expiration horizons, PO dispatch delays, and vendor slips); MedTrace's multi-source federated audit achieves **94.7% F1 evaluated on held-out simulated seeds 3–4**.*
+*Honest scope: every number in this table is measured on **simulated** data with 10 planted anomaly types. The held-out seeds (3-4) use the same generator as the tuning seeds, and the detector rules were written knowing those 10 anomaly classes, so this is a rule-coverage check, not evidence of real-world accuracy. The naive/heuristic baselines are deliberately simple.*
+
+*Note: All metrics reflect empirical evaluation executed across development seeds 1–2 and held-out test seeds 3–4 via `python scripts/run_backtest.py` on synthetic multi-tier facility simulation data with 10 planted ground-truth failure modes evaluated across all 180 simulation days with zero window leakage. This 180-day replay measures the **Deterministic Engine's Multi-Source Audit Detector** across 12 facilities, 12 essential medicines, and ~25,920 ledger rows per seed (about 81,000 rows across all simulated tables per seed) (directly auditing ledger drift, batch quarantines, expiration horizons, PO tracking, and consumption z-scores). Under identical alert thresholds, routine lead times are equivalent on clean data (74.2 days); traditional LMIS baselines equipped with rolling z-score and audit discrepancy detectors achieve 23.5% typed F1 (blind to batch quarantines, expiration horizons, PO dispatch delays, and vendor slips); MedTrace's multi-source audit achieves **94.7% F1 evaluated on held-out simulated seeds 3–4**.*
 
 ---
 
 ### 🧪 Regression / Rule-Coverage Checks
 
-In addition to the 180-day simulation replay (which evaluates the Deterministic Engine's multi-source federated audit detector across held-out simulated seeds 3–4), MedTrace maintains an offline suite of **25 hand-crafted clinical scenarios** (including 5 adversarial edge cases; see [`output/curated_evaluation.md`](output/curated_evaluation.md)).
+In addition to the 180-day simulation replay (which evaluates the Deterministic Engine's multi-source audit detector across held-out simulated seeds 3–4), MedTrace maintains an offline suite of **25 hand-crafted clinical scenarios** (including 5 adversarial edge cases; see [`output/curated_evaluation.md`](output/curated_evaluation.md)).
 
 These are rule-coverage and failure mode regression checks written by the same author as the rules to stress-test multi-agent deliberation, Number Auditor zero-hallucination invariants, and clinical action logic across known edge cases (e.g. quarantine holds, transit losses, UOM mismatches, cold chain rejections)—not an empirical generalization metric. Note that on this curated suite, MedTrace's correct-abstention rate on clean controls is 75.0% (6/8) versus the rules baseline's 87.5% (7/8), while achieving 100% recall (17/17) and 0.0% ungrounded number claims via Number Auditor.
 
@@ -93,9 +95,9 @@ These are rule-coverage and failure mode regression checks written by the same a
 
 | Layer | Technology | Role & Integration |
 | :--- | :--- | :--- |
-| **Headline Data Sponsor** | **Zetaris** | Multi-container data federation (Postgres metastore + Spark driver + REST SQL proxy) querying simulated warehouse ledgers and live openFDA REST data. See [Zetaris Registration Guide](scripts/register_zetaris_sources.md) and [Hospital LMIS Export Contract](data/lmis_export_contract.md). |
-| **Headline Power Sponsor** | **NVIDIA Nemotron** / **Meterless** | High-speed LLM reasoning via `nvidia/nemotron-3.5-lightning-30b-a3b` and Meterless Nightshift runtime. |
-| **Headless Cognition** | **Meterless World Model & H-MEM** | Shared canonical entity states (`ent_inv_*`) and cross-session episodic memory recording officer rejections and approvals. Verified by Phase 4 Tests W1, W2, H1, H2, H3. |
+| **Required Data Sponsor** | **Zetaris** | Lightning SQL (local docker stack). Database `MEDTRACE_LH` holds 10 FILESTORE tables over the facility CSVs; every deterministic input is read with SQL through the `run-query` REST proxy and each run's trace records query counts and CSV fallbacks (`DATA_SOURCE_SUMMARY`). Register with `python scripts/register_zetaris_medtrace.py`; see the [Zetaris Registration Guide](scripts/register_zetaris_sources.md) and [Hospital LMIS Export Contract](data/lmis_export_contract.md). Reference files in `data/real/` (openFDA, WHO, DailyMed, RxNorm) are read locally. |
+| **Required Model Route** | **Meterless Nightshift** + **NVIDIA Nemotron** | Nightshift is the primary provider (`METERLESS_BASE_URL`, `meterless/auto`); Nemotron models (`nemotron-3.5-lightning-30b-a3b`, `nemotron-3-ultra-550b-a55b`) are served through it. Direct NVIDIA endpoint is the secondary route. |
+| **Meterless Engines** | **World Model & H-MEM** | Shared canonical entity states (`ent_inv_*`) and cross-session episodic memory recording officer rejections and approvals. Tests W1, W2, H1, H2, H3 in `tests/test_world_model.py`. |
 | **API & Backend** | **FastAPI & Pydantic v2** | High-performance async service with CLI `--cli` mode and OpenAPI endpoints. |
 
 ---
@@ -125,18 +127,32 @@ git clone https://github.com/Sudheesh02/MedTrace.git
 cd MedTrace
 cp .env.example .env
 ```
-Fill in your credentials in `.env`:
+Fill in your credentials in `.env` (see `.env.example` for every variable; never commit real values):
 ```ini
-# Zetaris REST Data Layer
+# Zetaris Lightning SQL (local docker stack)
 ZETARIS_BASE_URL=http://localhost:3000
 ZETARIS_ORG_ID=1
-ZETARIS_USERNAME=admin@zetaris.com
-ZETARIS_PASSWORD=YourPassword
+ZETARIS_USERNAME=your-sign-in-email
+ZETARIS_PASSWORD=your-password
+USE_ZETARIS=true
 
-# NVIDIA Nemotron / Meterless Nightshift
+# Meterless Nightshift (primary LLM provider; Nemotron is served through it)
+METERLESS_BASE_URL=http://127.0.0.1:8088/v1
+METERLESS_RUNTIME_TOKEN=your-nightshift-runtime-token
+METERLESS_MODEL=meterless/auto
+
+# Optional secondary route: direct NVIDIA endpoint
 MODEL_BASE_URL=https://integrate.api.nvidia.com/v1
 MODEL_API_KEY=your-nvapi-key
 NEMOTRON_MODEL=nvidia/nemotron-3.5-lightning-30b-a3b
+
+SAMPLE_MODE=false
+```
+With no credentials the app starts in offline `SAMPLE_MODE` automatically.
+
+To use Zetaris, bring up the Zetaris stack from the participant guide and register the data once:
+```bash
+python scripts/register_zetaris_medtrace.py   # creates Lightning database MEDTRACE_LH (10 FILESTORE tables)
 ```
 
 ### 3. Run Clean-Clone & Offline Environment Validation (Gate G4)
@@ -155,13 +171,14 @@ python scripts/quick_demo.py
 ```bash
 python smoke_test.py
 ```
-*Verifies both Zetaris REST SQL API and NVIDIA Nemotron connectivity.*
+*Verifies Zetaris REST SQL and the model route (Nightshift / NVIDIA). Needs live credentials; without them use the offline modes above.*
 
 ### 6. Run CLI Modes & Proactive Triage
 Audit a specific facility and medicine or execute district triage (live or offline sample mode):
 ```bash
-# Standard live run (connects to configured Zetaris / Nemotron endpoints)
-python run.py --cli --facility FAC-CHC-01 --medicine MED-001
+# Live run: Zetaris data + Nightshift/Nemotron (SAMPLE_MODE=false, USE_ZETARIS=true)
+SAMPLE_MODE=false USE_ZETARIS=true python run.py --cli --facility FAC-WH-01 --medicine MED-006
+# then check the DATA_SOURCE_SUMMARY event in the newest logs/trace_<run_id>.jsonl (queries_ok, queries_fallback_to_csv)
 
 # Offline / Judge Sample Mode with executive explain-why timeline & printable memo export
 python run.py --cli --facility FAC-DH-01 --medicine MED-007 --sample-mode --explain --export-memo
@@ -193,7 +210,7 @@ python run.py
 
 ### 8. Run Test Suite & Backtest Evaluation
 ```bash
-# Run unit & agent tests (136 tests across 7 test suites)
+# Run unit & agent tests (146 tests across 9 test files)
 python -m pytest tests/
 
 # Run 180-day comparative multi-seed backtest
@@ -244,7 +261,8 @@ docker compose up --build
 │   ├── generate_facility_simulation.py  # Data pipeline generator
 │   ├── run_backtest.py                  # Multi-seed evaluation runner
 │   ├── generate_examples.py             # Generates API-contract verified samples
-│   └── register_zetaris_sources.md      # DDL & REST registration guide for Zetaris
+│   └── register_zetaris_medtrace.py      # Registers MEDTRACE_LH (FILESTORE tables) in Zetaris
+│   ├── register_zetaris_sources.md      # Zetaris MEDTRACE_LH setup and verification guide
 ├── tests/                     # Deterministic, agent & World Model tests
 ├── Dockerfile                 # Containerized deployment spec
 ├── docker-compose.yml         # Compose orchestration with healthchecks
@@ -262,6 +280,18 @@ docker compose up --build
 - **Audit Trails**: Every run produces an immutable, step-by-step trace log in `logs/trace_*.jsonl` recording each agent's inputs, reasoning tokens, and decisions.
 
 ---
+
+## Live Run Evidence
+
+- `output_examples/live_*.json`: full action packs produced with the live stack (Zetaris + Nightshift/Nemotron), for six pairs: stockout risk (FAC-WH-01/MED-006), critical metformin stockout (FAC-WH-02/MED-007), cold-chain quarantine (FAC-WH-01/MED-011), ledger-vs-physical drift (FAC-DH-01/MED-007), a secure no-action control (FAC-PHC-02/MED-005) and memory-changes-decision (FAC-CHC-01/MED-001: top action PEER_TRANSFER before an officer rejection, BATCH_RELEASE after it). `output_examples/live_runs/memory_ab/` holds the "before officer feedback" run for the memory demo.
+- `logs/live_trace_*.jsonl`: the matching traces. Each has a `ZetarisDataLayer` / `DATA_SOURCE_SUMMARY` event (queries attempted / ok / fallback to CSV) and per-event `model`, `llm_used` and `fallback` fields.
+
+## Known Limitations
+
+- All data is simulated or public reference data. Benchmarks measure rule coverage on simulated anomalies, not real-world accuracy.
+- Zetaris holds the 10 simulated CSV tables (one Lightning database); the real reference JSON files are read locally. There is no cross-engine federation.
+- The live path needs the local Zetaris stack and a Nightshift runtime token. Without them the app falls back to local CSV and rule-based text (flagged `fallback: true` in traces).
+- Offline tests cannot prove the live integrations; use the live traces and `smoke_test.py`.
 
 ## 👥 Contributors & Hackathon Track
 - **Author**: [@Sudheesh02](https://github.com/Sudheesh02)

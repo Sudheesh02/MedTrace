@@ -497,7 +497,7 @@
 
 #### What Was Done
 1. **Zero-Hardcoding & Security Hardening in `DataStore`**:
-   - Eradicated hardcoded `"<REDACTED>"` default password from [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py); `self.password` defaults to `os.environ.get("ZETARIS_PASSWORD", "")`, immediately returning `None` without unauthenticated or hardcoded login requests.
+   - Eradicated hardcoded `"<redacted>"` default password from [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py); `self.password` defaults to `os.environ.get("ZETARIS_PASSWORD", "")`, immediately returning `None` without unauthenticated or hardcoded login requests.
    - Added static identifier sanitizer `DataStore._sanitize_id` validating identifiers with strict regex (`^[A-Za-z0-9_-]+$`) to prevent SQL injection in dynamic queries.
 2. **Standardized `uvicorn.run` & Request State Isolation**:
    - Changed `uvicorn.run("run.py:app", ...)` to `"run:app"` in [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py).
@@ -628,7 +628,7 @@
 
 #### What Was Done
 1. **Hardened `smoke_test.py` with Zero Hardcoded Passwords & Dual-Provider Support**:
-   - Removed hardcoded fallback `"<REDACTED>"` password; requires explicit `ZETARIS_PASSWORD` from `.env` or raises clean `ValueError`.
+   - Removed hardcoded fallback `"<redacted>"` password; requires explicit `ZETARIS_PASSWORD` from `.env` or raises clean `ValueError`.
    - Enhanced `power_model()` to inspect `METERLESS_RUNTIME_TOKEN` first (Meterless Nightshift runtime) before `MODEL_API_KEY` (NVIDIA Nemotron), supporting both required Headline Sponsors.
    - Added automated regression test `test_smoke_test_provider_handling_and_zero_hardcoding` in `tests/test_api.py`.
 2. **Tracked Sanitized Multi-Agent Trace in Git & Clean-Clone Fallback (Priority 0 Item 7)**:
