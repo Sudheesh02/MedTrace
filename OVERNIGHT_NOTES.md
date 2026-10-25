@@ -1218,3 +1218,37 @@
 - **Backlog Item 3 (P0)**: Document and highlight Curated Multi-Agent Benchmark in `README.md` and `SPONSOR_TECH.md`.
 - **Backlog Item 4 (P0)**: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
 - **Backlog Item 5 (P1)**: Real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
+
+---
+
+### Session: 2026-10-25 21:38 IST
+**Role**: Senior Staff AI Auditor & Core Maintainer  
+**Phase**: Hardcoding & Hallucination Elimination Audit (Curated Benchmark Rigor & Dynamic Multi-Agent Evaluation)
+
+#### What Was Done
+1. **Curated Clinical Benchmark Suite Expansion & Honest Re-Framing**:
+   - Expanded [`app/backtest/curated_benchmark.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/curated_benchmark.py) from 20 to 25 scenarios, introducing 5 realistic adversarial edge cases under `CuratedCategory.ADVERSARIAL_EDGE_CASE`:
+     - `CASE-21`: Minor Dispensing Aliquot Loss & Count Jitter (Amoxicillin 500mg, 492 counted vs 500 ledger, normal clinical variance).
+     - `CASE-22`: Conflicting Delivery Source & Unlogged Cold Chain Excursion (Paracetamol 500mg, ERP marked delivered, receiving dock rejected truck due to broken refrigeration seal; 400 counted vs 500 ledger).
+     - `CASE-23`: Incomplete Shift Handover Count / Sub-Store Fridge Omission (Azithromycin 500mg, nurse counted 150 in cupboard, missing 300 in emergency ward fridge; MedTrace conservative patient-safety bias protects against stockouts).
+     - `CASE-24`: Chronic Vendor Delivery Slip with Vast Safety Stock Buffer (Metformin 500mg, vendor has 15d p90 slip, but facility has 1,500 units / 100 days cover, monitor buffer abstention).
+     - `CASE-25`: Split Grant Multi-Funding Procurement Consignment (Amlodipine 5mg, two 200-unit POs sharing dates/vendor for grant accounting, both received, shelf count 400 matches ledger 400).
+2. **Eliminated Fixture Tuning & Leaked Enum Conditions**:
+   - Removed `if scenario.category == CuratedCategory.QUARANTINED_BATCH` inside `CuratedScenarioDataStore.get_openfda_recalls`, replacing it with explicit attribute `CuratedScenario.recall_info`.
+   - Removed `and scenario.category == CuratedCategory.PHANTOM_DRIFT` inside `run_scenario_baseline`, ensuring the standard LMIS rules baseline evaluates available inputs (`|ledger - physical_count| >= 150`) uniformly without category cheating.
+   - Replaced hardcoded `get_medicine_unit_price -> 0.15` in `CuratedScenarioDataStore` with `super().get_medicine_unit_price(medicine_id)`, pulling dynamic wholesale prices per NLEM/WHO standards.
+3. **Honest Labeling & Transparent Baseline Documentation**:
+   - Explicitly relabeled [`output/curated_evaluation.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/output/curated_evaluation.md) as a **Rule-Coverage & Regression Benchmark Declaration**, affirming that it is a designed failure-mode regression test rather than an empirical generalization metric, keeping the 180-day backtest simulation replay (Seeds 1–4, 94.7% F1 on held-out seeds 3–4) as the primary headline metric in docs.
+   - Documented the exact rules-only baseline mechanism ($R = \text{daily consumption} \times 14.0\text{d}$) and why it scores 17.6% recall (3/17) due to blindness to batch quarantines, supplier slips, carrier loss, and UOM packaging multipliers.
+   - Reported honest metrics on the 25 scenarios: MedTrace achieves 89.5% precision, 100.0% recall, 94.5% F1, and 0.0% ungrounded claims via Number Auditor; baseline achieves 50.0% precision, 17.6% recall, 26.0% F1.
+4. **Added Dynamic Behavioral Unit Tests**:
+   - Updated `test_curated_benchmark_evaluation_execution` in [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py) to assert behavioral invariants (precision >= 85%, recall >= 95%, F1 >= 90%, Number Auditor = 0.0% ungrounded claims).
+   - Added `test_curated_benchmark_scenario_dynamism_and_unhardcoded_evaluation` in [`tests/test_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_backtest.py), mutating inventory, consumption, and batch parameters, proving that outputs scale with mathematical equations rather than hardcoded fixture constants.
+5. **Verified Clean-Clone and Test Suite**:
+   - Executed `scripts/validate_clean_clone.py` — 9/9 verification steps passed (100% green).
+   - Executed full test suite (`python -m pytest tests -q`): **131 passed, 1 warning in 272.15s** (100% green).
+
+#### What Is Next
+- **Backlog Item 3 (P0)**: Document and highlight Curated Multi-Agent Benchmark in `README.md` and `SPONSOR_TECH.md` (as a rule-coverage regression suite).
+- **Backlog Item 4 (P0)**: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
+- **Backlog Item 5 (P1)**: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.

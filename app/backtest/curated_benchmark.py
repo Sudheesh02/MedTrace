@@ -7,13 +7,14 @@ Provides 20 hand-crafted, clinically realistic test scenarios evaluating the
 multi-agent LLM debate loop, Number Auditor zero-hallucination guardrail,
 and clinical action formulation against a standard rules-only LMIS baseline.
 
-Scenario Distribution (n=20):
+Scenario Distribution (n=25):
 - 5 Clean / Normal cases (stock adequate, zero drift, unquarantined, on-time supplier)
 - 4 Phantom Drift cases (shelf count < ledger balance, inventory leakage)
 - 3 Quarantined Batch cases (batches locked under QA hold / FDA recall notice)
 - 3 Chronic Supplier Slip cases (p90 delivery slip creates impending stockout gap)
 - 3 Dispatched PO Transit Loss cases (PO marked dispatched, never delivered)
 - 2 Unit-of-Measure Mismatch cases (10x packaging multiplier error: pack vs tablet)
+- 5 Adversarial Edge Cases (ambiguous dispensing jitter, unlogged cold chain rejection, incomplete shift count, vendor delay with huge buffer, grant-split consignments)
 """
 
 import os
@@ -42,6 +43,7 @@ class CuratedCategory(str, Enum):
     CHRONIC_SUPPLIER_SLIP = "CHRONIC_SUPPLIER_SLIP"
     PO_TRANSIT_LOSS = "PO_TRANSIT_LOSS"
     UOM_MISMATCH = "UOM_MISMATCH"
+    ADVERSARIAL_EDGE_CASE = "ADVERSARIAL_EDGE_CASE"
 
 
 @dataclass
@@ -69,6 +71,7 @@ class CuratedScenario:
     packaging_info: Optional[Dict[str, Any]] = None
     surveillance_info: Optional[Dict[str, Any]] = None
     shortage_info: Optional[Dict[str, Any]] = None
+    recall_info: Optional[List[Dict[str, Any]]] = None
     peer_inventory: Optional[Dict[str, float]] = None
 
 
@@ -205,18 +208,10 @@ class CuratedScenarioDataStore(DataStore):
         return []
 
     def get_openfda_recalls(self, medicine_id: str = "", generic_name: str = "") -> List[Dict[str, Any]]:
-        if self.scenario.category == CuratedCategory.QUARANTINED_BATCH:
-            return [
-                {
-                    "classification": "Class II Recall",
-                    "recalling_firm": "PharmaCorp QA",
-                    "reason_for_recall": "Potential particulate contamination detected in released batch lots."
-                }
-            ]
-        return []
+        return self.scenario.recall_info or []
 
     def get_medicine_unit_price(self, medicine_id: str) -> float:
-        return 0.15
+        return super().get_medicine_unit_price(medicine_id)
 
 
 # ---------------------------------------------------------------------------
@@ -451,7 +446,14 @@ CURATED_SCENARIOS: List[CuratedScenario] = [
         ],
         purchase_orders=[],
         deliveries=[],
-        supplier_info={"supplier_id": "SUP-001", "name": "National Medical Supply", "historical_p90_slip": 2.0}
+        supplier_info={"supplier_id": "SUP-001", "name": "National Medical Supply", "historical_p90_slip": 2.0},
+        recall_info=[
+            {
+                "classification": "Class II Recall",
+                "recalling_firm": "PharmaCorp QA",
+                "reason_for_recall": "Potential particulate contamination detected in released batch lots."
+            }
+        ]
     ),
     CuratedScenario(
         case_id="CASE-11",
@@ -474,7 +476,14 @@ CURATED_SCENARIOS: List[CuratedScenario] = [
         ],
         purchase_orders=[],
         deliveries=[],
-        supplier_info={"supplier_id": "SUP-001", "name": "National Medical Supply", "historical_p90_slip": 2.0}
+        supplier_info={"supplier_id": "SUP-001", "name": "National Medical Supply", "historical_p90_slip": 2.0},
+        recall_info=[
+            {
+                "classification": "Class II Recall",
+                "recalling_firm": "PharmaCorp QA",
+                "reason_for_recall": "Potential particulate contamination detected in released batch lots."
+            }
+        ]
     ),
     CuratedScenario(
         case_id="CASE-12",
@@ -497,7 +506,14 @@ CURATED_SCENARIOS: List[CuratedScenario] = [
         ],
         purchase_orders=[],
         deliveries=[],
-        supplier_info={"supplier_id": "SUP-001", "name": "National Medical Supply", "historical_p90_slip": 2.0}
+        supplier_info={"supplier_id": "SUP-001", "name": "National Medical Supply", "historical_p90_slip": 2.0},
+        recall_info=[
+            {
+                "classification": "Class II Recall",
+                "recalling_firm": "PharmaCorp QA",
+                "reason_for_recall": "Potential particulate contamination detected in released batch lots."
+            }
+        ]
     ),
 
     # --- 3 Chronic Supplier Slip Cases ---
@@ -703,6 +719,129 @@ CURATED_SCENARIOS: List[CuratedScenario] = [
         supplier_info={"supplier_id": "SUP-001", "name": "National Medical Supply", "historical_p90_slip": 2.0},
         packaging_info={"dispensing_unit": "tablet", "standard_packaging": "box of 10 tablets", "pack_size_units": 10}
     ),
+    # --- 5 Adversarial Edge Cases ---
+    CuratedScenario(
+        case_id="CASE-21",
+        name="Sub-District Routine Dispensing Aliquot Loss & Count Jitter",
+        category=CuratedCategory.ADVERSARIAL_EDGE_CASE,
+        facility_id="FAC-DH-01",
+        facility_name="District Civil Hospital",
+        medicine_id="MED-004",
+        medicine_name="Amoxicillin 500mg",
+        clinical_context="Routine monthly physical count reveals 492 tablets vs ledger 500 tablets (8 tablets variance / 1.6% loss due to routine blister breakages and dispensing rounding). Normal clinical threshold is 5%.",
+        is_anomaly=False,
+        expected_anomaly_type=None,
+        expected_abstention=True,
+        ledger_stock=500.0,
+        physical_count=492.0,
+        daily_consumption=10.0,
+        batches=[
+            {"batch_id": "BATCH-ADV-01", "facility_id": "FAC-DH-01", "medicine_id": "MED-004", "quantity": 500.0, "expiry_date": "2028-12-31", "quarantined": "false"}
+        ],
+        purchase_orders=[],
+        deliveries=[],
+        supplier_info={"supplier_id": "SUP-001", "name": "Standard Pharms", "historical_p90_slip": 2.0}
+    ),
+    CuratedScenario(
+        case_id="CASE-22",
+        name="Receiving Gate Cold Chain Rejection vs ERP Accounting Discrepancy",
+        category=CuratedCategory.ADVERSARIAL_EDGE_CASE,
+        facility_id="FAC-CHC-01",
+        facility_name="North Sub-District CHC",
+        medicine_id="MED-001",
+        medicine_name="Paracetamol 500mg",
+        clinical_context="Electronic invoice marked PO-ADV-02 as delivered (100 units), but receiving dock rejected truck due to broken refrigeration seal; batch was never unpacked into pharmacy. Central ledger was prematurely updated to 500 units, but physical shelf count is only 400 units.",
+        is_anomaly=True,
+        expected_anomaly_type="GHOST_STOCK",
+        expected_abstention=False,
+        ledger_stock=500.0,
+        physical_count=400.0,
+        daily_consumption=25.0,
+        batches=[
+            {"batch_id": "BATCH-ADV-02", "facility_id": "FAC-CHC-01", "medicine_id": "MED-001", "quantity": 500.0, "expiry_date": "2028-12-31", "quarantined": "false"}
+        ],
+        purchase_orders=[
+            {"po_id": "PO-ADV-02", "facility_id": "FAC-CHC-01", "medicine_id": "MED-001", "quantity": 100.0, "order_date": "2026-05-10", "promised_date": "2026-05-18", "status": "DELIVERED", "supplier_id": "SUP-001"}
+        ],
+        deliveries=[
+            {"delivery_id": "DEL-ADV-02", "po_id": "PO-ADV-02", "facility_id": "FAC-CHC-01", "medicine_id": "MED-001", "delivery_date": "2026-05-18", "received_qty": 100.0}
+        ],
+        supplier_info={"supplier_id": "SUP-001", "name": "Standard Pharms", "historical_p90_slip": 2.0}
+    ),
+    CuratedScenario(
+        case_id="CASE-23",
+        name="Incomplete Shift Handover Count / Sub-Store Fridge Omission",
+        category=CuratedCategory.ADVERSARIAL_EDGE_CASE,
+        facility_id="FAC-PHC-01",
+        facility_name="East Rural PHC",
+        medicine_id="MED-005",
+        medicine_name="Azithromycin 500mg",
+        clinical_context="Audit clerk tallied 150 units in the main pharmacy cupboard during shift change, omitting 300 units located in the emergency ward sub-refrigerator. Ledger balance is 450 units (30 days of cover). True physical inventory is healthy (450 units).",
+        is_anomaly=False,
+        expected_anomaly_type=None,
+        expected_abstention=True,
+        ledger_stock=450.0,
+        physical_count=150.0,
+        daily_consumption=15.0,
+        batches=[
+            {"batch_id": "BATCH-ADV-03", "facility_id": "FAC-PHC-01", "medicine_id": "MED-005", "quantity": 450.0, "expiry_date": "2028-12-31", "quarantined": "false"}
+        ],
+        purchase_orders=[],
+        deliveries=[],
+        supplier_info={"supplier_id": "SUP-001", "name": "Standard Pharms", "historical_p90_slip": 2.0}
+    ),
+    CuratedScenario(
+        case_id="CASE-24",
+        name="Chronic Vendor Delivery Slip with Vast Safety Stock Buffer",
+        category=CuratedCategory.ADVERSARIAL_EDGE_CASE,
+        facility_id="FAC-DH-01",
+        facility_name="District Civil Hospital",
+        medicine_id="MED-007",
+        medicine_name="Metformin 500mg",
+        clinical_context="Supplier SUP-002 suffers chronic 15-day delivery slips on PO-ADV-04. However, district hospital holds 1,500 units in reserve against 15 units/day demand (100 days of usable cover). No stockout threat exists.",
+        is_anomaly=True,
+        expected_anomaly_type="CHRONIC_SUPPLIER_SLIP",
+        expected_abstention=True,
+        ledger_stock=1500.0,
+        physical_count=1500.0,
+        daily_consumption=15.0,
+        batches=[
+            {"batch_id": "BATCH-ADV-04", "facility_id": "FAC-DH-01", "medicine_id": "MED-007", "quantity": 1500.0, "expiry_date": "2028-12-31", "quarantined": "false"}
+        ],
+        purchase_orders=[
+            {"po_id": "PO-ADV-04", "facility_id": "FAC-DH-01", "medicine_id": "MED-007", "quantity": 300.0, "order_date": "2026-05-20", "promised_date": "2026-05-26", "status": "PLACED", "supplier_id": "SUP-002"}
+        ],
+        deliveries=[],
+        supplier_info={"supplier_id": "SUP-002", "name": "Regional Pharma Logistics", "historical_p90_slip": 15.0, "historical_mean_slip": 11.0}
+    ),
+    CuratedScenario(
+        case_id="CASE-25",
+        name="Split Grant Multi-Funding Procurement Consignment",
+        category=CuratedCategory.ADVERSARIAL_EDGE_CASE,
+        facility_id="FAC-CHC-02",
+        facility_name="South Community Health Centre",
+        medicine_id="MED-008",
+        medicine_name="Amlodipine 5mg",
+        clinical_context="Two POs for 200 units each share identical dates and supplier ID due to dual-grant accounting allocation. Accountant suspected duplicate order fraud, but both shipments were delivered into inventory (400 units). Shelf count matches ledger exactly (400 units).",
+        is_anomaly=False,
+        expected_anomaly_type=None,
+        expected_abstention=True,
+        ledger_stock=400.0,
+        physical_count=400.0,
+        daily_consumption=15.0,
+        batches=[
+            {"batch_id": "BATCH-ADV-05", "facility_id": "FAC-CHC-02", "medicine_id": "MED-008", "quantity": 400.0, "expiry_date": "2028-12-31", "quarantined": "false"}
+        ],
+        purchase_orders=[
+            {"po_id": "PO-ADV-05A", "facility_id": "FAC-CHC-02", "medicine_id": "MED-008", "quantity": 200.0, "order_date": "2026-05-10", "promised_date": "2026-05-18", "status": "DELIVERED", "supplier_id": "SUP-001"},
+            {"po_id": "PO-ADV-05B", "facility_id": "FAC-CHC-02", "medicine_id": "MED-008", "quantity": 200.0, "order_date": "2026-05-10", "promised_date": "2026-05-18", "status": "DELIVERED", "supplier_id": "SUP-001"}
+        ],
+        deliveries=[
+            {"delivery_id": "DEL-ADV-05A", "po_id": "PO-ADV-05A", "facility_id": "FAC-CHC-02", "medicine_id": "MED-008", "delivery_date": "2026-05-18", "received_qty": 200.0},
+            {"delivery_id": "DEL-ADV-05B", "po_id": "PO-ADV-05B", "facility_id": "FAC-CHC-02", "medicine_id": "MED-008", "delivery_date": "2026-05-18", "received_qty": 200.0}
+        ],
+        supplier_info={"supplier_id": "SUP-001", "name": "Standard Pharms", "historical_p90_slip": 2.0}
+    )
 ]
 
 
@@ -737,7 +876,7 @@ class CuratedBenchmark:
         effective_lmis_position = scenario.ledger_stock + open_pos_qty
 
         # 1. Crude audit discrepancy check: flags ghost stock only if physical drift >= 150 units
-        if scenario.physical_count is not None and scenario.category == CuratedCategory.PHANTOM_DRIFT:
+        if scenario.physical_count is not None:
             drift = abs(scenario.ledger_stock - scenario.physical_count)
             if drift >= 150.0:
                 detected_anomaly = "GHOST_STOCK"
@@ -956,13 +1095,20 @@ class CuratedBenchmark:
         category_breakdown = {}
         for cat in CuratedCategory:
             cat_scenarios = [(sc, m, b) for sc, m, b in zip(self.scenarios, medtrace_results, baseline_results) if sc.category == cat]
-            cat_tp_m = sum(1 for _, m, _ in cat_scenarios if m["is_tp"])
-            cat_tp_b = sum(1 for _, _, b in cat_scenarios if b["is_tp"])
             cat_total = len(cat_scenarios)
+            if cat == CuratedCategory.CLEAN_STOCK:
+                cat_m = sum(1 for _, m, _ in cat_scenarios if m["is_tn"])
+                cat_b = sum(1 for _, _, b in cat_scenarios if b["is_tn"])
+            elif cat == CuratedCategory.ADVERSARIAL_EDGE_CASE:
+                cat_m = sum(1 for sc, m, _ in cat_scenarios if (sc.is_anomaly and m["is_tp"]) or ((not sc.is_anomaly) and m["is_tn"]))
+                cat_b = sum(1 for sc, _, b in cat_scenarios if (sc.is_anomaly and b["is_tp"]) or ((not sc.is_anomaly) and b["is_tn"]))
+            else:
+                cat_m = sum(1 for _, m, _ in cat_scenarios if m["is_tp"])
+                cat_b = sum(1 for _, _, b in cat_scenarios if b["is_tp"])
             category_breakdown[cat.value] = {
                 "count": cat_total,
-                "medtrace_detected": cat_tp_m if cat != CuratedCategory.CLEAN_STOCK else sum(1 for _, m, _ in cat_scenarios if m["is_tn"]),
-                "baseline_detected": cat_tp_b if cat != CuratedCategory.CLEAN_STOCK else sum(1 for _, _, b in cat_scenarios if b["is_tn"]),
+                "medtrace_detected": cat_m,
+                "baseline_detected": cat_b,
             }
 
         return {
@@ -1009,8 +1155,17 @@ class CuratedBenchmark:
         md.append(f"**Total Hand-Crafted Clinical Scenarios**: {results['total_scenarios']}  ")
         md.append("**Evaluation Scope**: Multi-agent adversarial deliberation loop, Number Auditor zero-hallucination guardrail, and clinical action formulation against rules-only baseline.")
         md.append("")
-        md.append("> [!NOTE]")
-        md.append("> **Synthetic Benchmark Declaration**: This evaluation consists of 20 hand-crafted clinical scenarios representing real-world hospital/clinic supply failure modes (5 Clean Controls, 4 Phantom Drift, 3 Quarantined Batches, 3 Chronic Supplier Slips, 3 PO Transit Losses, 2 Unit-of-Measure Mismatches). All input records and numbers are explicitly grounded and audited.")
+        md.append("> [!IMPORTANT]")
+        md.append("> **Rule-Coverage & Regression Benchmark Declaration**: This suite is a **hand-crafted rule-coverage and regression test** (25 clinical scenarios: 5 Clean Controls, 4 Phantom Drift, 3 Quarantined Batches, 3 Chronic Supplier Slips, 3 PO Transit Losses, 2 Unit-of-Measure Mismatches, and 5 Adversarial Edge Cases including noisy audit counts, unlogged cold chain rejections, and grant splits). It validates that multi-agent deliberation, Number Auditor constraints, and clinical action logic function across designed edge cases. **This is NOT an empirical accuracy metric and is not headlined as one.** Statistical accuracy and generalization are evaluated on the 180-day simulation replay across held-out seeds 3-4 (94.7% F1).")
+        md.append(">")
+        md.append("> **What is the Rules-Only Baseline and why does it achieve 17.6% Recall (3/17)?**")
+        md.append("> The standard LMIS rules baseline calculates routine replenishment reorder point ($R = \\text{daily consumption} \\times 14.0\\text{ days}$) and evaluates effective position ($\\text{ledger stock} + \\text{placed/dispatched POs}$). It includes a crude audit discrepancy rule ($|\\text{ledger} - \\text{physical count}| \\ge 150.0\\text{ units}$).")
+        md.append("> - It catches 3 of 4 large phantom drift cases where shelf discrepancy $\\ge 150$ units.")
+        md.append("> - It misses sub-threshold drift (e.g. Case 9, 120 units $< 150$).")
+        md.append("> - It is 100% blind to batch quarantine holds (0/3): standard LMIS treats batches locked under recall/QA hold as dispensable stock.")
+        md.append("> - It is 100% blind to empirical supplier slips (0/3): standard LMIS evaluates PO arrival on promised dates, ignoring historical vendor delivery delays (+12 days).")
+        md.append("> - It is 100% blind to carrier transit losses (0/3): standard LMIS counts dispatched POs as incoming replenishment.")
+        md.append("> - It misclassifies Unit-of-Measure packaging errors (0/2): seeing 25 units reported against demand of 10 units/day, LMIS triggers a false generic stock deficit emergency order rather than recognizing 25 boxes of 10 tablets (250 tablets).")
         md.append("")
         md.append("---")
         md.append("")
@@ -1021,7 +1176,7 @@ class CuratedBenchmark:
         md.append(f"| **Anomaly Detection Precision** | **{bm['precision_pct']:.1f}%** ({bm['true_positives']}/{bm['true_positives'] + bm['false_positives']}) | **{mm['precision_pct']:.1f}%** ({mm['true_positives']}/{mm['true_positives'] + mm['false_positives']}) | **+{mm['precision_pct'] - bm['precision_pct']:.1f}%** | 0 false alarms on clean stock |")
         md.append(f"| **Anomaly Detection Recall** | **{bm['recall_pct']:.1f}%** ({bm['true_positives']}/{bm['true_positives'] + bm['false_negatives']}) | **{mm['recall_pct']:.1f}%** ({mm['true_positives']}/{mm['true_positives'] + mm['false_negatives']}) | **+{mm['recall_pct'] - bm['recall_pct']:.1f}%** | Multi-source audit intercepts hidden risks |")
         md.append(f"| **Anomaly F1 Score** | **{bm['f1_score_pct']:.1f}%** | **{mm['f1_score_pct']:.1f}%** | **+{mm['f1_score_pct'] - bm['f1_score_pct']:.1f}%** | Harmonic balance of precision & recall |")
-        md.append(f"| **Correct Abstention Rate (Clean Cases)** | **{bm['correct_abstention_pct']:.1f}%** ({bm['correct_abstentions']}/{bm['clean_cases_count']}) | **{mm['correct_abstention_pct']:.1f}%** ({mm['correct_abstentions']}/{mm['clean_cases_count']}) | **Parity (100%)** | Zero false emergency reorders on healthy stock |")
+        md.append(f"| **Correct Abstention Rate (Clean Cases)** | **{bm['correct_abstention_pct']:.1f}%** ({bm['correct_abstentions']}/{bm['clean_cases_count']}) | **{mm['correct_abstention_pct']:.1f}%** ({mm['correct_abstentions']}/{mm['clean_cases_count']}) | **{mm['correct_abstention_pct'] - bm['correct_abstention_pct']:+.1f}%** | Clean case safety preservation |")
         md.append(f"| **Unsupported Number Claim Rate** | Unenforced / Ungrounded | **{mm['unsupported_claim_rate_pct']:.1f}%** ({mm['unsupported_number_claims_count']}/{mm['total_cases']}) | **100% Mathematically Grounded** | Enforced by Skeptic Number Auditor |")
         md.append("")
         md.append("---")
@@ -1046,6 +1201,8 @@ class CuratedBenchmark:
                 conseq = "Baseline assumes dispatched PO will arrive; lost shipment is never expedited."
             elif cat_name == "UOM_MISMATCH":
                 conseq = "10x blister pack error leads to 10-fold inventory miscalculation and emergency ordering."
+            elif cat_name == "ADVERSARIAL_EDGE_CASE":
+                conseq = "Stress tests ambiguous evidence, noisy shift counts, cold chain discrepancies, and vast buffers."
             else:
                 conseq = "Unidentified failure mode."
             md.append(f"| `{cat_name}` | {tot} | {b_cnt}/{tot} ({b_cnt/tot*100:.0f}%) | **{m_cnt}/{tot} ({m_cnt/tot*100:.0f}%)** | {conseq} |")
@@ -1067,7 +1224,7 @@ class CuratedBenchmark:
         md.append("---")
         md.append("")
         md.append("## 4. Zero-Hallucination Number Auditor Verification Invariants")
-        md.append("Across all 20 clinical scenarios, the MedTrace multi-agent loop enforced 4 deterministic mathematical invariants:")
+        md.append(f"Across all {mm['total_cases']} clinical scenarios, the MedTrace multi-agent loop enforced 4 deterministic mathematical invariants:")
         md.append("1. **Non-Negative Inventory**: $\\text{usable\\_stock} \\ge 0$ and $\\text{shortfall\\_units} \\ge 0$ validated across 100% of cases.")
         md.append("2. **Trust-Adjusted Stock Identity**: $\\text{usable\\_stock} = \\max(0, \\text{ledger\\_stock} - \\text{drift} - \\text{quarantined} - \\text{expired})$ checked within 0.01 tolerance.")
         md.append("3. **Claim Grounding Guardrail**: Every numerical quantity cited in Investigator hypotheses and Skeptic critiques is checked against the deterministic reconciliation evidence set.")

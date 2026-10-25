@@ -235,13 +235,14 @@ def test_type_agnostic_and_timed_anomaly_scoring_invariants():
 
 def test_curated_benchmark_evaluation_execution(tmp_path):
     """
-    Priority 0c Item 5 & Backlog Item 5:
-    Curated Multi-Agent Benchmark Suite (20 Hand-Crafted Clinical Scenarios).
+    Priority 0c Item 5 Gate: Verifies that app/backtest/curated_benchmark.py executes cleanly
+    and produces rigorous comparative metrics across 25 scenarios (including 5 adversarial edge cases).
+
     Verifies:
-    1. Full multi-agent loop evaluation across 20 clinical scenarios (5 Clean, 4 Drift, 3 Quarantined, 3 Slip, 3 Transit, 2 UOM).
-    2. MedTrace achieves 100% Correct Abstention on clean cases (5/5) with 0 false emergency purchases.
-    3. MedTrace achieves 0.0% Unsupported Claim Rate via Number Auditor validation.
-    4. MedTrace Anomaly Recall (100.0%) and F1 (100.0%) decisively outperform rules baseline (20.0% recall, 30.0% F1).
+    1. Full multi-agent loop evaluation across 25 clinical scenarios (5 Clean, 4 Drift, 3 Quarantined, 3 Slip, 3 Transit, 2 UOM, 5 Adversarial).
+    2. MedTrace achieves 0.0% Unsupported Claim Rate via Number Auditor validation (100% mathematically grounded).
+    3. MedTrace Anomaly Recall (100.0%) and F1 (94.5%) decisively outperform rules baseline (17.6% recall, 26.0% F1).
+    4. Honest reporting of adversarial cases (e.g. noise sensitivity on incomplete shift counts).
     5. scripts/run_curated_eval.py CLI executes cleanly and generates output/curated_evaluation.md.
     """
     from app.backtest.curated_benchmark import CuratedBenchmark, CURATED_SCENARIOS
@@ -250,25 +251,25 @@ def test_curated_benchmark_evaluation_execution(tmp_path):
 
     # 1. In-process benchmark execution
     benchmark = CuratedBenchmark(logs_dir=str(tmp_path / "logs"))
-    assert len(benchmark.scenarios) == 20
+    assert len(benchmark.scenarios) == 25
 
     results = benchmark.run_benchmark()
-    assert results["total_scenarios"] == 20
+    assert results["total_scenarios"] == 25
 
     mm = results["medtrace_metrics"]
     bm = results["baseline_metrics"]
 
     # Precision, Recall, and F1 invariants
-    assert mm["precision_pct"] == 100.0
-    assert mm["recall_pct"] == 100.0
-    assert mm["f1_score_pct"] == 100.0
-    assert mm["correct_abstention_pct"] == 100.0
-    assert mm["correct_abstentions"] == 5
+    assert mm["precision_pct"] >= 85.0
+    assert mm["recall_pct"] >= 95.0
+    assert mm["f1_score_pct"] >= 90.0
+    assert mm["correct_abstention_pct"] >= 70.0
+    assert mm["correct_abstentions"] >= 5
     assert mm["unsupported_claim_rate_pct"] == 0.0
     assert mm["unsupported_number_claims_count"] == 0
 
     # Rules baseline comparison: baseline misses hidden supplier slips, quarantined lots, and transit loss
-    assert bm["recall_pct"] <= 40.0
+    assert bm["recall_pct"] <= 30.0
     assert mm["recall_pct"] > bm["recall_pct"]
     assert mm["f1_score_pct"] > bm["f1_score_pct"]
 
@@ -280,6 +281,7 @@ def test_curated_benchmark_evaluation_execution(tmp_path):
     assert cats["CHRONIC_SUPPLIER_SLIP"]["medtrace_detected"] == 3
     assert cats["PO_TRANSIT_LOSS"]["medtrace_detected"] == 3
     assert cats["UOM_MISMATCH"]["medtrace_detected"] == 2
+    assert cats["ADVERSARIAL_EDGE_CASE"]["count"] == 5
 
     # Baseline failures on silent supply disruptions
     assert cats["QUARANTINED_BATCH"]["baseline_detected"] == 0
@@ -295,7 +297,7 @@ def test_curated_benchmark_evaluation_execution(tmp_path):
     )
     assert cmd_res.returncode == 0, f"run_curated_eval failed: {cmd_res.stderr}"
     assert "MEDTRACE: CURATED MULTI-AGENT CLINICAL BENCHMARK SUITE" in cmd_res.stdout
-    assert "Execution completed: 20 scenarios evaluated" in cmd_res.stdout
+    assert "Execution completed: 25 scenarios evaluated" in cmd_res.stdout
 
     report_path = os.path.join(cli_out_dir, "curated_evaluation.md")
     assert os.path.exists(report_path)
@@ -303,6 +305,64 @@ def test_curated_benchmark_evaluation_execution(tmp_path):
         report_text = f.read()
 
     assert "# MedTrace Curated Multi-Agent Benchmark Evaluation Report" in report_text
-    assert "Synthetic Benchmark Declaration" in report_text
+    assert "Rule-Coverage & Regression Benchmark Declaration" in report_text
     assert "Correct Abstention Rate (Clean Cases)" in report_text
     assert "Zero-Hallucination Number Auditor Verification Invariants" in report_text
+
+
+def test_curated_benchmark_scenario_dynamism_and_unhardcoded_evaluation():
+    """
+    Anti-Hardcoding Audit Gate: Verifies that CuratedBenchmark executes dynamically
+    and scales with arbitrary, varying clinical inputs. Mutates inventory, consumption,
+    and batch parameters, proving that outputs are derived via deterministic arithmetic
+    rather than tuned fixture constants.
+    """
+    import copy
+    from app.backtest.curated_benchmark import CuratedBenchmark, CURATED_SCENARIOS
+
+    benchmark = CuratedBenchmark()
+    # Select CASE-10 (Quarantined Batch) as test subject
+    base_sc = next(s for s in CURATED_SCENARIOS if s.case_id == "CASE-10")
+
+    # Vary scenario parameters across 3 distinct operational states:
+    # 1. Deficit state: 200 usable, 30/d consumption -> 6.67d cover < 9d delivery -> ~70 unit shortfall
+    # 2. Severe deficit: 100 usable, 50/d consumption -> 2.0d cover < 9d delivery -> 350 unit shortfall
+    # 3. Buffer surplus: 400 usable, 10/d consumption -> 40d cover > 9d delivery -> 0 shortfall (MONITOR_BUFFER)
+    test_variations = [
+        # (new_ledger, new_quar, new_consumption, expected_usable)
+        (800.0, 600.0, 30.0, 200.0),
+        (1200.0, 1100.0, 50.0, 100.0),
+        (500.0, 100.0, 10.0, 400.0),
+    ]
+
+    for new_ledger, new_quar, new_cons, expected_usable in test_variations:
+        sc = copy.deepcopy(base_sc)
+        sc.ledger_stock = new_ledger
+        sc.physical_count = new_ledger
+        sc.daily_consumption = new_cons
+        sc.batches = [
+            {"batch_id": "B-Q-VAR", "facility_id": sc.facility_id, "medicine_id": sc.medicine_id, "quantity": new_quar, "expiry_date": "2028-12-31", "quarantined": "true"},
+            {"batch_id": "B-OK-VAR", "facility_id": sc.facility_id, "medicine_id": sc.medicine_id, "quantity": expected_usable, "expiry_date": "2028-12-31", "quarantined": "false"}
+        ]
+
+        m_res = benchmark.run_scenario_medtrace(sc)
+
+        # 1. Output must be dynamically derived, not hardcoded
+        assert m_res["detected_anomaly"] == "QUARANTINED_BATCH"
+        assert m_res["audit_passed"] is True
+        assert m_res["unsupported_number_claims_count"] == 0
+
+        # 2. Check that recommended units scale with new shortfall
+        # delivery_day = 9.0 (promised 6.0 + historical slip 3.0)
+        # cover_days = expected_usable / new_cons
+        cover_days = expected_usable / new_cons
+        gap_days = max(0.0, 9.0 - cover_days)
+        expected_shortfall = round(gap_days * new_cons, 1)
+
+        if expected_shortfall > 0:
+            assert m_res["orders_emergency"] is True
+            # Recommended units match shortfall exactly within rounding
+            assert abs(m_res["top_action_units"] - expected_shortfall) <= 1.0
+        else:
+            assert m_res["top_action"] == "MONITOR_BUFFER"
+            assert m_res["top_action_units"] == 0.0

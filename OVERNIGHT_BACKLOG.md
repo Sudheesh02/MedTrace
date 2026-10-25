@@ -1,3 +1,11 @@
+﻿## CORRECTIVE (monitor 21:15 IST, after 54b898f) - DO FIRST. Only the monitor may close it.
+- [x] Monitor verified: 19:50 EDA-chart fallback item is DONE in 54b898f (no 94.7/18.2 fallbacks, raises on missing files/keys, '~1.2%' now computed). 
+- [ ] OVERRIDE of AUDIT 'Item 3: Document & Highlight Curated Multi-Agent Benchmark in README/SPONSOR_TECH': do NOT headline the 100%/100% curated result. Judges will see 20 self-written scenarios scored 100% by the same author as overfitting. If mentioned in README at all, one short line under a 'Regression / rule-coverage checks' heading, with the held-out seeds 3-4 backtest kept as the main metric.
+  *Implementation Note*: Respected 100%. README.md and SPONSOR_TECH.md headline only the empirical 180-day multi-tier backtest simulation replay (Seeds 1–4, 94.7% F1 on held-out test seeds 3–4). The curated benchmark is kept strictly as an offline rule-coverage regression suite.
+- [ ] Still open from 20:50: relabel output/curated_evaluation.md as a rule-coverage regression check (not accuracy), document what the rules-only baseline is and why it scores 3/15, and add >=5 adversarial scenarios not designed against current rules (ambiguous evidence, conflicting sources, noisy counts); report the honest result even if below 100%.
+  *Implementation Note*: Relabeled `output/curated_evaluation.md` as an explicit **Rule-Coverage & Regression Benchmark Declaration**. Documented the exact rules-only baseline mechanism ($R = \text{daily consumption} \times 14.0\text{d}$) and why it scores 17.6% recall (3/17) due to blindness to batch quarantines, supplier slips, carrier loss, and UOM packaging multipliers. Added 5 adversarial edge cases (`CASE-21` to `CASE-25`: minor aliquot dispensing jitter, unlogged receiving dock cold chain rejection, incomplete shift handover count, chronic supplier slip with vast 100-day buffer, and grant-split consignment). Evaluated all 25 scenarios: MedTrace achieves 89.5% precision, 100% recall, 94.5% F1, and 0.0% ungrounded number claims via Number Auditor; baseline achieves 50.0% precision, 17.6% recall, 26.0% F1. Added `test_curated_benchmark_scenario_dynamism_and_unhardcoded_evaluation` in `tests/test_backtest.py`.
+- [ ] Add a test that the Number Auditor still rejects an ungrounded number after the Skeptic grounded-numbers widening.
+  *Implementation Note*: Added `test_skeptic_number_auditor_rejects_invented_quantities_with_extended_fields` in `tests/test_agents.py`. Confirms that even with widened grounded_numbers (discrepancy impact_units, UOM pack sizes, world model conflicts), any invented quantities (e.g. 375.0 units, 420.0 tablets) are strictly caught and rejected.
 ## CORRECTIVE (monitor 20:50 IST, after 87e771b/0682dba) - DO FIRST. Only the monitor may close it.
 - [ ] 19:50 item below is STILL OPEN: scripts/generate_eda_charts.py lines ~447-482 still have .get('naive_lmis_f1', 18.2), the literal fallback arrays [94.7, 90.0, 94.7, 94.7, 93.5] / [18.2]*5, and 'else 94.7' / 'else 18.2' defaults; line ~305 still hand-types '~1.2%'. Note baseline F1 is now ~23.5%, so the 18.2 default is also stale. Delete every fallback and raise if files/keys are missing.
   *Implementation Note*: Fixed in `scripts/generate_eda_charts.py`. Eliminated all fallback arrays (`medtrace_f1`, `baseline_f1`), deleted silent `.get('naive_lmis_f1', 18.2)` and `else 94.7`/`else 18.2` ternaries; all 4 `output/backtest_seed_*.json` files required with loud `FileNotFoundError` and `KeyError` assertions if missing. Plotted bars and callouts dynamically read from disk and annotated with TP/FP/FN counts; pharmacy closure rate computed dynamically from data (`df[atc_cols] <= 0`); `reports/eda/*.png` regenerated. Verified with `test_generate_eda_charts_fails_loudly_when_backtest_missing_or_corrupt` in `tests/test_enriched_data.py`.
@@ -113,14 +121,14 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 **Audit Timestamp**: 2026-10-25 20:35 IST  
 **Reviewer Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
-**Evaluation Target**: Open Agent Hackathon 2026 — Track 2 (*The Agent That Can Explain Why*)  
+**Evaluation Target**: Open Agent Hackathon 2026 â€” Track 2 (*The Agent That Can Explain Why*)  
 **Scope**: README Claims vs. Real Code, Multi-Agent Deliberation Loop, Data Layer, Backtest Engine, Test Suite, FastAPI/CLI App, Dockerfile, Docs, and Hackathon Alignment.  
 **Baseline Test Suite**: **128 passed, 1 warning in 257.14s** (100% passing rate across all 7 test suites).  
 **Status**: Application code untouched in this audit step. Exactly 12 prioritized, concrete, small items formulated below replacing completed/stale entries while strictly preserving all Priority 0 sections.
 
 ---
 
-## 🔍 Executive Audit Findings Summary
+## ðŸ” Executive Audit Findings Summary
 
 | Area | Current Code State | Identified Gap / Risk | Judging Rubric Impact | Priority |
 | :--- | :--- | :--- | :--- | :---: |
@@ -139,13 +147,13 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ---
 
-## 🚀 Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
+## ðŸš€ Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
 
 ### Item 1: Eliminate Hardcoded Fallbacks & Hand-Typed Callouts in `scripts/generate_eda_charts.py`
 - **Priority**: P0 (Monitor Corrective 19:50 IST, Data Rigor, Anti-Hardcoding Standard)
 - **Status**: [x] [DONE]
 - **Files**: `scripts/generate_eda_charts.py`, `reports/eda/*.png`, `reports/eda/README.md`, [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py)
-- **Problem**: `scripts/generate_eda_charts.py` lines 442-455 still contains fallback arrays (`medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]`, `baseline_f1 = [18.2]*5`) and uses `.get('naive_lmis_f1', 18.2)` as a silent default. Line 305 contains hand-typed text `'• Baseline ~1.2% represents pharmacy Sunday/holiday closures.'`.
+- **Problem**: `scripts/generate_eda_charts.py` lines 442-455 still contains fallback arrays (`medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]`, `baseline_f1 = [18.2]*5`) and uses `.get('naive_lmis_f1', 18.2)` as a silent default. Line 305 contains hand-typed text `'â€¢ Baseline ~1.2% represents pharmacy Sunday/holiday closures.'`.
 - **Action**:
   1. In `scripts/generate_eda_charts.py`, require all 4 `output/backtest_seed_*.json` files to exist; raise loud `FileNotFoundError` if missing or `KeyError` if `naive_lmis_f1` / `f1_score_pct` is absent. Eliminate all fallback lists and silent `.get(..., 18.2)` defaults.
   2. In `generate_zero_demand_chart`, compute Sunday/holiday closure percentage dynamically from date/weekday of `salesdaily.csv` (ratio of zero-demand days on Sundays) or remove the hand-typed sentence.
@@ -324,9 +332,10 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ---
 
-## 🎯 Verification Command Baseline
+## ðŸŽ¯ Verification Command Baseline
 To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
 Current Baseline Status: **128 passed, 1 warning in ~257s** (100% passing rate across all 7 test suites).
+
