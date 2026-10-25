@@ -14,10 +14,13 @@ All models evaluated under identical **14.0-day replenishment alert horizon** (`
 | **Shared Alert Horizon** | 14.0 days | 14.0 days | **14.0 days** | Identical baseline parity |
 | **Clean Stock Lead Time** | 74.2 days | 74.2 days | **74.2 days** | Baseline parity on uncorrupted stock |
 | **Stockout Recall** | 100.0% | 100.0% | **100.0%** | 100% intercept across all true stockouts |
-| **Ground-Truth Anomaly Precision** | 100.0% | 100.0% | **97.5%** | Planted failure mode precision |
-| **Ground-Truth Anomaly Recall** | 10.0% | 10.0% | **90.0%** | Planted failure mode recall (>85% target) |
-| **Ground-Truth Anomaly F1 Score** | 18.2% | 18.2% | **93.5%** | Planted failure mode F1 (>85% target) |
-| **Held-Out Test F1 (Seeds 3–4)** | 18.2% | 18.2% | **94.7%** | Unseen simulation generalization |
+| **Ground-Truth Anomaly Precision** | 29.6% (TP: 8, FP: 21) | 29.6% (TP: 8, FP: 21) | **97.5%** (TP: 36, FP: 1) | Planted failure mode precision |
+| **Ground-Truth Anomaly Recall** | 20.0% (TP: 8, FN: 32) | 20.0% (TP: 8, FN: 32) | **90.0%** (TP: 36, FN: 4) | Planted failure mode recall (>85% target) |
+| **Ground-Truth Anomaly F1 Score** | 23.5% | 23.5% | **93.5%** | Planted failure mode F1 (>85% target) |
+| **Type-Agnostic Anomaly F1** | 23.9% | 23.9% | **93.5%** | Unclassified irregularity flag |
+| **Timed Detection Recall (+/-7d)** | 10.0% | 10.0% | **80.0%** | Detection within +/-7d window |
+| **Median Detection Delay** | 0.0 days | 0.0 days | **0.0 days** | Rapid alert on schedule |
+| **Held-Out Test F1 (Seeds 3–4)** | 23.4% | 23.4% | **94.7%** | Unseen simulation generalization |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180 days |
 
 ---
@@ -26,10 +29,10 @@ All models evaluated under identical **14.0-day replenishment alert horizon** (`
 
 | Simulation Seed | Evaluation Role | Total Actual Stockouts | Anomaly Precision | Anomaly Recall | Anomaly F1 Score |
 | :---: | :--- | :---: | :---: | :---: | :---: |
-| Seed 1 | Tuning / Development | 23 | 100.0% | 90.0% | **94.7%** |
-| Seed 2 | Tuning / Development | 19 | 90.0% | 90.0% | **90.0%** |
-| Seed 3 | Held-Out Test | 26 | 100.0% | 90.0% | **94.7%** |
-| Seed 4 | Held-Out Test | 14 | 100.0% | 90.0% | **94.7%** |
+| Seed 1 | Tuning / Development | 23 | 100.0% (TP:9, FP:0) | 90.0% (TP:9, FN:1) | **94.7%** |
+| Seed 2 | Tuning / Development | 19 | 90.0% (TP:9, FP:1) | 90.0% (TP:9, FN:1) | **90.0%** |
+| Seed 3 | Held-Out Test | 26 | 100.0% (TP:9, FP:0) | 90.0% (TP:9, FN:1) | **94.7%** |
+| Seed 4 | Held-Out Test | 14 | 100.0% (TP:9, FP:0) | 90.0% (TP:9, FN:1) | **94.7%** |
 
 ---
 
@@ -39,10 +42,10 @@ Evaluation engine computational throughput measured across 180 simulated days (~
 
 | Simulation Seed | Transactions Replayed | Replay Duration | Processing Throughput |
 | :---: | :---: | :---: | :---: |
-| Seed 1 | 25,920 | 3.21s | 8,069.7 events/sec |
-| Seed 2 | 25,920 | 3.29s | 7,871.2 events/sec |
-| Seed 3 | 25,920 | 3.17s | 8,185.6 events/sec |
-| Seed 4 | 25,920 | 3.26s | 7,949.3 events/sec |
+| Seed 1 | 25,920 | 3.95s | 6,566.3 events/sec |
+| Seed 2 | 25,920 | 3.96s | 6,539.0 events/sec |
+| Seed 3 | 25,920 | 3.85s | 6,726.2 events/sec |
+| Seed 4 | 25,920 | 3.89s | 6,670.6 events/sec |
 
 ---
 

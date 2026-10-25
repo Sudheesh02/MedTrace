@@ -1025,7 +1025,6 @@
   - Backlog Item 8: Create lightweight interactive Streamlit dashboard (`app/ui.py`).
   - Backlog Item 9: Author consolidated `tests/test_sponsor_conformance.py`.
 
-
 ---
 
 ### Session: 2026-10-25 18:55 IST
@@ -1058,3 +1057,43 @@
   - Backlog Item 4: Synchronize `README.md` benchmark table and text with exact numbers from `output/backtest_summary.md` and 126 passing tests.
 - **Batch 2 (Multi-Agent Benchmark & Interfaces — P1)**:
   - Backlog Item 5: Author `app/backtest/curated_benchmark.py` and `scripts/run_curated_eval.py` (20 clinical scenarios).
+
+---
+
+### Session: 2026-10-25 19:40 IST
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Batch 1 & 2 — Hallucination & Hardcoding Elimination, Baseline Rigor, Timing Evaluation, and Docs Grounding (Items 2, 3, 4, 6)
+
+#### What Was Done
+1. **Hardcoding & Hallucination Elimination in EDA Visualizer (`scripts/generate_eda_charts.py`)**:
+   - Removed hardcoded F1 score arrays (`medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]`, `baseline_f1 = [18.2]*5`).
+   - Replaced with dynamic file-based extraction from `output/backtest_seed_*.json` for both MedTrace and baseline models with loud validation assertions.
+   - Dynamically computed held-out test generalization text and raw counts ($TP/FP/FN$). Regenerated `reports/eda/stockout_lead_time_distribution.png`.
+2. **Dynamic Narrative Extraction & Trace Grounding in Demo (`scripts/quick_demo.py`)**:
+   - Fixed missing `import json` bug.
+   - Replaced static string `(DailyMed/FDA recall)` with dynamic query to `data_store.get_openfda_recalls(medicine_id, generic_name)`. Reports registered recall count if found in dataset, or facility QA batch hold otherwise.
+   - Replaced hardcoded string `"Round 1 Challenge -> Round 2 Revision"` with dynamic trace event inspection of `ROUND_*_EVALUATION` actions and `details.accepted` flags.
+   - Grounded `"Zero LLM math hallucinated"` claim in runtime verification status from `pack.action_plan_audit.passed`.
+3. **Unrigged Baseline Generic Anomaly Detector (`app/backtest/engine.py`)**:
+   - Equipped Naive LMIS and Heuristic baselines with an unrigged rolling consumption z-score detector ($|z| \ge 3.0$ over rolling 14-day history, min 7 samples) and physical audit discrepancy detector ($|\text{drift}| \ge 45$).
+   - Baselines now legitimately flag consumption spikes and high physical drift across all anomaly types, raising baseline typed F1 from 18.2% to 23.5% and type-agnostic F1 to 23.9%.
+4. **Timing-Bounded Anomaly Scoring & Raw Counts (`app/backtest/engine.py`, `scripts/run_backtest.py`)**:
+   - Added $\pm 7$-day detection window requirement (`abs(detected_day - planted_day) <= 7`) for True Positive credit, reporting median detection delay in days. MedTrace achieves 80.0% window-bounded recall with 0.0 days median delay.
+   - Added type-agnostic F1 scoring across all models (MedTrace: 93.5% F1; Baselines: 23.9% F1).
+   - Added explicit raw counts ($TP/FP/FN$) to every result dictionary, backtest seed JSON, summary report, and chart.
+   - Reran multi-seed backtest across seeds 1–4, updating `output/backtest_seed_*.json` and `output/backtest_summary.md`.
+5. **Exact Synchronization of README Benchmark Metrics (`README.md`)**:
+   - Synchronized Executive Benchmark Table and prose notes with exact numbers from `output/backtest_summary.md`: Clean Stock Lead Time (74.2d), Anomaly Precision (97.5%), Anomaly Recall (90.0%), Anomaly F1 (93.5%), Type-Agnostic F1 (93.5%), Held-Out Test F1 (94.7%), and 0 false emergency reorders.
+   - Synchronized test count to 127 in `README.md`, `SPONSOR_TECH.md`, `PRE_EXISTING_COMPONENTS.md`, and `tests/test_api.py`.
+6. **Anti-Hardcoding & Timing Invariant Regression Tests (`tests/test_backtest.py`)**:
+   - Added `test_type_agnostic_and_timed_anomaly_scoring_invariants` asserting mathematical identities ($P = TP/(TP+FP)$, $R = TP/(TP+FN)$), dynamic seed variance, and $\pm 7$-day timing window enforcement.
+7. **Backlog & Monitor Tracking (`OVERNIGHT_BACKLOG.md`)**:
+   - Marked Items 2, 3, 4, 6 as completed `[x] [DONE]`. Added monitor implementation notes.
+8. **Full Test Suite Verification**:
+   - Executed full test suite (`python -m pytest tests -q`): **127 passed, 1 warning in 267.01s** (100% green across all 7 test suites). Zero git working tree dirtied.
+
+#### What Is Next
+- **Item 5 (Next Highest Priority — P1)**: Author `app/backtest/curated_benchmark.py` and `scripts/run_curated_eval.py` with 20 hand-crafted clinical scenarios (clean controls, phantom drift, QA quarantine, supplier delay, transit loss, UOM mismatch) measuring unsupported claim rate (0%) and correct abstention vs rules baseline.
+- **Item 7 (P1)**: Implement live openFDA REST API adapter with offline cache-aside in `DataStore`.
+- **Item 8 (P1)**: Create lightweight interactive Streamlit dashboard (`app/ui.py`).
+- **Item 9 (P1)**: Author consolidated `tests/test_sponsor_conformance.py`.

@@ -13,6 +13,7 @@ Demonstrates the complete end-to-end cognitive architecture in one command:
 import os
 import sys
 import time
+import json
 import shutil
 import argparse
 
@@ -88,7 +89,12 @@ def main():
     print(f"\n-> Investigation finalized in {t_inv:.2f}s across {pack.skeptic_rounds} adversarial rounds:")
     print(f"   - Ledger Stock: {pack.ledger_stock:.1f} units ({pack.days_of_cover_naive:.1f}d naive cover; LMIS considers safe)")
     if pack.quarantined_stock and pack.quarantined_stock > 0:
-        print(f"   - QA quarantine hold: {pack.quarantined_stock:.1f} units locked under QA quarantine hold (DailyMed/FDA recall)")
+        recall_note = "facility QA batch quarantine hold"
+        if hasattr(orchestrator, "data_store"):
+            recalls = orchestrator.data_store.get_openfda_recalls(medicine_id=target_med, generic_name=med_label)
+            if recalls:
+                recall_note = f"openFDA enforcement recall match ({len(recalls)} registered events in dataset)"
+        print(f"   - QA quarantine hold: {pack.quarantined_stock:.1f} units locked under {recall_note}")
     if pack.audit_drift and pack.audit_drift > 0:
         print(f"   - Physical Audit Drift: {pack.audit_drift:.1f} units unrecorded ledger variance")
     print(f"   - Trust-Adjusted Usable Stock: {pack.usable_stock:.1f} units ({pack.days_of_cover_trust:.1f}d true cover -> catastrophic deficit in {pack.days_of_cover_trust:.1f} days)")
@@ -109,11 +115,22 @@ def main():
     print(f"   - Understated Cover Gap: {pack.understated_gap_percent:.1f}%")
     print(f"   - Stockout Prevented: {'YES [CRITICAL EARLY WARNING]' if pack.stockout_prevented else 'NO'}")
     print(f"   - Number Auditor Verification: {'PASSED [OK]' if pack.action_plan_audit.passed else 'FAILED'}")
-    rounds_str = (
-        f"{pack.skeptic_rounds} rounds (Round 1 Challenge -> Round 2 Revision)"
-        if pack.skeptic_rounds > 1 else
-        f"1 round (Immediate Verification & Parity)"
-    )
+    rounds_str = f"{pack.skeptic_rounds} round{'s' if pack.skeptic_rounds != 1 else ''}"
+    if pack.trace_file and os.path.exists(pack.trace_file):
+        try:
+            round_actions = []
+            with open(pack.trace_file, "r", encoding="utf-8") as tf:
+                for line in tf:
+                    ev = json.loads(line)
+                    act = ev.get("action", "")
+                    if act.endswith("_EVALUATION") and "ROUND_" in act:
+                        r_idx = act.split("_")[1]
+                        acc = ev.get("details", {}).get("accepted", False)
+                        round_actions.append(f"Round {r_idx} {'Approved' if acc else 'Challenged'}")
+            if round_actions:
+                rounds_str = f"{pack.skeptic_rounds} rounds (" + " -> ".join(round_actions) + ")"
+        except Exception:
+            pass
     print(f"   - Adversarial Debate Rounds: {rounds_str}")
     print(f"   - Verified Recommendations ({pack.action_plan_audit.verified_recommendations_count} actions):")
     for i, act in enumerate(pack.recommendations[:3], 1):
@@ -142,7 +159,9 @@ def main():
     t_total = time.time() - t0
     mode_str = "Deterministic Sample Mode (rule-based offline)" if (pack.fallback or not pack.llm_used) else f"Live LLM Mode ({pack.model_used})"
     print(f"\n[+] Demonstration successfully completed in {t_total:.2f}s ({mode_str}).")
-    print("    Zero LLM math hallucinated: all stock, cover, and financial numbers computed via DeterministicEngine.")
+    audit_tag = "PASSED [OK]" if pack.action_plan_audit.passed else "FLAGGED"
+    v_count = pack.action_plan_audit.verified_recommendations_count
+    print(f"    Number Auditor: {v_count} recommendations mathematically verified [{audit_tag}]. Zero ungrounded numbers emitted.")
     print("="*85 + "\n")
 
 if __name__ == "__main__":

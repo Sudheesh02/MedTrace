@@ -183,6 +183,7 @@ class BacktestEngine:
         naive_detected_anomalies = []
         heuristic_detected_anomalies = []
         detected_anomalies = []
+        pair_cons_history: Dict[Tuple[str, str], List[float]] = {}
 
         # Find true stockouts: when true physical stock hits 0
         actual_stockouts = {}
@@ -286,8 +287,18 @@ class BacktestEngine:
                 catchment = float(fac_meta.get("catchment_scale", 1.0))
                 expected_daily = base_demands.get(med, 20.0) * catchment
 
-                # Baseline anomaly detector (Naive LMIS & Heuristic): consumption spike evaluation
-                if expected_daily > 0 and (consumption / expected_daily) >= 2.0 and consumption >= 50:
+                # Baseline anomaly detector (Naive LMIS & Heuristic):
+                # 1. Generic per-pair rolling consumption z-score detector (|z| >= 3.0, min 7 samples)
+                pair_history = pair_cons_history.setdefault(pair_key, [])
+                is_zscore_spike = False
+                if len(pair_history) >= 7:
+                    recent_hist = pair_history[-14:]
+                    h_mean = float(np.mean(recent_hist))
+                    h_std = float(np.std(recent_hist))
+                    if h_std > 1.0 and ((consumption - h_mean) / h_std) >= 3.0 and consumption >= 35:
+                        is_zscore_spike = True
+
+                if is_zscore_spike or (expected_daily > 0 and (consumption / expected_daily) >= 2.0 and consumption >= 50):
                     naive_detected_anomalies.append({
                         "type": "DEMAND_SPIKE",
                         "facility_id": fac,
@@ -302,6 +313,26 @@ class BacktestEngine:
                         "day_index": day_idx,
                         "consumption": consumption
                     })
+
+                # 2. Baseline physical audit discrepancy detector:
+                # When physical audit count deviates significantly from ledger (|drift| >= 45)
+                if phantom_drift >= 45:
+                    naive_detected_anomalies.append({
+                        "type": "GHOST_STOCK",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "variance": phantom_drift
+                    })
+                    heuristic_detected_anomalies.append({
+                        "type": "GHOST_STOCK",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "variance": phantom_drift
+                    })
+
+                pair_history.append(consumption)
 
                 # MedTrace Multi-Source Anomaly Detection: evaluated across all 180 simulation days
                 # 1. GHOST_STOCK: Significant discrepancy between ledger and physical count on audit date
@@ -529,6 +560,47 @@ class BacktestEngine:
         heuristic_anomaly_precision = (heuristic_tp / len(heuristic_det_types) * 100.0) if heuristic_det_types else 0.0
         heuristic_anomaly_f1 = (2 * heuristic_anomaly_precision * heuristic_anomaly_recall / (heuristic_anomaly_precision + heuristic_anomaly_recall)) if (heuristic_anomaly_precision + heuristic_anomaly_recall) > 0 else 0.0
 
+        # 3. Type-Agnostic Timing-Bounded Anomaly Metrics (+/-7 days window)
+        # Evaluates whether each model flags ANY anomaly on (facility, medicine) within +/-7 days of planted failure mode
+        def _eval_type_agnostic(det_list):
+            ta_matched_gt = set()
+            ta_delays = []
+            for g in ground_truth_anomalies:
+                g_fac = g["facility_id"]
+                g_med = g["medicine_id"]
+                g_day = int(g.get("day_index", 0))
+                matching = [
+                    d["day_index"] for d in det_list
+                    if d["facility_id"] == g_fac and d["medicine_id"] == g_med and abs(d["day_index"] - g_day) <= 7
+                ]
+                if matching:
+                    ta_matched_gt.add((g_fac, g_med, g_day))
+                    ta_delays.append(min(matching) - g_day)
+
+            ta_tp = len(ta_matched_gt)
+            ta_fn = len(ground_truth_anomalies) - ta_tp
+            det_pairs = {(d["facility_id"], d["medicine_id"]) for d in det_list}
+            gt_pairs = {(g["facility_id"], g["medicine_id"]) for g in ground_truth_anomalies}
+            ta_fp = len(det_pairs - gt_pairs)
+
+            ta_p = (ta_tp / (ta_tp + ta_fp) * 100.0) if (ta_tp + ta_fp) > 0 else 0.0
+            ta_r = (ta_tp / (ta_tp + ta_fn) * 100.0) if (ta_tp + ta_fn) > 0 else 0.0
+            ta_f1 = (2 * ta_p * ta_r / (ta_p + ta_r)) if (ta_p + ta_r) > 0 else 0.0
+            return {
+                "detected_pairs_count": len(det_pairs),
+                "true_positives": ta_tp,
+                "false_positives": ta_fp,
+                "false_negatives": ta_fn,
+                "precision_pct": round(ta_p, 1),
+                "recall_pct": round(ta_r, 1),
+                "f1_score_pct": round(ta_f1, 1),
+                "median_delay_days": round(float(np.median(ta_delays)), 1) if ta_delays else 0.0
+            }
+
+        ta_medtrace = _eval_type_agnostic(detected_anomalies)
+        ta_naive = _eval_type_agnostic(naive_detected_anomalies)
+        ta_heuristic = _eval_type_agnostic(heuristic_detected_anomalies)
+
         elapsed_sec = time.time() - t_start
         throughput_eps = round(total_evaluations / max(0.001, elapsed_sec), 1)
 
@@ -566,10 +638,20 @@ class BacktestEngine:
                     "f1_score_pct": round(anomaly_f1, 1),
                     "naive_lmis_f1": round(naive_anomaly_f1, 1),
                     "heuristic_f1": round(heuristic_anomaly_f1, 1),
+                    "raw_counts": {
+                        "true_positives": true_positives,
+                        "false_positives": false_positives,
+                        "false_negatives": false_negatives
+                    },
                     "timing_evaluation": {
                         "window_days": 7,
                         "timed_true_positives": timed_tps,
                         "median_detection_delay_days": round(median_delay, 1)
+                    },
+                    "type_agnostic_comparisons": {
+                        "medtrace": ta_medtrace,
+                        "naive_lmis": ta_naive,
+                        "heuristic_rule_based": ta_heuristic
                     },
                     "baseline_comparisons": {
                         "naive_lmis": {

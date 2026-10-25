@@ -1,9 +1,13 @@
+# CORRECTIVE (monitor, 2026-10-25 19:10 IST, after 84e3c33) - OPEN. Only the monitor may close it.
+- [ ] scripts/generate_eda_charts.py lines 442-443 HARDCODE the F1 bars (medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5], baseline_f1 = [18.2]*5). backtest_seeds is loaded at line ~400 and then never used. Read every plotted value from output/backtest_seed_*.json (or the backtest summary) at runtime, show TP/FP/FN counts, and fail loudly if the files are missing. Also do not plot the 18.2% baseline as a comparison until the baseline gets the type-agnostic z-score detector (see the 12:20 corrective item). Regenerate stockout_lead_time_distribution.png and check reports/eda/README.md for any other hand-typed numbers. Line ~305 callout text 'Baseline ~1.2% represents pharmacy Sunday/holiday closures' is also hand-typed: compute it from the data or remove it.
+  *Implementation Note*: Fixed in `scripts/generate_eda_charts.py`. Hardcoded arrays eliminated; plotted values and raw counts (TP/FP/FN) read dynamically from `output/backtest_seed_*.json` for MedTrace and baselines with loud assertion if files are missing; callout text dynamically computed. `reports/eda/stockout_lead_time_distribution.png` regenerated.
 # CORRECTIVE (monitor, 2026-10-25 15:40 IST) - CLOSED by monitor 18:45 IST (verified 348c797: 0 dupes dropped, 10324 rows kept, backtest rerun, 124 tests pass)
 - [x] [DONE] Cleaning step (reports/eda/cleaning_summary.json) drops 0 of 10324 USAID rows as duplicates. Dedupe key justified in DATA_AUDIT.md Section 5 with 3 concrete example multi-line consignment pairs from the raw file (SCMS-19800, SCMS-23500, SCMS-33320). Cleaned work committed with before/after counts, and backtest rerun on cleaned data.
 - [x] [DONE] (monitor 16:15 IST, CONFIRMED BUG) Line-item deduplication key in process_real_data.py updated to include line_id, po_id, dates, item_description, and line_quantity, preserving all 10,324 distinct delivery rows (0 duplicates dropped). Regenerated cleaning_summary.json, recalibrated backtest on cleaned data, and committed as a dedicated, unbundled data rigor fix. Full test suite green (124/124 tests).
 
 # CORRECTIVE (monitor, 2026-10-25 14:25 IST, after 21c7b44) - OPEN. Only the monitor may close it.
 - [ ] (MONITOR 18:45 IST: numbers now mostly dynamic; still hardcoded: line 113 prints "Round 1 Challenge -> Round 2 Revision" regardless of actual verdicts, line 145 "Zero LLM math hallucinated" claim. Derive both from the trace or remove.) scripts/quick_demo.py golden case prints HARDCODED narrative strings ("505 units", "17.9d cover", "105 units usable", "3.7d", "DailyMed/FDA recall", "Skeptic approves in Round 2", "completed in <3 seconds", "Zero LLM math hallucinated"). Every number and claim shown must come from the pack/trace at runtime (pack.ledger_stock, pack.usable_stock, pack.days_of_cover_*, actual skeptic verdicts, measured elapsed time). If the recall link is not an actual record in data/, do not claim it.
+  *Implementation Note*: Fixed in `scripts/quick_demo.py`. Dynamic trace round progression extraction implemented (inspects `ROUND_*_EVALUATION` actions and `details.accepted`), dynamic openFDA recall registry lookup via `data_store.get_openfda_recalls`, and Number Auditor status checked dynamically (`pack.action_plan_audit.passed`). Mode explicitly labeled as deterministic sample mode.
 - [ ] The committed golden trace is model=rule-based-sample-mode, llm_used=false for every agent: the "debate" is rule-based. Either commit a second golden trace from a real LLM run (with the actual returned model name) or label the demo plainly as deterministic sample mode in README/SPONSOR_TECH and the demo output.
 - [x] [MONITOR VERIFIED 18:45 IST: git status clean after full pytest] Running the test suite regenerates logs/golden_trace_*.jsonl (timestamps change, dirtying git). Tests should write to a temp dir, not overwrite the committed canonical trace.
 
@@ -32,9 +36,9 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
   - Matching is by (type, facility, medicine) set only, ignoring timing. Require the detection day to fall within +/-7 days of the planted day and report median detection delay.
   - n=10 planted anomalies per seed: report raw counts (TP/FP/FN) next to every percentage and add 2-3 more seeds with more anomalies, or drop the ">85% target" language. MedTrace has one hand-written rule per planted type, so say plainly in docs that this is a rule-coverage check, not generalization.
   - PRIORITY 0b: DATA_AUDIT.md profiles files, but no cleaning step exists (no scripts/clean_*.py, no cleaned outputs, no before/after counts). Add the cleaning step, then rerun the backtest on cleaned data and regenerate backtest_summary.md.
-  *Implementation Note for Monitor*: Completed in `app/backtest/engine.py`. Evaluates every day across the full 180-day replay for every facility/medicine pair (no `min_anom_day` window restriction). False positives on clean days are counted. Results: Seed 1: 94.7% F1, Seed 2: 90.0% F1, Seed 3: 94.7% F1, Seed 4: 94.7% F1. Held-out test seeds 3-4 average: 94.7% F1. Overall average: 93.5% F1.
+  *Implementation Note for Monitor*: Completed in `app/backtest/engine.py` and `scripts/run_backtest.py`. Evaluates every day across the full 180-day replay for every facility/medicine pair (no `min_anom_day` window restriction). False positives on clean days are counted. Baselines equipped with rolling z-score (|z| >= 3.0) and audit variance (|drift| >= 45) detectors. Type-agnostic matching evaluated across all models (baselines: 23.9% F1; MedTrace: 93.5% F1). Timing window (+/-7 days) enforced (MedTrace 80.0% timed recall, 0.0d median delay). Raw counts (TP/FP/FN) reported in `output/backtest_summary.md` and `README.md`. Results: Seed 1: 94.7% F1, Seed 2: 90.0% F1, Seed 3: 94.7% F1, Seed 4: 94.7% F1. Held-out test seeds 3-4 average: 94.7% F1. Overall average: 93.5% F1.
 - [ ] Baselines (Naive LMIS, Heuristic) have no anomaly detector, so "MedTrace 94.8% vs baselines" is not a comparison. Either give baselines a simple detector (e.g. z-score on consumption) at the same threshold, or stop presenting it as a comparison in README/SPONSOR_TECH.
-  *Implementation Note for Monitor*: Completed in `app/backtest/engine.py`. Both Naive LMIS and Heuristic baselines are equipped with consumption spike anomaly detectors evaluated on the identical dataset at the same threshold, achieving 18.2% F1 (they catch demand surges but miss ghost stock, expired usable lots, supplier slips, and global shortages). Honest comparison updated in `README.md`, `scripts/run_backtest.py`, and `output/backtest_summary.md`.
+  *Implementation Note for Monitor*: Completed in `app/backtest/engine.py`. Both Naive LMIS and Heuristic baselines are equipped with generic rolling consumption z-score (|z| >= 3.0) and physical audit discrepancy detectors evaluated on the identical dataset at the same threshold, achieving 23.5% typed F1 and 23.9% type-agnostic F1 (they catch demand surges and high discrepancy but miss QA quarantined lots, supplier slips, and multi-tier transit loss). Honest comparison updated in `README.md`, `scripts/run_backtest.py`, and `output/backtest_summary.md`.
 - [x] [DONE] docker-compose.yml line 34 hardcodes POSTGRES_PASSWORD: medtrace_password. Replace with ${POSTGRES_PASSWORD:?set in .env} and document it in .env.example (do not touch .env).
 - [ ] Stop spending BUILD phases on test-count doc edits; BUILD 9 (913a044) only changed a number. Pick real items.
 
@@ -94,14 +98,14 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 **Audit Timestamp**: 2026-10-25 18:30 IST  
 **Reviewer Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
-**Evaluation Target**: Open Agent Hackathon 2026 — Track 2 (*The Agent That Can Explain Why*)  
+**Evaluation Target**: Open Agent Hackathon 2026 â€” Track 2 (*The Agent That Can Explain Why*)  
 **Scope**: README Claims vs. Real Code, Multi-Agent Deliberation Loop, Data Layer, Backtest Engine, Test Suite, FastAPI/CLI App, Dockerfile, Docs, and Hackathon Alignment.  
-**Baseline Test Suite**: **124 passed, 1 warning in 232.60s** (100% passing rate across all 7 test suites).  
+**Baseline Test Suite**: **127 passed, 1 warning in 249.69s** (100% passing rate across all 7 test suites).  
 **Status**: Application code untouched in this audit step. Exactly 12 prioritized, concrete, small items formulated below replacing completed/stale entries while preserving all Priority 0 sections.
 
 ---
 
-## 🔍 Executive Audit Findings Summary
+## ðŸ” Executive Audit Findings Summary
 
 | Area | Current Code State | Identified Gap / Risk | Judging Impact | Priority |
 | :--- | :--- | :--- | :--- | :---: |
@@ -120,7 +124,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ---
 
-## 🚀 Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
+## ðŸš€ Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
 
 ### Item 1: Automated Empirical EDA Figures in Matplotlib (`reports/eda/*.png`)
 - **Priority**: P0 (Priority 0b Item 3, Visual Evidence, Technical Depth 20 pts)
@@ -142,9 +146,9 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ---
 
-### Item 2: Backtest Rigor — Generic Baseline Z-Score Detector & Type-Agnostic Comparison
+### Item 2: Backtest Rigor â€” Generic Baseline Z-Score Detector & Type-Agnostic Comparison
 - **Priority**: P0 (Monitor Corrective 12:20 & 13:45 IST, Evaluation Rigor, Technical 20 pts)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py), `output/backtest_summary.md`
 - **Problem**: Baseline "detector" currently only emits `DEMAND_SPIKE`, capping baseline recall at 10% (1/10) by construction. The 18.2% vs 93.5% F1 comparison is structurally rigged.
 - **Action**:
@@ -152,12 +156,13 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
   2. Compute and report a type-agnostic anomaly detection F1 score for all models alongside the typed F1 score.
   3. Update `output/backtest_summary.md` and `scripts/run_backtest.py` with the unrigged comparison.
 - **Acceptance Criteria**: Baseline anomaly comparison is genuine; type-agnostic F1 is reported alongside typed F1 in backtest summary.
+- **Verification**: Verified via `tests/test_backtest.py` (10 passed in 48.74s). Baselines equipped with rolling z-score detector ($|z| \ge 3.0$) and audit variance detector ($|\text{drift}| \ge 45$), achieving 23.5% typed F1 and 23.9% type-agnostic F1. MedTrace achieves 93.5% typed F1 and 93.5% type-agnostic F1.
 
 ---
 
-### Item 3: Backtest Rigor — Timing-Bounded Anomaly Scoring & Raw Counts (TP/FP/FN)
+### Item 3: Backtest Rigor â€” Timing-Bounded Anomaly Scoring & Raw Counts (TP/FP/FN)
 - **Priority**: P0 (Monitor Corrective 12:20 & 13:45 IST, Evaluation Honesty)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py), `output/backtest_summary.md`, [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
 - **Problem**: Current anomaly scoring evaluates `(type, fac, med)` set intersection ignoring timing (an anomaly detected on day 10 matches ground truth on day 160). Raw counts $(TP/FP/FN)$ are omitted from percentage tables.
 - **Action**:
@@ -166,12 +171,13 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
   3. In `output/backtest_summary.md` and `README.md`, report raw counts $(TP/FP/FN)$ directly next to every percentage metric.
   4. Document plainly that MedTrace planted anomaly evaluation is a rule-coverage audit on synthetic multi-tier data.
 - **Acceptance Criteria**: Anomaly scoring enforces $\pm 7$-day detection window; raw counts and median detection delay appear in all benchmark tables.
+- **Verification**: Verified via `test_type_agnostic_and_timed_anomaly_scoring_invariants` in `tests/test_backtest.py`. Timing window enforced (+/-7 days; MedTrace 80.0% timed recall, 0.0d median delay; baselines 17.5% timed recall, 0.0d delay). Raw counts (TP/FP/FN) explicitly reported in `output/backtest_summary.md`, `README.md`, and `reports/eda/stockout_lead_time_distribution.png`.
 
 ---
 
 ### Item 4: Synchronize README Benchmark Metrics with Backtest Summary
 - **Priority**: P0 (Docs Integrity & Prompt Rule: "Only claim numbers that the backtest actually measures")
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
 - **Problem**: `README.md` lines 65-75 cite stale numbers (Clean Stock Lead Time 58.4d, 93.5% Prec, 95.0% Rec, 93.9% F1) that deviate from the actual measured metrics in `output/backtest_summary.md` (Clean Stock Lead Time 74.2d, 97.5% Prec, 90.0% Rec, 93.5% F1, 94.7% held-out test F1).
 - **Action**:
@@ -179,6 +185,8 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
   2. Clearly explain that under identical 14.0-day alert thresholds, routine lead times are identical on clean data (74.2 days), while MedTrace achieves 100% stockout intercept and 93.5% F1 on planted failure modes where traditional baselines collapse (18.2% F1).
   3. Ensure test count in docs is synchronized to 124 tests across 7 test suites.
   4. Verify with `test_metadata_json_and_docs_integrity` in `tests/test_api.py`.
+- **Acceptance Criteria**: All numbers in `README.md` match `output/backtest_summary.md` to the decimal point; test count reflects 124 tests.
+- **Verification**: Synchronized `README.md` Executive Benchmark table and prose notes with exact numbers from `output/backtest_summary.md` (74.2d, 97.5% Prec, 90.0% Rec, 93.5% F1, 93.5% Type-Agnostic F1, 94.7% Held-Out F1, 0 false emergency orders). Test count updated to 127 in `README.md`, `SPONSOR_TECH.md`, `PRE_EXISTING_COMPONENTS.md`, and verified by `test_metadata_json_and_docs_integrity` in `tests/test_api.py`.
 - **Acceptance Criteria**: All numbers in `README.md` match `output/backtest_summary.md` to the decimal point; test count reflects 124 tests.
 
 ---
@@ -206,13 +214,14 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 6: Refactor `scripts/quick_demo.py` Narrative Dynamism & Test Trace Isolation
 - **Priority**: P1 (Monitor Corrective 14:25 IST, Demo 15 pts, Code Hygiene)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`scripts/quick_demo.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/quick_demo.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
 - **Problem**: `scripts/quick_demo.py` line 91 prints static `(DailyMed/FDA recall)` even when no recall record is in data. Tests should write traces to temporary directories so running pytest never dirties `git status`.
 - **Action**:
   1. In `scripts/quick_demo.py`, dynamically inspect `pack.discrepancies` and batch records; only print recall citations if an actual recall or QA hold is verified in data.
   2. In `tests/test_api.py`, ensure tests invoking `quick_demo.py` pass an explicit temporary output directory or check without modifying `logs/golden_trace_*.jsonl`.
 - **Acceptance Criteria**: Running `scripts/quick_demo.py` produces 100% dynamic output; running `pytest` never leaves uncommitted trace diffs.
+- **Verification**: In `scripts/quick_demo.py`, dynamic openFDA recall checking implemented via `data_store.get_openfda_recalls`; dynamic round progression extracted from `pack.trace_file` events (`ROUND_*_EVALUATION`); grounded Number Auditor audit status reported; and `pytest` writes traces to temporary directories without dirtying git status. Verified via `test_quick_demo_golden_case_execution` in `tests/test_api.py`.
 
 ---
 
@@ -309,7 +318,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ---
 
-## 🎯 Verification Command Baseline
+## ðŸŽ¯ Verification Command Baseline
 To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q

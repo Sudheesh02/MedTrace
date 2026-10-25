@@ -322,9 +322,10 @@ def test_metadata_json_and_docs_integrity():
     assert "120-test" not in sponsor_doc
     assert "122-test" not in sponsor_doc
     assert "124-test" not in sponsor_doc
-    assert "126-test pytest suite" in sponsor_doc
+    assert "126-test" not in sponsor_doc
+    assert "127-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "126/126 Automated Tests Verified" in sponsor_doc
+    assert "127/127 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -339,7 +340,8 @@ def test_metadata_json_and_docs_integrity():
     assert "120 automated tests" not in pre_existing_doc
     assert "122 automated tests" not in pre_existing_doc
     assert "124 automated tests" not in pre_existing_doc
-    assert "126 automated tests passing" in pre_existing_doc
+    assert "126 automated tests" not in pre_existing_doc
+    assert "127 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:

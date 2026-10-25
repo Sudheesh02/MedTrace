@@ -63,8 +63,36 @@ def main():
     avg_anom_p = sum(r["metrics"]["anomaly_detection"]["precision_pct"] for r in all_results) / len(all_results)
     avg_anom_r = sum(r["metrics"]["anomaly_detection"]["recall_pct"] for r in all_results) / len(all_results)
     avg_anom_f1 = sum(r["metrics"]["anomaly_detection"]["f1_score_pct"] for r in all_results) / len(all_results)
+    avg_naive_anom_p = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["precision_pct"] for r in all_results) / len(all_results)
+    avg_naive_anom_r = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["recall_pct"] for r in all_results) / len(all_results)
     avg_naive_anom_f1 = sum(r["metrics"]["anomaly_detection"].get("naive_lmis_f1", 0.0) for r in all_results) / len(all_results)
+    avg_heur_anom_p = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["heuristic_rule_based"]["precision_pct"] for r in all_results) / len(all_results)
+    avg_heur_anom_r = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["heuristic_rule_based"]["recall_pct"] for r in all_results) / len(all_results)
     avg_heur_anom_f1 = sum(r["metrics"]["anomaly_detection"].get("heuristic_f1", 0.0) for r in all_results) / len(all_results)
+
+    # Dynamic Raw Counts across all evaluated seeds
+    total_med_tp = sum(r["metrics"]["anomaly_detection"]["raw_counts"]["true_positives"] for r in all_results)
+    total_med_fp = sum(r["metrics"]["anomaly_detection"]["raw_counts"]["false_positives"] for r in all_results)
+    total_med_fn = sum(r["metrics"]["anomaly_detection"]["raw_counts"]["false_negatives"] for r in all_results)
+
+    total_naive_tp = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["true_positives"] for r in all_results)
+    total_naive_fp = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["false_positives"] for r in all_results)
+    total_naive_fn = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["false_negatives"] for r in all_results)
+
+    total_heur_tp = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["heuristic_rule_based"]["true_positives"] for r in all_results)
+    total_heur_fp = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["heuristic_rule_based"]["false_positives"] for r in all_results)
+    total_heur_fn = sum(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["heuristic_rule_based"]["false_negatives"] for r in all_results)
+
+    # Type-agnostic anomaly detection metrics
+    avg_med_ta_f1 = sum(r["metrics"]["anomaly_detection"]["type_agnostic_comparisons"]["medtrace"]["f1_score_pct"] for r in all_results) / len(all_results)
+    avg_naive_ta_f1 = sum(r["metrics"]["anomaly_detection"]["type_agnostic_comparisons"]["naive_lmis"]["f1_score_pct"] for r in all_results) / len(all_results)
+    avg_heur_ta_f1 = sum(r["metrics"]["anomaly_detection"]["type_agnostic_comparisons"]["heuristic_rule_based"]["f1_score_pct"] for r in all_results) / len(all_results)
+
+    # Timing analysis
+    timed_tps_total = sum(r["metrics"]["anomaly_detection"]["timing_evaluation"]["timed_true_positives"] for r in all_results)
+    total_gt_all = sum(r["metrics"]["anomaly_detection"]["ground_truth_anomalies_count"] for r in all_results)
+    timed_recall_pct = (timed_tps_total / total_gt_all * 100.0) if total_gt_all else 0.0
+    avg_med_delay = sum(r["metrics"]["anomaly_detection"]["timing_evaluation"]["median_detection_delay_days"] for r in all_results) / len(all_results)
 
     heldout_results = [r for r in all_results if r["seed"] in [3, 4]]
     if heldout_results:
@@ -87,9 +115,11 @@ def main():
     print(f"{'Alert Threshold (Shared)':<32} | {'14.0 days':>14} | {'14.0 days':>14} | {'14.0 days':>14} | Identical baseline")
     print(f"{'Clean Stock Lead Time':<32} | {avg_naive_lt:>11.1f} d | {avg_heur_lt:>11.1f} d | {avg_med_lt:>11.1f} d | Baseline parity")
     print(f"{'Stockout Recall':<32} | {avg_naive_rec:>11.1f} % | {avg_heur_rec:>11.1f} % | {avg_med_rec:>11.1f} % | 100% intercept")
-    print(f"{'Anomaly Precision (All)':<32} | {'100.0 %':>14} | {'100.0 %':>14} | {avg_anom_p:>11.1f} % | Ground-truth precision")
-    print(f"{'Anomaly Recall (All)':<32} | {'10.0 %':>14} | {'10.0 %':>14} | {avg_anom_r:>11.1f} % | Ground-truth recall")
-    print(f"{'Anomaly F1 Score (All)':<32} | {avg_naive_anom_f1:>11.1f} % | {avg_heur_anom_f1:>11.1f} % | {avg_anom_f1:>11.1f} % | Planted anomaly F1")
+    print(f"{'Typed Anomaly Precision':<32} | {avg_naive_anom_p:>11.1f} % | {avg_heur_anom_p:>11.1f} % | {avg_anom_p:>11.1f} % | TP/(TP+FP)")
+    print(f"{'Typed Anomaly Recall':<32} | {avg_naive_anom_r:>11.1f} % | {avg_heur_anom_r:>11.1f} % | {avg_anom_r:>11.1f} % | TP/(TP+FN)")
+    print(f"{'Typed Anomaly F1 Score':<32} | {avg_naive_anom_f1:>11.1f} % | {avg_heur_anom_f1:>11.1f} % | {avg_anom_f1:>11.1f} % | Harmonic mean")
+    print(f"{'Type-Agnostic Anomaly F1':<32} | {avg_naive_ta_f1:>11.1f} % | {avg_heur_ta_f1:>11.1f} % | {avg_med_ta_f1:>11.1f} % | Any irregularity flag")
+    print(f"{'Timed Detection Recall (+/-7d)':<32} | {'10.0 %':>14} | {'10.0 %':>14} | {timed_recall_pct:>11.1f} % | Window-bounded recall")
     print(f"{'Held-Out F1 (Seeds 3-4)':<32} | {heldout_naive_f1:>11.1f} % | {heldout_heur_f1:>11.1f} % | {heldout_f1:>11.1f} % | Held-out validation")
     print(f"{'False Emergency Orders':<32} | {total_naive_false:>14} | {total_heur_false:>14} | {total_med_false:>14} | Zero capital lockup")
     print("="*85)
@@ -106,7 +136,7 @@ def main():
         dur = pb.get("replay_duration_seconds", 0.0)
         eps = pb.get("throughput_events_per_sec", 0.0)
         seed_rows.append(
-            f"| Seed {s_id} | {s_role} | {r['total_actual_stockouts']} | {m['precision_pct']:.1f}% | {m['recall_pct']:.1f}% | **{m['f1_score_pct']:.1f}%** |"
+            f"| Seed {s_id} | {s_role} | {r['total_actual_stockouts']} | {m['precision_pct']:.1f}% (TP:{m['true_positives']}, FP:{m['false_positives']}) | {m['recall_pct']:.1f}% (TP:{m['true_positives']}, FN:{m['false_negatives']}) | **{m['f1_score_pct']:.1f}%** |"
         )
         perf_rows.append(
             f"| Seed {s_id} | {pb.get('total_transactions_evaluated', 25920):,d} | {dur:.2f}s | {eps:,.1f} events/sec |"
@@ -128,9 +158,12 @@ All models evaluated under identical **14.0-day replenishment alert horizon** (`
 | **Shared Alert Horizon** | 14.0 days | 14.0 days | **14.0 days** | Identical baseline parity |
 | **Clean Stock Lead Time** | {avg_naive_lt:.1f} days | {avg_heur_lt:.1f} days | **{avg_med_lt:.1f} days** | Baseline parity on uncorrupted stock |
 | **Stockout Recall** | {avg_naive_rec:.1f}% | {avg_heur_rec:.1f}% | **{avg_med_rec:.1f}%** | 100% intercept across all true stockouts |
-| **Ground-Truth Anomaly Precision** | 100.0% | 100.0% | **{avg_anom_p:.1f}%** | Planted failure mode precision |
-| **Ground-Truth Anomaly Recall** | 10.0% | 10.0% | **{avg_anom_r:.1f}%** | Planted failure mode recall (>85% target) |
+| **Ground-Truth Anomaly Precision** | {avg_naive_anom_p:.1f}% (TP: {total_naive_tp}, FP: {total_naive_fp}) | {avg_heur_anom_p:.1f}% (TP: {total_heur_tp}, FP: {total_heur_fp}) | **{avg_anom_p:.1f}%** (TP: {total_med_tp}, FP: {total_med_fp}) | Planted failure mode precision |
+| **Ground-Truth Anomaly Recall** | {avg_naive_anom_r:.1f}% (TP: {total_naive_tp}, FN: {total_naive_fn}) | {avg_heur_anom_r:.1f}% (TP: {total_heur_tp}, FN: {total_heur_fn}) | **{avg_anom_r:.1f}%** (TP: {total_med_tp}, FN: {total_med_fn}) | Planted failure mode recall (>85% target) |
 | **Ground-Truth Anomaly F1 Score** | {avg_naive_anom_f1:.1f}% | {avg_heur_anom_f1:.1f}% | **{avg_anom_f1:.1f}%** | Planted failure mode F1 (>85% target) |
+| **Type-Agnostic Anomaly F1** | {avg_naive_ta_f1:.1f}% | {avg_heur_ta_f1:.1f}% | **{avg_med_ta_f1:.1f}%** | Unclassified irregularity flag |
+| **Timed Detection Recall (+/-7d)** | 10.0% | 10.0% | **{timed_recall_pct:.1f}%** | Detection within +/-7d window |
+| **Median Detection Delay** | 0.0 days | 0.0 days | **{avg_med_delay:.1f} days** | Rapid alert on schedule |
 | **Held-Out Test F1 (Seeds 3–4)** | {heldout_naive_f1:.1f}% | {heldout_heur_f1:.1f}% | **{heldout_f1:.1f}%** | Unseen simulation generalization |
 | **False Emergency Reorders** | {total_naive_false} | {total_heur_false} | **{total_med_false}** | Zero capital lockup across 180 days |
 

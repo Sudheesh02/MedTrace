@@ -36,6 +36,30 @@ def test_backtest_runs_reproducibly_on_seed_1():
     assert 0.0 <= anom["naive_lmis_f1"] <= 100.0
     assert anom["f1_score_pct"] > anom["naive_lmis_f1"]
 
+    # Verify raw counts mathematical integrity
+    raw = anom["raw_counts"]
+    assert raw["true_positives"] + raw["false_negatives"] == anom["ground_truth_anomalies_count"]
+    assert raw["true_positives"] == anom["true_positives"]
+    assert raw["false_positives"] == anom["false_positives"]
+    expected_p = round(raw["true_positives"] / (raw["true_positives"] + raw["false_positives"]) * 100.0, 1)
+    expected_r = round(raw["true_positives"] / (raw["true_positives"] + raw["false_negatives"]) * 100.0, 1)
+    assert anom["precision_pct"] == expected_p
+    assert anom["recall_pct"] == expected_r
+
+    # Verify type-agnostic anomaly comparisons
+    ta = anom["type_agnostic_comparisons"]
+    assert "medtrace" in ta
+    assert "naive_lmis" in ta
+    assert "heuristic_rule_based" in ta
+    assert ta["medtrace"]["f1_score_pct"] >= ta["naive_lmis"]["f1_score_pct"]
+    assert ta["medtrace"]["true_positives"] >= ta["naive_lmis"]["true_positives"]
+
+    # Verify timing evaluation bounds
+    te = anom["timing_evaluation"]
+    assert te["window_days"] == 7
+    assert 0 <= te["timed_true_positives"] <= anom["ground_truth_anomalies_count"]
+    assert te["median_detection_delay_days"] <= 5.0
+
     # Verify capital lockup
     false_reorders = metrics["capital_lockup_false_reorders"]
     assert false_reorders["medtrace"] == 0
@@ -157,4 +181,53 @@ def test_backtest_summary_markdown_generation(tmp_path):
     assert "Held-Out Test F1" in content
     assert "Processing Throughput" in content
     assert "Zero LLM Arithmetic" in content
+
+
+def test_type_agnostic_and_timed_anomaly_scoring_invariants():
+    """
+    Anti-Hardcoding & Audit Invariant Test:
+    Verifies that type-agnostic and timing-bounded anomaly scoring metrics are derived
+    dynamically from simulation records across varying seeds, asserting:
+    1. Raw counts (TP, FP, FN) satisfy P = TP/(TP+FP) and R = TP/(TP+FN) exactly.
+    2. Type-agnostic F1 scores evaluate irregularities across all three models.
+    3. Metrics vary dynamically between seeds without hardcoding.
+    """
+    engine1 = BacktestEngine(sim_dir="data/simulated")
+    res1 = engine1.run_backtest(seed=1, sim_dir="data/simulated")
+
+    sim_dir2 = "data/simulated_seed_2"
+    if not os.path.exists(sim_dir2):
+        from scripts.generate_facility_simulation import generate_simulation
+        generate_simulation(seed=2, out_dir=sim_dir2)
+
+    engine2 = BacktestEngine(sim_dir=sim_dir2)
+    res2 = engine2.run_backtest(seed=2, sim_dir=sim_dir2)
+
+    for res in [res1, res2]:
+        anom = res["metrics"]["anomaly_detection"]
+        raw = anom["raw_counts"]
+        # Invariant 1: TP + FN must equal ground truth total count
+        assert raw["true_positives"] + raw["false_negatives"] == anom["ground_truth_anomalies_count"]
+        # Invariant 2: Precision formula
+        if raw["true_positives"] + raw["false_positives"] > 0:
+            calc_p = round(raw["true_positives"] / (raw["true_positives"] + raw["false_positives"]) * 100.0, 1)
+            assert anom["precision_pct"] == calc_p
+        # Invariant 3: Recall formula
+        calc_r = round(raw["true_positives"] / (raw["true_positives"] + raw["false_negatives"]) * 100.0, 1)
+        assert anom["recall_pct"] == calc_r
+
+        # Type-agnostic comparisons must be present for all 3 models
+        ta = anom["type_agnostic_comparisons"]
+        assert "medtrace" in ta and "naive_lmis" in ta and "heuristic_rule_based" in ta
+        assert ta["medtrace"]["precision_pct"] >= 80.0
+        assert ta["medtrace"]["recall_pct"] >= 80.0
+
+        # Timing evaluation must have window_days = 7
+        te = anom["timing_evaluation"]
+        assert te["window_days"] == 7
+        assert te["timed_true_positives"] >= 7
+
+    # Dynamism invariant: across different seeds, total actual stockouts and transaction counts vary
+    assert res1["total_actual_stockouts"] != res2["total_actual_stockouts"]
+
 

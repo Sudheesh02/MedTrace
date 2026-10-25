@@ -3,9 +3,9 @@
   "evaluation_period_days": 180,
   "total_actual_stockouts": 19,
   "performance_benchmarks": {
-    "replay_duration_seconds": 3.293,
+    "replay_duration_seconds": 3.964,
     "total_transactions_evaluated": 25920,
-    "throughput_events_per_sec": 7871.2
+    "throughput_events_per_sec": 6539.0
   },
   "metrics": {
     "early_warning_lead_time_days": {
@@ -30,31 +30,68 @@
       "precision_pct": 90.0,
       "recall_pct": 90.0,
       "f1_score_pct": 90.0,
-      "naive_lmis_f1": 18.2,
-      "heuristic_f1": 18.2,
+      "naive_lmis_f1": 22.2,
+      "heuristic_f1": 22.2,
+      "raw_counts": {
+        "true_positives": 9,
+        "false_positives": 1,
+        "false_negatives": 1
+      },
       "timing_evaluation": {
         "window_days": 7,
         "timed_true_positives": 8,
         "median_detection_delay_days": 0.0
       },
-      "baseline_comparisons": {
+      "type_agnostic_comparisons": {
+        "medtrace": {
+          "detected_pairs_count": 10,
+          "true_positives": 9,
+          "false_positives": 1,
+          "false_negatives": 1,
+          "precision_pct": 90.0,
+          "recall_pct": 90.0,
+          "f1_score_pct": 90.0,
+          "median_delay_days": -1.0
+        },
         "naive_lmis": {
-          "detected_count": 1,
-          "true_positives": 1,
-          "false_positives": 0,
-          "false_negatives": 9,
-          "precision_pct": 100.0,
-          "recall_pct": 10.0,
-          "f1_score_pct": 18.2
+          "detected_pairs_count": 8,
+          "true_positives": 2,
+          "false_positives": 6,
+          "false_negatives": 8,
+          "precision_pct": 25.0,
+          "recall_pct": 20.0,
+          "f1_score_pct": 22.2,
+          "median_delay_days": 2.5
         },
         "heuristic_rule_based": {
-          "detected_count": 1,
-          "true_positives": 1,
-          "false_positives": 0,
-          "false_negatives": 9,
-          "precision_pct": 100.0,
-          "recall_pct": 10.0,
-          "f1_score_pct": 18.2
+          "detected_pairs_count": 8,
+          "true_positives": 2,
+          "false_positives": 6,
+          "false_negatives": 8,
+          "precision_pct": 25.0,
+          "recall_pct": 20.0,
+          "f1_score_pct": 22.2,
+          "median_delay_days": 2.5
+        }
+      },
+      "baseline_comparisons": {
+        "naive_lmis": {
+          "detected_count": 8,
+          "true_positives": 2,
+          "false_positives": 6,
+          "false_negatives": 8,
+          "precision_pct": 25.0,
+          "recall_pct": 20.0,
+          "f1_score_pct": 22.2
+        },
+        "heuristic_rule_based": {
+          "detected_count": 8,
+          "true_positives": 2,
+          "false_positives": 6,
+          "false_negatives": 8,
+          "precision_pct": 25.0,
+          "recall_pct": 20.0,
+          "f1_score_pct": 22.2
         }
       }
     },
