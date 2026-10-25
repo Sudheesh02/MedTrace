@@ -1,0 +1,156 @@
+{
+  "run_id": "run-a5c8e04f",
+  "status": "success",
+  "execution_time_seconds": 90.49,
+  "output": {
+    "run_id": "run-a5c8e04f",
+    "facility_id": "FAC-PHC-02",
+    "medicine_id": "MED-005",
+    "stockout_prevented": false,
+    "days_of_cover_trust": 238.78,
+    "days_of_cover_naive": 238.88,
+    "understated_gap_percent": 0.0,
+    "p_stockout_risk": 0.0,
+    "investigation_summary": "Skeptic verified top hypothesis 'Upstream Supplier Lead Time Slippage' (Round 1). All 3 competing hypotheses evaluated. Audited numbers verified: Usable Stock = 819.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 3 items checked.",
+    "winning_hypothesis": {
+      "hypothesis_id": "H2-SUPPLIER-TRANSIT",
+      "title": "Upstream Supplier Lead Time Slippage",
+      "cause": "Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window.",
+      "likelihood": 0.9,
+      "supporting_evidence": [
+        "Promised delivery expected at Day 6, but vendor slip adds +5.0 days.",
+        "Leaves a trust-adjusted shortfall of 0.0 units across 0.0 gap days.",
+        "World Model topology verifies supply-chain relations: FOR_MEDICINE, HOLDS_INVENTORY."
+      ],
+      "refuting_evidence": [
+        "Supplier confirms expedited dispatch with guaranteed logistics priority."
+      ],
+      "confirming_query": "SELECT vendor, shipment_mode, mean_slip_days, p90_days FROM MEDTRACE_LH.supplier_slip LIMIT 5"
+    },
+    "recommendations": [
+      {
+        "action_id": "ACT-MON-FAC-PHC-02-MED-005",
+        "action_type": "MONITOR_BUFFER",
+        "facility_id": "FAC-PHC-02",
+        "medicine_id": "MED-005",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.98,
+        "justification": "Inventory levels are secure (238.8 days of cover). Routine monitoring active; safety buffer intact; emergency transfer and local purchase quotas remain on standby.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "trust_cover_days": 238.78,
+          "unit_price_usd": 0.25,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-TRF-FAC-PHC-02-MED-005",
+        "action_type": "PEER_TRANSFER",
+        "facility_id": "FAC-PHC-02",
+        "medicine_id": "MED-005",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.2,
+        "justification": "No emergency stock transfer required: Facility holds 238.8 days of verified usable cover, exceeding safety threshold. Inter-facility transfer queue on standby.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "peer_surplus": 2781.0,
+          "unit_price_usd": 0.25,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-EXP-FAC-PHC-02-MED-005",
+        "action_type": "EXPEDITE_PO",
+        "facility_id": "FAC-PHC-02",
+        "medicine_id": "MED-005",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": "SUP-004",
+        "feasibility_score": 0.15,
+        "justification": "Standard procurement cycle: No expedited dispatch required; existing inventory covers 238.8 days.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "unit_price_usd": 0.25,
+          "estimated_cost_usd": 0.0
+        }
+      },
+      {
+        "action_id": "ACT-EMERG-FAC-PHC-02-MED-005",
+        "action_type": "EMERGENCY_PURCHASE",
+        "facility_id": "FAC-PHC-02",
+        "medicine_id": "MED-005",
+        "recommended_units": 0.0,
+        "estimated_cost_usd": 0.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.1,
+        "justification": "Zero emergency procurement required: Local stock is adequate (238.8 days of cover); emergency quota preserved.",
+        "number_provenance": {
+          "shortfall_units": 0.0,
+          "gap_days": 0.0,
+          "unit_price_usd": 0.25,
+          "estimated_cost_usd": 0.0
+        }
+      }
+    ],
+    "skeptic_rounds": 1,
+    "trace_file": "logs\\trace_run-a5c8e04f.jsonl",
+    "action_plan_audit": {
+      "audited": true,
+      "passed": true,
+      "verified_recommendations_count": 4,
+      "flagged_inconsistencies": []
+    },
+    "escalated_to_human": false,
+    "escalation_reason": null,
+    "model_used": "nvidia/nemotron-3-ultra-550b-a55b",
+    "llm_used": true,
+    "fallback": false,
+    "ledger_stock": 819.0,
+    "usable_stock": 819.0,
+    "quarantined_stock": 0.0,
+    "audit_drift": 0.0,
+    "expiring_stock": 0.0
+  },
+  "agents": [
+    {
+      "name": "TriagePlanner",
+      "role": "Scans district portfolio and prioritizes at-risk facilities & medicines"
+    },
+    {
+      "name": "Reconciler",
+      "role": "Audits ledger vs physical audit vs batch expiry"
+    },
+    {
+      "name": "WorldModel",
+      "role": "Maintains shared canonical grounded entities & relations"
+    },
+    {
+      "name": "Investigator",
+      "role": "Generates >= 3 competing hypotheses with evidence queries"
+    },
+    {
+      "name": "Skeptic & Number Auditor",
+      "role": "Challenging assertions & verifying deterministic arithmetic"
+    },
+    {
+      "name": "ActionPlanner",
+      "role": "Ranks transfers, PO expedites, and emergency orders"
+    },
+    {
+      "name": "HMEM",
+      "role": "Cross-session memory of officer approvals/overrides"
+    }
+  ],
+  "trace_file": "logs\\trace_run-a5c8e04f.jsonl"
+}

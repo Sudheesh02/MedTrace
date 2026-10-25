@@ -49,6 +49,7 @@ logs/*
 !logs/golden_trace_*.jsonl
 !logs/trace_without_memory.jsonl
 !logs/trace_with_memory.jsonl
+!logs/live_trace_*.jsonl
 
 # 6. IDE, OS & System Metadata
 .vscode/
