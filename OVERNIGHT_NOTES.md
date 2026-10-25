@@ -982,3 +982,45 @@
 - **Batch 2 (Evaluation & Visual Evidence — P1)**:
   - Backlog Item 4: Automated empirical EDA figures in matplotlib (`reports/eda/*.png`).
   - Backlog Item 6: Backtest rigor: generic baseline z-score detector & timing-bounded matching.
+
+---
+
+### Session: 2026-10-25 18:35 IST
+**Role**: Senior Staff AI Reviewer & Project Auditor  
+**Phase**: Comprehensive Senior Project Audit & Prioritized Backlog Refresh
+
+#### What Was Done
+1. **Full-Scope Project Audit Against 100-Point Rubric & Execution Plan**:
+   - Reviewed [README.md](file:///C:/Users/Asus/Desktop/Open Agent/README.md), [MedTrace_Research_and_Execution_Plan.md](file:///C:/Users/Asus/Desktop/Open Agent/MedTrace_Research_and_Execution_Plan.md), and all guides in `hackathon details/` ([16page.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/16page.md), [How to Win Hackathons!.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/How to Win Hackathons!.md), [Meterless_ Overview.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/Meterless_ Overview.md), [participant-setup-guide.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/participant-setup-guide.md), [zetaris-*.md](file:///C:/Users/Asus/Desktop/Open Agent/hackathon details/zetaris-sponsor-overview.md)).
+   - Systematically audited README claims vs real code, multi-agent deliberation loop, data layer, backtest engine, test suites, API/CLI app, Dockerfile, and docs.
+2. **Verified Test Suite & Resolved Test Artifact Desynchronization**:
+   - Resolved canonical memory trace artifact desynchronization: updated `logs/trace_with_memory.jsonl` with live `hmem_beliefs` emitted by `Orchestrator.run_investigation`, allowing `test_explain_trace_renders_verdict_flip_card` in `tests/test_api.py` to assert memory facts cleanly.
+   - Executed full test suite: **124 passed, 1 warning in 232.60s (100% passing rate across all 7 test suites)**.
+3. **Key Deficiencies Uncovered**:
+   - **README vs Measured Numbers Divergence**: `README.md` lines 65–75 cite stale backtest metrics (58.4d lead time, 93.5% Prec, 95.0% Rec, 93.9% F1) that deviate from actual measured metrics in `output/backtest_summary.md` (74.2d clean lead time, 97.5% Prec, 90.0% Rec, 93.5% F1, 94.7% held-out test F1). Hard rule violated until synchronized.
+   - **Missing Visual EDA Figures**: `reports/eda/` contains 55 JSON profile reports but 0 PNG charts, missing Priority 0b Item 3 figures.
+   - **Rigged Baseline Anomaly Detector**: Baseline detector only emits `DEMAND_SPIKE`, capping baseline recall at 10% (1/10) by construction. Needs generic rolling z-score detector (|z| > 3.0) and type-agnostic F1 comparison.
+   - **Untimed Anomaly Scoring**: Anomaly matching evaluates `(type, fac, med)` set intersection ignoring timing. Needs $\pm 7$-day timing window enforcement and raw counts $(TP/FP/FN)$ in tables.
+   - **Missing Curated Multi-Agent Benchmark**: Backtest evaluates simulated data layer; lacks a 20-scenario clinical evaluation of the *multi-agent LLM debate loop itself* measuring unsupported number claims and correct abstention.
+   - **Semi-Static Demo Strings**: `quick_demo.py` line 91 prints static `(DailyMed/FDA recall)` even when no recall record is in data.
+   - **Missing Live openFDA Query**: `DataStore` reads local JSON directly; needs live HTTP queries to `api.fda.gov` with 5s timeout and cache-aside fallback.
+   - **Missing Interactive UI Screen**: Execution Plan Phase 6.2 specifies 1 simple interactive screen (`app/ui.py`) for judges preferring visual walkthroughs.
+   - **Scattered Sponsor Tests**: Lacks consolidated `tests/test_sponsor_conformance.py` for 1-command verification of Zetaris, Meterless, and Nemotron.
+   - **Docker Build Trace Exclusion**: `.dockerignore` ignores `logs/*.jsonl` without exceptions for tracked sample/golden traces.
+4. **Application Code Preserved**:
+   - Strictly maintained zero changes to application code in `app/`.
+5. **Formulated Prioritized 12-Item Backlog**:
+   - Rewrote [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open Agent/OVERNIGHT_BACKLOG.md) with exactly 12 concrete, small, high-impact items. Preserved all Priority 0 sections at the top.
+
+#### What Is Next
+- **Batch 1 (Next Highest Priority — P0)**:
+  - Backlog Item 1: Author `scripts/generate_eda_charts.py` to generate 5 high-resolution matplotlib charts in `reports/eda/*.png` with written summary in `reports/eda/README.md`.
+  - Backlog Item 2: Implement generic baseline rolling z-score detector (|z| > 3.0) on consumption and ledger-vs-audit gap in `BacktestEngine`, reporting type-agnostic F1 alongside typed F1.
+  - Backlog Item 3: Enforce $\pm 7$-day detection window for anomaly True Positive credit and report raw counts $(TP/FP/FN)$ and median detection delay in `output/backtest_summary.md` and `README.md`.
+  - Backlog Item 4: Synchronize `README.md` benchmark table and text with exact numbers from `output/backtest_summary.md` and 124 passing tests.
+- **Batch 2 (Multi-Agent Benchmark & Interfaces — P1)**:
+  - Backlog Item 5: Author `app/backtest/curated_benchmark.py` and `scripts/run_curated_eval.py` (20 clinical scenarios).
+  - Backlog Item 6: Refactor `scripts/quick_demo.py` narrative dynamism and test trace isolation.
+  - Backlog Item 7: Implement live openFDA REST API adapter with offline cache-aside in `DataStore`.
+  - Backlog Item 8: Create lightweight interactive Streamlit dashboard (`app/ui.py`).
+  - Backlog Item 9: Author consolidated `tests/test_sponsor_conformance.py`.
