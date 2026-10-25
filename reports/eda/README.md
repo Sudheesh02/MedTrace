@@ -126,7 +126,7 @@ All visualizations are generated programmatically via [`scripts/generate_eda_cha
      - **Target Safety Buffer ($S \ge 30$ days)**: Stable operational equilibrium.
 2. **Multi-Seed Benchmark Performance (Right Panel)**:
    - **Tuning Seeds 1–2**: MedTrace achieves 94.7% F1 (Seed 1) and 90.0% F1 (Seed 2).
-   - **Held-Out Test Seeds 3–4**: MedTrace achieves **94.7% F1** on both Seeds 3 and 4, demonstrating that multi-agent anomaly detection generalizes robustly to unseen facility networks.
+   - **Held-Out Test Seeds 3–4**: MedTrace achieves **94.7% F1** on both Seeds 3 and 4, on simulated planted anomalies from our own generator (one run per seed). This is not a generalization claim and not real-world accuracy.
    - **Overall Comparative Benchmark**: MedTrace achieves **93.5% F1** with **100.0% stockout intercept** across all 180 days, while baseline models (Naive LMIS and Heuristic Rule-Based equipped with unrigged z-score detectors) achieve **23.5% typed F1** (23.9% type-agnostic F1) when confronted with multi-tier clinical discrepancies.
 
 ---

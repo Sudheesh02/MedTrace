@@ -145,7 +145,7 @@ The Action Planner formulated and vetted the following ranked transfer indents a
 ```
 PREPARED BY:
 MedTrace Autonomous Multi-Agent Deliberation Suite (v1.0.0)
-Zetaris Federated Data Fabric & Meterless Nightshift World Model
+Zetaris Lightning SQL (MEDTRACE_LH) & Meterless Nightshift World Model
 
 AUDITED BY:
 Skeptic Number Auditor (Deterministic Invariant Enforcement)

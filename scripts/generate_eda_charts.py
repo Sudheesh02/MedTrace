@@ -513,7 +513,7 @@ def generate_stockout_lead_time_chart(data_dir: str = "data", output_dir: str = 
     heldout_f1_val = float(np.mean(medtrace_f1[2:4]))
     baseline_heldout_val = float(np.mean(baseline_f1[2:4]))
     ax2.text(
-        0.03, 0.95, f"Held-Out Test Generalization (Seeds 3-4):\nMedTrace achieves {heldout_f1_val:.1f}% F1 on unseen facilities\nwhile baselines achieve {baseline_heldout_val:.1f}% (unrigged z-score).",
+        0.03, 0.95, f"Held-Out Simulated Seeds 3-4 (not a generalization claim):\nMedTrace achieves {heldout_f1_val:.1f}% F1 on simulated planted anomalies\nwhile baselines achieve {baseline_heldout_val:.1f}% (unrigged z-score).",
         transform=ax2.transAxes, verticalalignment="top", fontsize=8,
         bbox=dict(boxstyle="round,pad=0.5", facecolor=LIGHT_GRAY, edgecolor="#CBD5E1")
     )

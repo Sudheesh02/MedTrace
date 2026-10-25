@@ -15,12 +15,12 @@ All models evaluated under identical **14.0-day replenishment alert horizon** (`
 | **Clean Stock Lead Time** | 74.2 days | 74.2 days | **74.2 days** | Baseline parity on uncorrupted stock |
 | **Stockout Recall** | 100.0% | 100.0% | **100.0%** | 100% intercept across all true stockouts |
 | **Ground-Truth Anomaly Precision** | 29.6% (TP: 8, FP: 21) | 29.6% (TP: 8, FP: 21) | **97.5%** (TP: 36, FP: 1) | Planted failure mode precision |
-| **Ground-Truth Anomaly Recall** | 20.0% (TP: 8, FN: 32) | 20.0% (TP: 8, FN: 32) | **90.0%** (TP: 36, FN: 4) | Planted failure mode recall (>85% target) |
-| **Ground-Truth Anomaly F1 Score** | 23.5% | 23.5% | **93.5%** | Planted failure mode F1 (>85% target) |
+| **Ground-Truth Anomaly Recall** | 20.0% (TP: 8, FN: 32) | 20.0% (TP: 8, FN: 32) | **90.0%** (TP: 36, FN: 4) | Planted failure mode recall |
+| **Ground-Truth Anomaly F1 Score** | 23.5% | 23.5% | **93.5%** | Planted failure mode F1 |
 | **Type-Agnostic Anomaly F1** | 23.9% | 23.9% | **93.5%** | Unclassified irregularity flag |
 | **Timed Detection Recall (+/-7d)** | 10.0% | 10.0% | **80.0%** | Detection within +/-7d window |
 | **Median Detection Delay** | 0.0 days | 0.0 days | **0.0 days** | Rapid alert on schedule |
-| **Held-Out Test F1 (Seeds 3–4)** | 23.4% | 23.4% | **94.7%** | Unseen simulation generalization |
+| **Held-Out Test F1 (Seeds 3–4)** | 23.4% | 23.4% | **94.7%** | Simulated planted anomalies (not a generalization claim) |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180 days |
 
 ---
@@ -53,4 +53,4 @@ Evaluation engine computational throughput measured across 180 simulated days (~
 
 1. **Parity Alert Threshold**: All three models trigger reorder alerts at exactly `consumption * 14.0 days`. Naive LMIS and Heuristic are not artificially penalized with higher or lower thresholds.
 2. **Zero LLM Arithmetic**: All stock reconciliations, Monte Carlo ETA simulations, and order quantities are computed with deterministic symbolic algorithms (`DeterministicEngine`).
-3. **Held-Out Generalization**: Algorithm parameters were tuned exclusively on Seeds 1–2 and evaluated without modification on held-out Seeds 3–4, demonstrating **94.7% F1 generalization** on unseen facility networks.
+3. **Held-Out Simulated Seeds**: Algorithm parameters were tuned exclusively on Seeds 1–2 and evaluated without modification on held-out Seeds 3–4, giving **94.7% F1 on simulated planted anomalies** from our own generator (held-out seeds, one run per seed). This is not a generalization claim and not real-world accuracy.

@@ -1,4 +1,4 @@
-# MedTrace - Submission Checklist
+﻿# MedTrace - Submission Checklist
 
 Open Agent Hackathon 2026, Track 2 "The Agent That Can Explain Why". Submissions close **27 Oct 2026 23:45 UTC (28 Oct 05:15 IST)** on HackOS. Sources: `hackathon details/` (Welcome Guide sections 8-9, 6.2, onboarding deck, Zetaris sponsor files).
 
@@ -10,7 +10,7 @@ Status key: **DONE** = verified with the evidence shown. **PARTIAL** = works but
 | :-- | :--- | :--- | :--- |
 | 1.1 | Demo video, 1-4 min: main workflow, how the agent solves the challenge, Zetaris and Meterless integration | MISSING (USER) | No recording in the repo. Suggested shot list: triage -> `FAC-WH-01/MED-006` live run -> Investigator vs Skeptic debate -> `FAC-CHC-01/MED-001` memory flip (`output_examples/live_runs/memory_ab/` vs `live_FAC-CHC-01_MED-001.json`) -> `DATA_SOURCE_SUMMARY` in a trace. |
 | 1.2 | Slide deck: problem and user, solution, architecture, stack, how Zetaris and Meterless were used, what is unique, visuals, future work | MISSING (USER) | No deck in the repo. README and SPONSOR_TECH.md contain the content to lift. |
-| 1.3 | Public GitHub repo with all source, README covering setup, usage, dependencies | PARTIAL | README, `requirements.txt`, `.env.example`, `LICENSE` (MIT, added) are in place. `https://github.com/Sudheesh02/MedTrace` is public (HTTP 200) but local `main` is 65+ commits ahead of `origin/main`: **push before submitting**. |
+| 1.3 | Public GitHub repo with all source, README covering setup, usage, dependencies | DONE | README (live links at the top), `requirements.txt`, `.env.example`, `LICENSE` (MIT) are in place. `https://github.com/Sudheesh02/MedTrace` is public and `main` is pushed. |
 | 1.4 | Sponsor technology explanation (Zetaris integration; Meterless engines, what each does and the test; Nightshift connection; NVIDIA contribution; what is unique) | DONE | `SPONSOR_TECH.md` (rewritten to match the real setup), plus `metadata.json`. |
 | 1.5 | Pre-existing components declared (in repo and in the submission form) | PARTIAL | `PRE_EXISTING_COMPONENTS.md` is complete (first commit 24 Oct 2026 21:32 IST, inside the build window). The HackOS form entry is USER. |
 | 1.6 | Project details: name, description, team members, track | PARTIAL | `metadata.json` has name, description, track, one author. The form entry and team list are USER. |
@@ -43,7 +43,7 @@ Status key: **DONE** = verified with the evidence shown. **PARTIAL** = works but
 | Technical | 20 | DONE | Deterministic engine, debate loop, World Model, H-MEM, traces, 146 tests, Docker. |
 | Innovation | 15 | DONE | Zero LLM arithmetic with Number Auditor, counterfactual verdict-flip, officer-memory that changes decisions. |
 | Demo | 15 | MISSING (USER) | Video not recorded (1.1). The live runs and traces needed for it exist. |
-| Product & UX | 10 | PARTIAL | Dashboard in `dashboard/` (separate workstream); needs its final deploy and a rebuild of its data bundle so the live packs appear. |
+| Product & UX | 10 | DONE | Next.js dashboard in `dashboard/`, deployed on Vercel at https://medtrace-dashboard.vercel.app (snapshot mode: stored real runs from the data bundle; `Run analysis` works only on the laptop with the backend running). |
 | Sponsor Tech | 10 | DONE | Section 2.1-2.5 above; `SPONSOR_TECH.md`. |
 
 ## 4. Verification run (this repo state)
@@ -72,7 +72,14 @@ Packs: `output_examples/live_*.json` (+ `live_runs/memory_ab/`). Traces: `logs/l
 
 ## 6. Counts
 
-Sections 1-2 (21 items): **13 DONE, 4 PARTIAL, 3 MISSING, 1 N/A**.
+Sections 1-2 (21 items): **14 DONE, 3 PARTIAL, 3 MISSING, 1 N/A**.
 - MISSING, all owned by the user and not fixable in code: 1.1 demo video, 1.2 slide deck, 1.7 HackOS team/submission.
-- PARTIAL: 1.3 (push local commits), 1.5 and 1.6 (HackOS form entries), 2.6 (old password in git history).
-Section 3 (6 criteria): 4 DONE, 1 PARTIAL (Product & UX, dashboard deploy), 1 MISSING (Demo, video).
+- PARTIAL: 1.5 and 1.6 (HackOS form entries), 2.6 (old password in git history).
+Section 3 (6 criteria): 5 DONE, 1 MISSING (Demo, video).
+
+## 7. Links and publishing status
+
+- Repo (pushed, `main`): https://github.com/Sudheesh02/MedTrace
+- Live dashboard (Vercel, auto-deploys on push to `main`): https://medtrace-dashboard.vercel.app
+- Demo video script: `docs/DEMO_VIDEO_SCRIPT.md`
+- Still the user's items: record and upload the demo video (1.1), slide deck (1.2), HackOS form and team (1.5, 1.6, 1.7).

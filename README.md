@@ -1,5 +1,9 @@
 # MedTrace: Deterministic Audit & Multi-Agent Inventory Intelligence
 
+**Live dashboard:** https://medtrace-dashboard.vercel.app (snapshot mode: stored real runs)  
+**Repo:** https://github.com/Sudheesh02/MedTrace  
+**Demo video script:** [docs/DEMO_VIDEO_SCRIPT.md](docs/DEMO_VIDEO_SCRIPT.md)
+
 > **Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why**  
 > *Preventing catastrophic essential medicine stockouts through multi-source data auditing, deterministic arithmetic, and adversarial multi-agent reasoning.*
 
@@ -72,7 +76,7 @@ All models are evaluated under the **identical 14.0-day replenishment alert thre
 | **Ground-Truth Anomaly F1 Score** | 23.5% | 23.5% | **93.5%** | Planted anomaly detection F1 |
 | **Type-Agnostic Anomaly F1** | 23.9% | 23.9% | **93.5%** | Any irregularity flag |
 | **Timed Detection Recall (±7d)** | 10.0% | 10.0% | **80.0%** | Detection within ±7d window |
-| **Held-Out Test F1 (Seeds 3–4)** | 23.4% | 23.4% | **94.7%** | Unseen simulation generalization |
+| **Held-Out Test F1 (Seeds 3–4)** | 23.4% | 23.4% | **94.7%** | Simulated planted anomalies (not a generalization claim) |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180-day simulation |
 
 *Honest scope: every number in this table is measured on **simulated** data with 10 planted anomaly types. The held-out seeds (3-4) use the same generator as the tuning seeds, and the detector rules were written knowing those 10 anomaly classes, so this is a rule-coverage check, not evidence of real-world accuracy. The naive/heuristic baselines are deliberately simple.*

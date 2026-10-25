@@ -47,7 +47,7 @@ export default function HowItWorks() {
             ))}
           </ol>
           <div className="chips2">
-            <span className="chip2"><Database className="ic" /><b>Zetaris</b> federated SQL data layer</span>
+            <span className="chip2"><Database className="ic" /><b>Zetaris</b> Lightning SQL (MEDTRACE_LH)</span>
             <span className="chip2"><Brain className="ic" /><b>Meterless H-MEM</b> officer-decision memory</span>
             <span className="chip2"><Cpu className="ic" /><b>NVIDIA Nemotron</b> LLM reasoning (sample mode runs without it)</span>
           </div>
