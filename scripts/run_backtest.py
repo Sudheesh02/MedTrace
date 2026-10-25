@@ -14,15 +14,21 @@ from app.backtest.engine import BacktestEngine
 from scripts.generate_facility_simulation import generate_simulation
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Run MedTrace Backtest Across Simulation Seeds")
+    parser.add_argument("--output-dir", default="output", help="Output directory for backtest JSON files and summary report")
+    parser.add_argument("--seeds", nargs="+", type=int, default=[1, 2, 3, 4], help="Simulation seeds to evaluate")
+    args = parser.parse_args()
+
     print("="*75)
     print("MEDTRACE 180-DAY BACKTEST & BENCHMARK SUITE")
     print("Evaluating against Naive LMIS and Rule-Based Heuristic")
     print("="*75)
 
-    output_dir = "output"
+    output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
 
-    seeds = [1, 2, 3, 4]
+    seeds = args.seeds
     all_results = []
 
     for s in seeds:
@@ -61,11 +67,18 @@ def main():
     avg_heur_anom_f1 = sum(r["metrics"]["anomaly_detection"].get("heuristic_f1", 0.0) for r in all_results) / len(all_results)
 
     heldout_results = [r for r in all_results if r["seed"] in [3, 4]]
-    heldout_f1 = sum(r["metrics"]["anomaly_detection"]["f1_score_pct"] for r in heldout_results) / len(heldout_results)
-    heldout_p = sum(r["metrics"]["anomaly_detection"]["precision_pct"] for r in heldout_results) / len(heldout_results)
-    heldout_r = sum(r["metrics"]["anomaly_detection"]["recall_pct"] for r in heldout_results) / len(heldout_results)
-    heldout_naive_f1 = sum(r["metrics"]["anomaly_detection"].get("naive_lmis_f1", 0.0) for r in heldout_results) / len(heldout_results)
-    heldout_heur_f1 = sum(r["metrics"]["anomaly_detection"].get("heuristic_f1", 0.0) for r in heldout_results) / len(heldout_results)
+    if heldout_results:
+        heldout_f1 = sum(r["metrics"]["anomaly_detection"]["f1_score_pct"] for r in heldout_results) / len(heldout_results)
+        heldout_p = sum(r["metrics"]["anomaly_detection"]["precision_pct"] for r in heldout_results) / len(heldout_results)
+        heldout_r = sum(r["metrics"]["anomaly_detection"]["recall_pct"] for r in heldout_results) / len(heldout_results)
+        heldout_naive_f1 = sum(r["metrics"]["anomaly_detection"].get("naive_lmis_f1", 0.0) for r in heldout_results) / len(heldout_results)
+        heldout_heur_f1 = sum(r["metrics"]["anomaly_detection"].get("heuristic_f1", 0.0) for r in heldout_results) / len(heldout_results)
+    else:
+        heldout_f1 = avg_anom_f1
+        heldout_p = avg_anom_p
+        heldout_r = avg_anom_r
+        heldout_naive_f1 = avg_naive_anom_f1
+        heldout_heur_f1 = avg_heur_anom_f1
 
     total_naive_false = sum(r["metrics"]["capital_lockup_false_reorders"]["naive_lmis"] for r in all_results)
     total_heur_false = sum(r["metrics"]["capital_lockup_false_reorders"]["heuristic_rule_based"] for r in all_results)

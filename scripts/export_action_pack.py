@@ -19,11 +19,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.models.schemas import ActionPack
 
 
-def generate_memorandum(pack_data: Union[ActionPack, Dict[str, Any]], output_path: str = None) -> str:
+def generate_memorandum_text(pack_data: Union[ActionPack, Dict[str, Any]]) -> str:
     """
-    Generates a professional, printable Markdown memorandum from an ActionPack.
-    Saves to output_path (default: output/memo_{facility_id}_{medicine_id}.md).
-    Returns the absolute path to the generated memorandum.
+    Generates a professional, printable Markdown memorandum string from an ActionPack.
     """
     if isinstance(pack_data, ActionPack):
         data = pack_data.model_dump()
@@ -157,16 +155,32 @@ ________________________________________            ____________________
 Chief Medical Officer / Warehouse Superintendent    Official Seal / Stamp
 ```
 """
+    return memo_md.strip() + "\n"
+
+
+def generate_memorandum(pack_data: Union[ActionPack, Dict[str, Any]], output_path: str = None) -> str:
+    """
+    Generates a professional, printable Markdown memorandum from an ActionPack.
+    Saves to output_path (default: output/memo_{facility_id}_{medicine_id}.md).
+    Returns the absolute path to the generated memorandum.
+    """
+    memo_md = generate_memorandum_text(pack_data)
 
     if not output_path:
         out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
         os.makedirs(out_dir, exist_ok=True)
-        output_path = os.path.join(out_dir, f"memo_{facility_id}_{medicine_id}.md")
+        if isinstance(pack_data, ActionPack):
+            fac_id = pack_data.facility_id
+            med_id = pack_data.medicine_id
+        else:
+            fac_id = pack_data.get("facility_id", "UNKNOWN-FAC")
+            med_id = pack_data.get("medicine_id", "UNKNOWN-MED")
+        output_path = os.path.join(out_dir, f"memo_{fac_id}_{med_id}.md")
     else:
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write(memo_md.strip() + "\n")
+        f.write(memo_md)
 
     return os.path.abspath(output_path)
 

@@ -41,10 +41,14 @@ data/simulated_seed_*/
 logs/*
 !logs/sample_trace_*.jsonl
 !logs/golden_trace_*.jsonl
+!logs/trace_without_memory.jsonl
+!logs/trace_with_memory.jsonl
 *.log
 *.jsonl
 !logs/sample_trace_*.jsonl
 !logs/golden_trace_*.jsonl
+!logs/trace_without_memory.jsonl
+!logs/trace_with_memory.jsonl
 
 # 6. IDE, OS & System Metadata
 .vscode/

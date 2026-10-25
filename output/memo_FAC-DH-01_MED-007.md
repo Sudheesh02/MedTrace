@@ -5,15 +5,15 @@
 ---
 
 ### 1. Document Control & Provenance Metadata
-- **Memorandum ID**: `MEMO-run-4505760c`
-- **Generated Timestamp**: `2026-10-25 08:41:55 UTC`
+- **Memorandum ID**: `MEMO-run-074ba54b`
+- **Generated Timestamp**: `2026-10-25 10:32:34 UTC`
 - **Target Facility ID**: `FAC-DH-01`
 - **Target Medicine ID**: `MED-007`
 - **Operational Status**: ✅ **AUTONOMOUS RECONCILIATION APPROVED (ZERO DEFICIT CONFIRMED)**
 - **Escalation Reason**: `N/A — High consensus & verified constraints`
 - **Model Provenance**: `rule-based-sample-mode` (LLM Active: `False`, Fallback Invoked: `True`)
 - **Audit Verification**: `Certified Zero-Hallucination by Skeptic Number Auditor`
-- **Trace Reference**: `logs\trace_run-4505760c.jsonl`
+- **Trace Reference**: `logs\trace_run-074ba54b.jsonl`
 
 ---
 
@@ -38,11 +38,11 @@ The MedTrace deterministic reconciliation engine audited physical counted stock,
   - Ledger drift variance of 50.0 units recorded.
   - Differential confirmation: Physical inventory audit and batch quality records isolate variance directly to facility ledger, refuting external transit delay.
   - Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine.
-  - World Model entity ent_inv_a1ad9831b61b (canon hash af8e9d98) corroborates usable inventory.
+  - World Model entity ent_inv_a1ad9831b61b (canon hash 58b201e1) corroborates usable inventory.
   - **Confirming Data Query**: `SELECT counted_stock, date FROM zetaris.lightning.physical_audit WHERE facility_id = 'FAC-DH-01' AND medicine_id = 'MED-007' ORDER BY date DESC LIMIT 1`
 
 **Executive Clinical Summary**:
-> Skeptic approved revised hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 2). Differential elimination confirmed against 'Active National / Global Manufacturing Shortage' (separation Delta=0.43). Audited numbers verified: Usable Stock = 6362.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 5 items checked.
+> Skeptic approved revised hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 2). Differential elimination confirmed against 'Upstream Supplier Lead Time Slippage' (separation Delta=0.38). Audited numbers verified: Usable Stock = 6362.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 5 items checked.
 
 ---
 

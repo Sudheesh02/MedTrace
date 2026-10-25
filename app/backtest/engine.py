@@ -490,9 +490,31 @@ class BacktestEngine:
         det_types = {(t, fac, med) for (t, fac, med) in det_types if not (t == "PO_DISPATCHED_NOT_RECEIVED" and (fac, med) in chronic_items)}
 
         true_positives = len(gt_types.intersection(det_types))
+        false_positives = len(det_types - gt_types)
+        false_negatives = len(gt_types - det_types)
         anomaly_recall = (true_positives / len(gt_types) * 100.0) if gt_types else 100.0
         anomaly_precision = (true_positives / len(det_types) * 100.0) if det_types else 100.0
         anomaly_f1 = (2 * anomaly_precision * anomaly_recall / (anomaly_precision + anomaly_recall)) if (anomaly_precision + anomaly_recall) > 0 else 0.0
+
+        # Timing analysis: evaluation of detection delay within +/-7 days window
+        timed_tps = 0
+        delays = []
+        for g in ground_truth_anomalies:
+            g_key = (g["type"], g["facility_id"], g["medicine_id"])
+            g_day = int(g.get("day_index", 0))
+            matching_days = [
+                d["day_index"] for d in detected_anomalies
+                if (d["type"], d["facility_id"], d["medicine_id"]) == g_key
+            ]
+            if matching_days:
+                valid_window = [d for d in matching_days if abs(d - g_day) <= 7]
+                if valid_window:
+                    timed_tps += 1
+                    delays.append(min(valid_window) - g_day)
+                else:
+                    delays.append(min(matching_days) - g_day)
+
+        median_delay = float(np.median(delays)) if delays else 0.0
 
         # 2. Baseline Models Anomaly Metrics (Consumption Spike Detector)
         naive_det_types = {(d["type"], d["facility_id"], d["medicine_id"]) for d in naive_detected_anomalies}
@@ -533,18 +555,28 @@ class BacktestEngine:
                     "medtrace": round(medtrace_recall, 1)
                 },
                 "anomaly_detection": {
+                    "evaluation_scope": "rule_coverage_planted_anomalies",
                     "ground_truth_anomalies_count": len(ground_truth_anomalies),
                     "detected_anomalies_count": len(det_types),
                     "true_positives": true_positives,
+                    "false_positives": false_positives,
+                    "false_negatives": false_negatives,
                     "precision_pct": round(anomaly_precision, 1),
                     "recall_pct": round(anomaly_recall, 1),
                     "f1_score_pct": round(anomaly_f1, 1),
                     "naive_lmis_f1": round(naive_anomaly_f1, 1),
                     "heuristic_f1": round(heuristic_anomaly_f1, 1),
+                    "timing_evaluation": {
+                        "window_days": 7,
+                        "timed_true_positives": timed_tps,
+                        "median_detection_delay_days": round(median_delay, 1)
+                    },
                     "baseline_comparisons": {
                         "naive_lmis": {
                             "detected_count": len(naive_det_types),
                             "true_positives": naive_tp,
+                            "false_positives": len(naive_det_types - gt_types),
+                            "false_negatives": len(gt_types - naive_det_types),
                             "precision_pct": round(naive_anomaly_precision, 1),
                             "recall_pct": round(naive_anomaly_recall, 1),
                             "f1_score_pct": round(naive_anomaly_f1, 1)
@@ -552,6 +584,8 @@ class BacktestEngine:
                         "heuristic_rule_based": {
                             "detected_count": len(heuristic_det_types),
                             "true_positives": heuristic_tp,
+                            "false_positives": len(heuristic_det_types - gt_types),
+                            "false_negatives": len(gt_types - heuristic_det_types),
                             "precision_pct": round(heuristic_anomaly_precision, 1),
                             "recall_pct": round(heuristic_anomaly_recall, 1),
                             "f1_score_pct": round(heuristic_anomaly_f1, 1)

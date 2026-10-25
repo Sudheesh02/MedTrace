@@ -31,6 +31,8 @@ def main():
         help="Target clinical demonstration case: 'golden' (FAC-CHC-01/MED-001 quarantine stockout) or 'standard' (FAC-DH-01/MED-007)"
     )
     parser.add_argument("--top-n", type=int, default=3, help="Top urgent items to display in triage scan")
+    parser.add_argument("--output-trace", type=str, default=None, help="Optional output path to copy the resulting debate trace")
+    parser.add_argument("--save-golden", action="store_true", help="Explicitly update the committed canonical golden trace file")
     args = parser.parse_args()
 
     print("\n" + "="*85)
@@ -65,30 +67,34 @@ def main():
     if args.case == "golden":
         target_fac = "FAC-CHC-01"
         target_med = "MED-001"
-        med_label = "Paracetamol 500mg Tablets"
-        print(f"\n[STEP 2 / 4] Launching Deep Multi-Agent Audit on GOLDEN CASE: {target_fac} ({med_label})...")
-        print("             - Clinical Problem: Ledger shows 505 units (17.9d cover; naive LMIS considers safe).")
-        print("             - Audit Finding: 400 units are locked under QA quarantine hold (DailyMed/FDA recall).")
-        print("             - Usable Stock: Only 105 units usable (3.7d cover -> catastrophic stockout in 3.7 days).")
-        print("             - World Model: Grounds canonical entity state and cross-references FDA recall registry.")
-        print("             - Multi-Agent Debate: Investigator proposes quarantine vs transit loss vs demand surge.")
-        print("             - Adversarial Loop: Skeptic challenges in Round 1 -> Investigator refutes -> Skeptic approves in Round 2.")
     else:
         target_fac = "FAC-DH-01"
         target_med = "MED-007"
-        med_label = "Metformin 500mg"
-        print(f"\n[STEP 2 / 4] Launching Deep Multi-Agent Audit on {target_fac} ({med_label})...")
-        print("             - Reconciler audits physical shelf audit vs warehouse ledger.")
-        print("             - Meterless World Model grounds canonical state hash.")
-        print("             - Investigator formulates 3 competing hypotheses.")
+
+    med_meta = next((m for m in orchestrator.data_store.get_medicines() if m["medicine_id"] == target_med), {})
+    fac_meta = next((f for f in orchestrator.data_store.get_facilities() if f["facility_id"] == target_fac), {})
+    med_label = f"{med_meta.get('generic_name', target_med)} {med_meta.get('form', '')}".strip()
+    fac_label = f"{fac_meta.get('name', target_fac)} ({fac_meta.get('level', 'Facility')})"
+
+    case_tag = "GOLDEN CASE: " if args.case == "golden" else ""
+    print(f"\n[STEP 2 / 4] Launching Deep Multi-Agent Audit on {case_tag}{target_fac} ({med_label})...")
+    print(f"             - Target Node: {fac_label} | Medicine: {med_label}")
+    print("             - Auditing records across warehouse ledger, physical counts, QA batch hold registry, and supplier priors.")
 
     t1 = time.time()
     pack = orchestrator.run_investigation(facility_id=target_fac, medicine_id=target_med)
     t_inv = time.time() - t1
 
-    print(f"\n-> Investigation finalized in {t_inv:.2f}s across {pack.skeptic_rounds} adversarial rounds.")
-    print(f"   Winning Hypothesis: {pack.winning_hypothesis.title}")
-    print(f"   Root Cause: {pack.winning_hypothesis.cause}")
+    print(f"\n-> Investigation finalized in {t_inv:.2f}s across {pack.skeptic_rounds} adversarial rounds:")
+    print(f"   - Ledger Stock: {pack.ledger_stock:.1f} units ({pack.days_of_cover_naive:.1f}d naive cover; LMIS considers safe)")
+    if pack.quarantined_stock and pack.quarantined_stock > 0:
+        print(f"   - QA quarantine hold: {pack.quarantined_stock:.1f} units locked under QA quarantine hold (DailyMed/FDA recall)")
+    if pack.audit_drift and pack.audit_drift > 0:
+        print(f"   - Physical Audit Drift: {pack.audit_drift:.1f} units unrecorded ledger variance")
+    print(f"   - Trust-Adjusted Usable Stock: {pack.usable_stock:.1f} units ({pack.days_of_cover_trust:.1f}d true cover -> catastrophic deficit in {pack.days_of_cover_trust:.1f} days)")
+    print(f"   - Winning Hypothesis: {pack.winning_hypothesis.title}")
+    print(f"   - Root Cause: {pack.winning_hypothesis.cause}")
+    print(f"   - Adversarial Outcome: Skeptic challenged in Round 1 -> Investigator refined -> Skeptic approved in Round {pack.skeptic_rounds}")
 
     # -------------------------------------------------------------
     # Step 3: Approval-Ready Action Pack Formulation
@@ -113,12 +119,21 @@ def main():
     print(f"\n[STEP 4 / 4] Rendering Explain-Why Audit & Multi-Agent Debate Timeline:")
     render_trace(pack.trace_file)
 
-    if args.case == "golden":
+    if args.output_trace:
+        os.makedirs(os.path.dirname(os.path.abspath(args.output_trace)), exist_ok=True)
+        shutil.copyfile(pack.trace_file, args.output_trace)
+        print(f"[+] Output trace saved: {args.output_trace}")
+    elif args.save_golden or (args.case == "golden" and os.environ.get("MEDTRACE_SAVE_GOLDEN") == "1"):
         golden_trace_path = os.path.join(orchestrator.logs_dir, "golden_trace_FAC-CHC-01_MED-001.jsonl")
         shutil.copyfile(pack.trace_file, golden_trace_path)
         print(f"[+] Canonical Golden Trace committed & saved: {golden_trace_path}")
+    else:
+        print(f"[+] Dynamic run trace saved: {pack.trace_file}")
 
-    print("\n[+] Demonstration successfully completed in <3 seconds. Zero LLM math hallucinated.")
+    t_total = time.time() - t0
+    mode_str = "Deterministic Sample Mode (rule-based offline)" if (pack.fallback or not pack.llm_used) else f"Live LLM Mode ({pack.model_used})"
+    print(f"\n[+] Demonstration successfully completed in {t_total:.2f}s ({mode_str}).")
+    print("    Zero LLM math hallucinated: all stock, cover, and financial numbers computed via DeterministicEngine.")
     print("="*85 + "\n")
 
 if __name__ == "__main__":

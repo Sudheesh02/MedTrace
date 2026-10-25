@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-10-25T15:08:52.902259",
+  "usaid_deliveries": {
+    "dataset": "USAID Deliveries",
+    "total_raw_rows": 10324,
+    "dropped_missing_dates": 0,
+    "dropped_duplicates": 3732,
+    "winsorized_extreme_slips": 215,
+    "cleaned_valid_rows": 6592,
+    "vendor_mode_priors_count": 34
+  },
+  "pharma_sales": {
+    "dataset": "Pharma Sales Daily",
+    "total_raw_rows": 2106,
+    "dropped_invalid_rows": 0,
+    "cleaned_valid_rows": 2106,
+    "zero_demand_counts": {
+      "M01AB": 40,
+      "M01AE": 36,
+      "N02BA": 78,
+      "N02BE": 26,
+      "N05B": 43,
+      "N05C": 1430,
+      "R03": 484,
+      "R06": 256
+    },
+    "group_baseline_means": {
+      "M01AB": 5.03,
+      "M01AE": 3.9,
+      "N02BA": 3.88,
+      "N02BE": 29.92,
+      "N05B": 8.85,
+      "N05C": 0.59,
+      "R03": 5.51,
+      "R06": 2.9
+    }
+  },
+  "openfda_recalls": {
+    "dataset": "OpenFDA Recalls",
+    "total_raw_records": 189,
+    "duplicates_removed": 0,
+    "cleaned_records_count": 189
+  }
+}

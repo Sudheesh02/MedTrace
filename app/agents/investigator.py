@@ -45,6 +45,7 @@ class InvestigatorAgent:
         po_disc = next((d for d in discrepancies if d.get("anomaly_type") == "PO_DISPATCHED_NOT_RECEIVED"), None)
         demand_disc = next((d for d in discrepancies if d.get("anomaly_type") == "DEMAND_SPIKE"), None)
         global_disc = next((d for d in discrepancies if d.get("anomaly_type") == "GLOBAL_SHORTAGE"), None)
+        slip_disc = next((d for d in discrepancies if d.get("anomaly_type") == "CHRONIC_SUPPLIER_SLIP"), None)
 
         # -------------------------------------------------------------
         # 1. Hypothesis 1: Internal Record Inaccuracy / Quality Hold
@@ -106,15 +107,18 @@ class InvestigatorAgent:
             ]
             h2_refuting = ["Carrier tracking confirms delivery scheduled within 24 hours."]
             h2_query = f"SELECT po_id, supplier_id, order_date, promised_date, status FROM zetaris.lightning.purchase_orders WHERE facility_id = '{fac_id}' AND status = 'DISPATCHED'"
-        elif anoms["supplier_delay_risk"]:
+        elif slip_disc or anoms["supplier_delay_risk"]:
             h2_title = "Upstream Supplier Lead Time Slippage"
-            h2_cause = f"Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window."
-            slip_ratio = min(1.0, slip_added / max(1.0, promised_day_val))
-            h2_likelihood = round(min(0.92, 0.65 + 0.25 * slip_ratio), 2)
+            h2_cause = slip_disc.get("description") if slip_disc else f"Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window."
+            effective_slip = max(slip_added, 7.0 if slip_disc else 0.0)
+            slip_ratio = min(1.0, effective_slip / max(1.0, promised_day_val))
+            h2_likelihood = round(min(0.95, 0.72 + 0.22 * slip_ratio), 2)
             h2_evidence = [
-                f"Promised delivery expected at Day {promised_day_val:.0f}, but historical vendor slip adds +{slip_added:.1f} days.",
+                f"Promised delivery expected at Day {promised_day_val:.0f}, but vendor slip adds +{slip_added:.1f} days.",
                 f"Leaves a trust-adjusted shortfall of {shortfall['shortfall_units']} units across {shortfall['gap_days']} gap days."
             ]
+            if slip_disc:
+                h2_evidence.append(slip_disc.get("description"))
             h2_refuting = ["Supplier confirms expedited dispatch with guaranteed logistics priority."]
             h2_query = f"SELECT vendor, shipment_mode, mean_slip_days, p90_days FROM zetaris.lightning.supplier_slip LIMIT 5"
         else:

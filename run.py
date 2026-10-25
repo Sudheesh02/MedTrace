@@ -155,14 +155,12 @@ def api_run(req: RunRequest):
 def api_get_memo(facility_id: str, medicine_id: str):
     """Generates and returns an executive procurement memorandum as formatted Markdown."""
     try:
-        from scripts.export_action_pack import generate_memorandum
+        from scripts.export_action_pack import generate_memorandum_text
         pack = orchestrator.run_investigation(
             facility_id=facility_id,
             medicine_id=medicine_id
         )
-        memo_path = generate_memorandum(pack)
-        with open(memo_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        content = generate_memorandum_text(pack)
         return PlainTextResponse(content=content, media_type="text/markdown")
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
@@ -210,6 +208,7 @@ def main():
     parser.add_argument("--top-n", type=int, default=5, help="Number of urgent items to display in triage")
     parser.add_argument("--explain", action="store_true", help="Render executive multi-agent debate timeline after investigation")
     parser.add_argument("--export-memo", action="store_true", help="Export printable Markdown procurement memorandum to output/")
+    parser.add_argument("--save-golden", action="store_true", help="Explicitly update the committed canonical golden trace file")
     args = parser.parse_args()
 
     if args.sample_mode:
@@ -307,7 +306,7 @@ def main():
             print(f"- Estimated Financial Cost: ${top_act.estimated_cost_usd:.2f} USD")
         print(f"- Justification: {top_act.justification}")
         print(f"\nTrace log written to: {pack.trace_file}")
-        if getattr(args, "case", None) == "golden":
+        if getattr(args, "case", None) == "golden" and (getattr(args, "save_golden", False) or os.environ.get("MEDTRACE_SAVE_GOLDEN") == "1"):
             import shutil
             golden_trace_path = os.path.join(orchestrator.logs_dir, "golden_trace_FAC-CHC-01_MED-001.jsonl")
             shutil.copyfile(pack.trace_file, golden_trace_path)

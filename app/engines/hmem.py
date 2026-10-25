@@ -78,6 +78,41 @@ class HMemEngine:
         self.long_term_beliefs["officer_action_preferences"][pref_key] = prefs
         self._save()
 
+    def record_supplier_delay(
+        self,
+        supplier_id: str,
+        p90_delay_days: float,
+        reason: str
+    ):
+        """
+        Records a learned empirical supplier delivery delay prior into long-term beliefs.
+        Enables cross-session cognitive memory to adjust downstream reconciliation and action planning.
+        """
+        self.long_term_beliefs["supplier_delays"][supplier_id] = {
+            "p90_delay_days": float(p90_delay_days),
+            "reason": reason,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        self._save()
+
+    def get_supplier_delay(self, supplier_id: str) -> Optional[float]:
+        """Retrieves learned p90 delay days for a supplier if recorded in long-term beliefs."""
+        info = self.long_term_beliefs.get("supplier_delays", {}).get(supplier_id)
+        if isinstance(info, dict):
+            return info.get("p90_delay_days")
+        elif isinstance(info, (int, float)):
+            return float(info)
+        return None
+
+    def get_supplier_delay_info(self, supplier_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieves full learned delay belief record (delay, reason, updated_at)."""
+        info = self.long_term_beliefs.get("supplier_delays", {}).get(supplier_id)
+        if isinstance(info, dict):
+            return info
+        elif isinstance(info, (int, float)):
+            return {"p90_delay_days": float(info), "reason": "Empirical observation"}
+        return None
+
     def get_relevant_memories(self, facility_id: str, medicine_id: str) -> Dict[str, Any]:
         """Retrieves top memories for context injection into Action Planner."""
         relevant_episodes = [
@@ -88,5 +123,6 @@ class HMemEngine:
         return {
             "past_episodes": relevant_episodes,
             "officer_preferences": self.long_term_beliefs["officer_action_preferences"],
-            "rejected_patterns": self.long_term_beliefs["rejected_patterns"][-5:]
+            "rejected_patterns": self.long_term_beliefs["rejected_patterns"][-5:],
+            "supplier_delays": self.long_term_beliefs.get("supplier_delays", {})
         }

@@ -71,7 +71,7 @@ The entirety of MedTrace's domain logic, reasoning loops, evaluation harnesses, 
 
 3. **Sponsor Technology Implementations**:
    - **Meterless World Model Service** ([`app/engines/world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engines/world_model.py)): Grounded entity state graph, provenance tracking, content hash idempotency (Test W1), and planted conflict recording (Test W2).
-   - **Meterless H-MEM Service** ([`app/engines/hmem.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engines/hmem.py)): Episodic memory store recording officer override decisions (Test H1) and deterministic contradiction resolution (Test H2).
+   - **Meterless H-MEM Service** ([`app/engines/hmem.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engines/hmem.py)): Episodic memory store recording officer override decisions (Test H1), deterministic contradiction resolution (Test H2), and decision-changing cognitive priors (Test H3).
    - **Zetaris Federated SQL Adapter** ([`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py)): REST SQL proxy querying, JWT authentication caching, dynamic SQL generation, and offline fallback.
 
 4. **180-Day Facility Simulation & Comparative Backtest Harness**:
@@ -81,7 +81,7 @@ The entirety of MedTrace's domain logic, reasoning loops, evaluation harnesses, 
 5. **API, Packaging, Documentation & Test Suite**:
    - Unified API & CLI runner ([`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py)).
    - Hardened `Dockerfile` with container healthcheck and `.dockerignore`.
-   - Comprehensive test suite in [`tests/`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/) (117 automated tests passing with 100% success rate across all 7 test suites).
+   - Comprehensive test suite in [`tests/`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/) (120 automated tests passing with 100% success rate across all 7 test suites).
    - All documentation: `README.md`, `SPONSOR_TECH.md`, `scripts/register_zetaris_sources.md`, `data/lmis_export_contract.md`.
 
 6. **Autonomous Development & Agent Harness**:

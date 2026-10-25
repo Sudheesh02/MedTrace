@@ -37,7 +37,7 @@ class MedTraceOrchestrator:
 
         # Agents (Phase 3.2: 5 agents)
         self.triage_planner = TriagePlannerAgent(self.data_store, self.llm_client)
-        self.reconciler = ReconcilerAgent(self.data_store, self.ingest_service)
+        self.reconciler = ReconcilerAgent(self.data_store, self.ingest_service, hmem=self.hmem)
         self.investigator = InvestigatorAgent(self.llm_client)
         self.skeptic = SkepticAgent(self.llm_client)
         self.action_planner = ActionPlannerAgent(self.llm_client, self.hmem, self.data_store)
@@ -246,7 +246,12 @@ class MedTraceOrchestrator:
             escalation_reason=escalation_reason,
             model_used=overall_model,
             llm_used=overall_llm_used,
-            fallback=overall_fallback
+            fallback=overall_fallback,
+            ledger_stock=det_rec["stock_evaluation"]["ledger_stock"],
+            usable_stock=det_rec["stock_evaluation"]["usable_stock"],
+            quarantined_stock=det_rec["stock_evaluation"].get("quarantined_stock", 0.0),
+            audit_drift=det_rec["stock_evaluation"].get("audit_drift", 0.0),
+            expiring_stock=det_rec["stock_evaluation"].get("expiring_stock", 0.0)
         )
 
         log_step("Orchestrator", "RUN_COMPLETE", {"run_id": run_id, "status": "SUCCESS"}, llm_used=False, fallback=False)

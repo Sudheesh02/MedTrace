@@ -106,7 +106,7 @@ def main():
             sample_traces = [
                 os.path.join(logs_dir, f)
                 for f in os.listdir(logs_dir)
-                if (f.startswith("sample_trace_") or f.startswith("golden_trace_")) and f.endswith(".jsonl")
+                if (f.startswith("sample_trace_") or f.startswith("golden_trace_") or f.startswith("trace_with")) and f.endswith(".jsonl")
             ]
             trace_files.extend(sample_traces)
 

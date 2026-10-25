@@ -91,3 +91,8 @@ class ActionPack(BaseModel):
     model_used: Optional[str] = None
     llm_used: bool = False
     fallback: bool = False
+    ledger_stock: Optional[float] = None
+    usable_stock: Optional[float] = None
+    quarantined_stock: Optional[float] = None
+    audit_drift: Optional[float] = None
+    expiring_stock: Optional[float] = None

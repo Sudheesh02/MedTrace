@@ -4,7 +4,7 @@ Audits the numbers first: compares ledger, physical audits, batches, and supplie
 Ingests grounded state into the Meterless World Model.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from datetime import datetime
 from app.adapters.data_store import DataStore
 from app.engine.deterministic import DeterministicEngine
@@ -12,9 +12,10 @@ from app.engines.world_model import IngestPipelineService
 from app.models.schemas import Discrepancy, AnomalyType
 
 class ReconcilerAgent:
-    def __init__(self, data_store: DataStore, ingest_service: IngestPipelineService):
+    def __init__(self, data_store: DataStore, ingest_service: IngestPipelineService, hmem: Optional[Any] = None):
         self.data_store = data_store
         self.ingest_service = ingest_service
+        self.hmem = hmem
 
     def reconcile_item(self, facility_id: str, medicine_id: str) -> Dict[str, Any]:
         # 1. Fetch data
@@ -48,6 +49,8 @@ class ReconcilerAgent:
         # 3. Expected delivery timeline and empirical supplier slip
         promised_days = 6.0
         historical_slip_days = 3.0
+        contracted_supplier = None
+        supplier_delay_source = "dataset_prior"
         if pos:
             latest_po = pos[-1]
             try:
@@ -60,9 +63,9 @@ class ReconcilerAgent:
                 pass
 
             # Query empirical vendor slip prior for contracted supplier
-            supplier_id = latest_po.get("supplier_id")
-            if supplier_id:
-                sup_records = [s for s in self.data_store.get_suppliers() if s.get("supplier_id") == supplier_id]
+            contracted_supplier = latest_po.get("supplier_id")
+            if contracted_supplier:
+                sup_records = [s for s in self.data_store.get_suppliers() if s.get("supplier_id") == contracted_supplier]
                 if sup_records:
                     sup_rec = sup_records[0]
                     raw_slip = sup_rec.get("historical_p90_slip", sup_rec.get("historical_mean_slip", 3.0))
@@ -70,6 +73,18 @@ class ReconcilerAgent:
                         historical_slip_days = max(0.0, float(raw_slip))
                     except (ValueError, TypeError):
                         historical_slip_days = 3.0
+
+        if not contracted_supplier:
+            suppliers = self.data_store.get_suppliers()
+            if suppliers:
+                contracted_supplier = suppliers[0].get("supplier_id")
+
+        # Consult Meterless H-MEM for learned prior supplier delay
+        if self.hmem and contracted_supplier:
+            learned_delay = self.hmem.get_supplier_delay(contracted_supplier)
+            if learned_delay is not None:
+                historical_slip_days = float(learned_delay)
+                supplier_delay_source = "hmem_memory" 
 
         # Check UOM mismatch between deliveries and POs
         uom_info = None
@@ -117,6 +132,9 @@ class ReconcilerAgent:
             uom_info=uom_info,
             audit_drift=calculated_drift
         )
+        recon_result["contracted_supplier"] = contracted_supplier
+        recon_result["historical_slip_days"] = historical_slip_days
+        recon_result["supplier_delay_source"] = supplier_delay_source
 
         # 5. Extract discrepancies
         discrepancies: List[Discrepancy] = []
@@ -212,6 +230,24 @@ class ReconcilerAgent:
                         impact_units=po_qty,
                         sources_in_conflict=["purchase_orders", "deliveries"]
                     ))
+
+        # Check chronic or learned supplier delay discrepancy
+        if historical_slip_days >= 7.0 or supplier_delay_source == "hmem_memory":
+            slip_reason_note = ""
+            if self.hmem and contracted_supplier:
+                delay_info = self.hmem.get_supplier_delay_info(contracted_supplier)
+                if delay_info and delay_info.get("reason"):
+                    slip_reason_note = f" (H-MEM Grounded Reason: {delay_info['reason']})"
+
+            discrepancies.append(Discrepancy(
+                discrepancy_id=f"DISC-SLIP-{facility_id}-{medicine_id}",
+                anomaly_type=AnomalyType.CHRONIC_SUPPLIER_SLIP,
+                facility_id=facility_id,
+                medicine_id=medicine_id,
+                description=f"Supplier {contracted_supplier or 'SUP-001'} delivery slip of +{historical_slip_days:.1f} days threatens delivery window{slip_reason_note}.",
+                impact_units=recon_result["trust_shortfall"]["shortfall_units"],
+                sources_in_conflict=["hmem_store.json", "purchase_orders"] if supplier_delay_source == "hmem_memory" else ["supplier_slip.csv", "purchase_orders"]
+            ))
 
         # Check openFDA shortages & cross-border shortages
         fda_shortages = self.data_store.get_openfda_shortages(generic_name)

@@ -274,7 +274,7 @@ def discover_files() -> List[str]:
     return sorted(files)
 
 
-def run_audit(output_dir: str = "reports/eda") -> Tuple[List[Dict[str, Any]], str]:
+def run_audit(output_dir: str = "reports/eda", md_path: str = "DATA_AUDIT.md") -> Tuple[List[Dict[str, Any]], str]:
     os.makedirs(output_dir, exist_ok=True)
     files = discover_files()
     print(f"[*] Discovering and auditing {len(files)} dataset files across data/real and data/simulated*...")
@@ -299,9 +299,10 @@ def run_audit(output_dir: str = "reports/eda") -> Tuple[List[Dict[str, Any]], st
 
     # Generate Markdown Report (DATA_AUDIT.md)
     md_content = generate_markdown_report(audits)
-    md_path = "DATA_AUDIT.md"
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(md_content)
+    if md_path:
+        os.makedirs(os.path.dirname(os.path.abspath(md_path)), exist_ok=True)
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write(md_content)
 
     print(f"\n[+] Comprehensive Data Audit completed!")
     print(f"    - JSON reports saved to: {output_dir}/*.json ({len(audits)} files)")

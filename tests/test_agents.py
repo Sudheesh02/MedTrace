@@ -1364,5 +1364,37 @@ def test_action_planner_adapts_to_human_escalation():
         assert "[ESCALATED TO CONTROLLER]" in esc.justification
 
 
+def test_action_pack_stock_attributes_are_dynamic_and_unhardcoded():
+    """
+    Verify that ActionPack exposes first-class typed stock attributes
+    (ledger_stock, usable_stock, quarantined_stock, audit_drift) that vary
+    across different facility/medicine pairs and match deterministic ground truth.
+    """
+    orchestrator = MedTraceOrchestrator(use_zetaris=False)
+
+    # Pair 1: FAC-CHC-01 / MED-001 (400 quarantined units)
+    pack1 = orchestrator.run_investigation("FAC-CHC-01", "MED-001")
+    assert pack1.ledger_stock == 505.0
+    assert pack1.quarantined_stock == 400.0
+    assert pack1.usable_stock == 105.0
+    assert pack1.usable_stock < pack1.ledger_stock
+
+    # Pair 2: FAC-DH-01 / MED-007 (50 units phantom drift)
+    pack2 = orchestrator.run_investigation("FAC-DH-01", "MED-007")
+    assert pack2.ledger_stock == 6412.0
+    assert pack2.audit_drift == 50.0
+    assert pack2.quarantined_stock == 0.0
+    assert pack2.usable_stock == 6362.0
+    assert pack2.usable_stock == pack2.ledger_stock - pack2.audit_drift
+
+    # Pair 3: FAC-PHC-01 / MED-002
+    pack3 = orchestrator.run_investigation("FAC-PHC-01", "MED-002")
+    assert pack3.ledger_stock is not None
+    assert pack3.usable_stock is not None
+    assert (pack3.ledger_stock, pack3.usable_stock) != (pack1.ledger_stock, pack1.usable_stock)
+    assert (pack3.ledger_stock, pack3.usable_stock) != (pack2.ledger_stock, pack2.usable_stock)
+    assert pack3.usable_stock <= pack3.ledger_stock
+
+
 
 

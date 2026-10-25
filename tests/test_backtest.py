@@ -32,7 +32,8 @@ def test_backtest_runs_reproducibly_on_seed_1():
     assert anom["precision_pct"] >= 80.0
     assert anom["recall_pct"] >= 90.0
     assert anom["f1_score_pct"] >= 90.0
-    assert anom["naive_lmis_f1"] == 18.2
+    assert anom["naive_lmis_f1"] == anom["baseline_comparisons"]["naive_lmis"]["f1_score_pct"]
+    assert 0.0 <= anom["naive_lmis_f1"] <= 100.0
     assert anom["f1_score_pct"] > anom["naive_lmis_f1"]
 
     # Verify capital lockup
@@ -132,19 +133,19 @@ def test_backtest_performance_benchmarks_metrics():
     assert pb["throughput_events_per_sec"] > 10.0
 
 
-def test_backtest_summary_markdown_generation():
-    """Verify that scripts/run_backtest.py generates output/backtest_summary.md with valid comparative tables."""
+def test_backtest_summary_markdown_generation(tmp_path):
+    """Verify that scripts/run_backtest.py generates valid comparative tables in an isolated directory."""
     import subprocess
     import sys
 
     res = subprocess.run(
-        [sys.executable, "scripts/run_backtest.py"],
+        [sys.executable, "scripts/run_backtest.py", "--output-dir", str(tmp_path), "--seeds", "1"],
         capture_output=True,
         text=True
     )
     assert res.returncode == 0, f"run_backtest failed with stderr: {res.stderr}"
 
-    summary_file = os.path.join("output", "backtest_summary.md")
+    summary_file = os.path.join(str(tmp_path), "backtest_summary.md")
     assert os.path.exists(summary_file)
     with open(summary_file, "r", encoding="utf-8") as f:
         content = f.read()

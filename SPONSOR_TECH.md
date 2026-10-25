@@ -2,7 +2,7 @@
 
 > **Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why**  
 > **Submission Deliverable 04: Sponsor Technology Explanation (10 Points)**  
-> **Status: Conformance Tests Passing (117/117 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials)**
+> **Status: Conformance Tests Passing (120/120 Automated Tests Verified; Live Cloud Connections Testable via smoke_test.py with User Credentials)**
 
 ---
 
@@ -133,6 +133,7 @@ flowchart LR
   1. **Cross-Session Recall (Phase 4 Test H1)**: Decisions written in Session A (e.g., rejecting an emergency transfer due to local clinical preferences) are recalled in Session B, penalizing recurring rejected patterns. Verified by `test_hmem_session_memory_persistence`.
   2. **Deterministic Contradiction Resolution (Phase 4 Test H2)**: If an officer rejects an action pattern in Session A but subsequently approves it in Session B (e.g., policy change or acute crisis), H-MEM deterministically clears the prior rejection penalty and updates preference weightings without LLM hallucination. Verified by `test_hmem_contradiction_resolution`.
   3. **Interactive Officer Decision API & CLI (`POST /decision`)**: Exposes interactive routes for users, officers, and hackathon judges to submit approvals/rejections live (`POST /decision` or `python run.py --record-decision`), dynamically steering multi-agent action feasibility in subsequent runs. Verified by `test_api_record_officer_decision_and_hmem_adaptation`.
+  4. **Decision-Changing Cognitive Prior Loop (Phase 4 Test H3)**: Learned supplier delivery delay beliefs recorded in H-MEM actively alter downstream reconciliation and multi-agent action planning on identical source records, flipping recommendations from routine monitoring to urgent peer transfer. Verified by `test_hmem_supplier_delay_belief_changes_decision`.
 
 ---
 
@@ -157,7 +158,7 @@ In strict adherence to Track 2 guidelines (*The Agent That Can Explain Why*), **
 MedTrace was built inside **Cursor** leveraging:
 - **Composer & Grok**: Used for multi-file architectural refactoring, rapid test authoring, and complex multi-agent debate coordination.
 - **AGENTS.md & Conformance Rules**: Enforced strict anti-hardcoding invariants, parameterization, and deterministic arithmetic isolation across all iterations.
-- **Background Test Automation**: Running the 117-test pytest suite continuously to eliminate regressions before every commit.
+- **Background Test Automation**: Running the 120-test pytest suite continuously to eliminate regressions before every commit.
 
 ---
 
@@ -194,9 +195,9 @@ python -m pytest tests/test_deterministic.py -q
 python -m pytest tests/test_enriched_data.py -q
 # Result: 7 passed
 
-# Full End-to-End Test Baseline (117 passed across 7 test suites)
+# Full End-to-End Test Baseline (120 passed across 7 test suites)
 python -m pytest tests/ -q
 # Result: 117 passed in ~100s
 ```
 
-All sponsor technology interfaces are verified via 117 passing offline and mock tests, and live cloud connections are testable through `smoke_test.py` with active user credentials.
+All sponsor technology interfaces are verified via 120 passing offline and mock tests, and live cloud connections are testable through `smoke_test.py` with active user credentials.

@@ -1,6 +1,13 @@
+# CORRECTIVE (monitor, 2026-10-25 15:40 IST) - OPEN. Only the monitor may close it.
+- [ ] Cleaning step (reports/eda/cleaning_summary.json) drops 3732 of 10324 USAID rows (36%) as duplicates. Justify the dedupe key in DATA_AUDIT.md with 3 example duplicate pairs from the raw file; if rows differ in any meaningful column (qty, date, vendor, PO), they are NOT duplicates. Commit the cleaning work with before/after counts, then rerun the backtest on cleaned data.
+
+# CORRECTIVE (monitor, 2026-10-25 14:25 IST, after 21c7b44) - OPEN. Only the monitor may close it.
+- [ ] scripts/quick_demo.py golden case prints HARDCODED narrative strings ("505 units", "17.9d cover", "105 units usable", "3.7d", "DailyMed/FDA recall", "Skeptic approves in Round 2", "completed in <3 seconds", "Zero LLM math hallucinated"). Every number and claim shown must come from the pack/trace at runtime (pack.ledger_stock, pack.usable_stock, pack.days_of_cover_*, actual skeptic verdicts, measured elapsed time). If the recall link is not an actual record in data/, do not claim it.
+- [ ] The committed golden trace is model=rule-based-sample-mode, llm_used=false for every agent: the "debate" is rule-based. Either commit a second golden trace from a real LLM run (with the actual returned model name) or label the demo plainly as deterministic sample mode in README/SPONSOR_TECH and the demo output.
+- [ ] Running the test suite regenerates logs/golden_trace_*.jsonl (timestamps change, dirtying git). Tests should write to a temp dir, not overwrite the committed canonical trace.
 # PRIORITY 0c (from a 4-model LLM council, DO NOT DELETE until done): ONE GOLDEN CASE + SPONSOR PROOF + EXPLAIN UX
 1. [x] [DONE] Golden case end to end: a quarantined batch or unit-of-measure mismatch where the ledger looks sufficient but usable stock is not. Source records -> reconciliation -> competing explanations (Investigator vs Skeptic) -> deterministic action -> cited explanation. Must run in under 90 seconds via one command (scripts/quick_demo.py or similar) and its trace must be committed (sanitized). Verified via `scripts/quick_demo.py --case golden` and `tests/test_api.py::test_quick_demo_golden_case_execution`.
-2. Meterless must change a decision: seed a prior supplier-slip fact in H-MEM/world model, then show the SAME discrepancy classified or acted on differently with vs without that memory. Add a test and save both traces.
+2. [x] [DONE] Meterless must change a decision: seed a prior supplier-slip fact in H-MEM/world model, then show the SAME discrepancy classified or acted on differently with vs without that memory. Add a test and save both traces. Verified by `test_hmem_supplier_delay_belief_changes_decision` in `tests/test_world_model.py`; saved `logs/trace_without_memory.jsonl` and `logs/trace_with_memory.jsonl`.
 3. Verdict-flip card in --explain: print the minimum missing/changed evidence that would reverse the conclusion, plus the dissent log (Skeptic objections) and the memory fact that changed the call.
 4. Terminal explain view using the 'rich' library: color-coded, readable evidence chain (ledger line -> physical count -> debate excerpt -> action). Keep existing plain JSONL output.
 5. Small honest evaluation: 15-25 hand-written cases (clean, missing evidence, conflicting records) vs a rules-only baseline with its own simple detector; report precision, recall, unsupported-claim rate and correct abstention. Label synthetic clearly.
@@ -155,7 +162,8 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 2: Meterless H-MEM Decision-Changing Feedback Loop (Test H3)
 - **Priority**: P0 (Priority 0c Item 2, Sponsor Tech 10 pts, Innovation 15 pts)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
+- **Verification**: Implemented `record_supplier_delay` and `get_supplier_delay` on `HMemEngine`; wired `ReconcilerAgent` and `ActionPlannerAgent` to consult learned supplier delays; verified with unit test `test_hmem_supplier_delay_belief_changes_decision` in `tests/test_world_model.py` demonstrating verdict/action shift from `MONITOR_BUFFER` to `PEER_TRANSFER`; committed canonical sanitized traces `logs/trace_without_memory.jsonl` and `logs/trace_with_memory.jsonl`; 120/120 automated tests passing.
 - **Files**: [`app/engines/hmem.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engines/hmem.py), [`app/agents/reconciler.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/reconciler.py), [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/action_planner.py), [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py)
 - **Problem**: While H-MEM stores `supplier_delays` in `long_term_beliefs`, neither `ReconcilerAgent` nor `ActionPlannerAgent` consults it. Seeding prior vendor delay beliefs does not currently change downstream decisions.
 - **Action**:

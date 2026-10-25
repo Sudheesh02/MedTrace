@@ -318,9 +318,10 @@ def test_metadata_json_and_docs_integrity():
     assert "103-test" not in sponsor_doc
     assert "115-test" not in sponsor_doc
     assert "116-test" not in sponsor_doc
-    assert "117-test pytest suite" in sponsor_doc
+    assert "117-test" not in sponsor_doc
+    assert "120-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "117/117 Automated Tests Verified" in sponsor_doc
+    assert "120/120 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -331,7 +332,8 @@ def test_metadata_json_and_docs_integrity():
     assert "103 automated tests" not in pre_existing_doc
     assert "115 automated tests" not in pre_existing_doc
     assert "116 automated tests" not in pre_existing_doc
-    assert "117 automated tests passing" in pre_existing_doc
+    assert "117 automated tests" not in pre_existing_doc
+    assert "120 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:
@@ -585,7 +587,7 @@ def test_dockerfile_configuration():
     assert "PORT=8000" in content
 
 
-def test_quick_demo_golden_case_execution():
+def test_quick_demo_golden_case_execution(tmp_path):
     """
     Priority 0c Item 1 & Backlog Item 1:
     Verifies scripts/quick_demo.py executes the end-to-end golden quarantine case:
@@ -601,9 +603,10 @@ def test_quick_demo_golden_case_execution():
     import json
     import os
 
-    # 1. Execute quick_demo.py (defaults to golden case)
+    # 1. Execute quick_demo.py (defaults to golden case, writes trace to isolated tmp_path)
+    temp_trace = tmp_path / "test_quick_demo_trace.jsonl"
     res_demo = subprocess.run(
-        [sys.executable, "scripts/quick_demo.py", "--case", "golden"],
+        [sys.executable, "scripts/quick_demo.py", "--case", "golden", "--output-trace", str(temp_trace)],
         capture_output=True,
         text=True,
         timeout=30
@@ -611,13 +614,13 @@ def test_quick_demo_golden_case_execution():
     assert res_demo.returncode == 0, f"quick_demo.py failed:\n{res_demo.stderr}\n{res_demo.stdout}"
     assert "MEDTRACE: EXECUTIVE JUDGE DEMONSTRATION" in res_demo.stdout
     assert "FAC-CHC-01" in res_demo.stdout
-    assert "Paracetamol" in res_demo.stdout
+    assert "paracetamol" in res_demo.stdout.lower()
     assert "QA quarantine hold" in res_demo.stdout
     assert "MULTI-AGENT ADVERSARIAL DEBATE: ROUND 1" in res_demo.stdout
     assert "MULTI-AGENT ADVERSARIAL DEBATE: ROUND 2" in res_demo.stdout
     assert "PEER_TRANSFER" in res_demo.stdout
     assert "BATCH_RELEASE" in res_demo.stdout
-    assert "Canonical Golden Trace committed & saved" in res_demo.stdout
+    assert os.path.exists(temp_trace)
 
     # 2. Verify tracked golden trace exists and has valid events
     golden_trace_path = os.path.join("logs", "golden_trace_FAC-CHC-01_MED-001.jsonl")

@@ -154,6 +154,15 @@ class ActionPlannerAgent:
                 }
             ))
 
+        # Check if contracted supplier has a learned delay prior in H-MEM
+        sup_delay_record = self.hmem.get_supplier_delay_info(contracted_supplier) if (self.hmem and contracted_supplier) else None
+        hmem_sup_note = ""
+        if sup_delay_record:
+            p90_del = sup_delay_record.get("p90_delay_days", 0.0)
+            reason = sup_delay_record.get("reason", "Empirical delay prior")
+            if p90_del >= 7.0:
+                hmem_sup_note = f" (H-MEM Grounded Delay: {contracted_supplier} +{p90_del:.0f}d delay: {reason})"
+
         # Check peer transfer feasibility
         transfer_penalty = 0.20 if any("PEER_TRANSFER" in p for p in rejected_patterns) else 0.0
         can_transfer = (best_source_facility is not None and best_surplus >= max(50.0, shortfall))
@@ -162,7 +171,8 @@ class ActionPlannerAgent:
         if shortfall > 0:
             transfer_feasibility = round(max(0.1, (0.90 if can_transfer else 0.35) - transfer_penalty), 2)
             if can_transfer:
-                transfer_justification = f"Transfer {shortfall} units from peer warehouse {best_source_facility} (usable surplus {best_surplus:.0f} units, lead time 24h, est transit fee ${transfer_cost:.2f}) to cover {gap_days}-day gap."
+                pref_note = f" Prioritized over delayed supplier {contracted_supplier}{hmem_sup_note}." if hmem_sup_note else ""
+                transfer_justification = f"Transfer {shortfall} units from peer warehouse {best_source_facility} (usable surplus {best_surplus:.0f} units, lead time 24h, est transit fee ${transfer_cost:.2f}) to cover {gap_days}-day gap.{pref_note}"
             elif best_source_facility:
                 transfer_justification = f"Peer warehouse {best_source_facility} holds only {best_surplus:.0f} units; partial transfer possible but insufficient for full {shortfall} unit shortfall."
             else:
@@ -192,9 +202,11 @@ class ActionPlannerAgent:
 
         # Secondary: Expedite PO with contracted supplier
         expedite_penalty = 0.20 if any("EXPEDITE_PO" in p for p in rejected_patterns) else 0.0
+        if hmem_sup_note:
+            expedite_penalty += 0.25  # Penalize reliance on supplier with verified chronic transit failure
         expedite_cost = round(shortfall * unit_price * 1.10, 2) if shortfall > 0 else 0.0
         if shortfall > 0:
-            expedite_justification = f"Issue urgent dispatch escalation to contracted supplier {contracted_supplier or 'SUP-001'} (est order cost ${expedite_cost:.2f}) to compress delivery slip and cover {gap_days}-day gap."
+            expedite_justification = f"Issue urgent dispatch escalation to contracted supplier {contracted_supplier or 'SUP-001'} (est order cost ${expedite_cost:.2f}) to compress delivery slip and cover {gap_days}-day gap.{hmem_sup_note}"
             expedite_feasibility = round(max(0.1, 0.75 - expedite_penalty), 2)
         else:
             expedite_justification = f"Standard procurement cycle: No expedited dispatch required; existing inventory covers {trust_cover:.1f} days."

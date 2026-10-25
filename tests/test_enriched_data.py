@@ -180,7 +180,7 @@ def test_reconciler_uom_mismatch_uses_packaging_standards(store):
         store.get_purchase_orders = orig_pos
 
 
-def test_data_audit_execution_and_artifacts():
+def test_data_audit_execution_and_artifacts(tmp_path):
     """
     Priority 0b Gate: Verifies that scripts/data_audit.py executes cleanly,
     outputs DATA_AUDIT.md and reports/eda/*.json, and computes exact statistics
@@ -190,7 +190,9 @@ def test_data_audit_execution_and_artifacts():
     import json
     from scripts.data_audit import run_audit
 
-    audits, md_path = run_audit(output_dir="reports/eda")
+    tmp_md = tmp_path / "DATA_AUDIT.md"
+    tmp_eda = tmp_path / "eda"
+    audits, md_path = run_audit(output_dir=str(tmp_eda), md_path=str(tmp_md))
     assert len(audits) >= 50
     assert os.path.exists(md_path)
 
@@ -203,10 +205,10 @@ def test_data_audit_execution_and_artifacts():
     assert "data/simulated/ledger_daily.csv" in md_text
 
     # Verify JSON reports exist
-    report_files = [f for f in os.listdir("reports/eda") if f.endswith(".json")]
+    report_files = [f for f in os.listdir(str(tmp_eda)) if f.endswith(".json")]
     assert len(report_files) >= 50
 
-    sample_report_path = os.path.join("reports/eda", report_files[0])
+    sample_report_path = os.path.join(str(tmp_eda), report_files[0])
     with open(sample_report_path, "r", encoding="utf-8") as f:
         sample_data = json.load(f)
 
@@ -214,5 +216,52 @@ def test_data_audit_execution_and_artifacts():
     assert "rows" in sample_data
     assert "columns_count" in sample_data
     assert "columns_detail" in sample_data
+
+
+def test_process_real_data_cleaning_pipeline(tmp_path):
+    """
+    Priority 0b Gate: Verifies that scripts/process_real_data.py cleans raw datasets,
+    handles missing/invalid dates, deduplicates records, winsorizes extreme slips,
+    computes empirical priors with pooled fallbacks, and writes summary reports.
+    """
+    import os
+    import csv
+    from scripts.process_real_data import clean_usaid_deliveries, clean_pharma_sales, clean_openfda_recalls
+
+    # 1. Clean USAID Deliveries into temp dir
+    cleaned_usaid = tmp_path / "cleaned_usaid.csv"
+    out_slip = tmp_path / "supplier_slip.csv"
+    u_stats = clean_usaid_deliveries(
+        raw_path="data/real/raw/usaid_deliveries.csv",
+        cleaned_csv_path=str(cleaned_usaid),
+        out_slip_path=str(out_slip)
+    )
+    assert u_stats["total_raw_rows"] > 5000
+    assert u_stats["cleaned_valid_rows"] > 0
+    assert u_stats["cleaned_valid_rows"] <= u_stats["total_raw_rows"]
+    assert u_stats["dropped_duplicates"] >= 0
+    assert u_stats["winsorized_extreme_slips"] > 0
+    assert os.path.exists(cleaned_usaid)
+    assert os.path.exists(out_slip)
+
+    # Verify supplier_slip has pooled prior fallback
+    with open(out_slip, "r", encoding="utf-8") as f:
+        reader = list(csv.DictReader(f))
+    assert len(reader) >= 5
+    assert any(r["vendor"] == "POOLED_PRIOR" for r in reader)
+
+    # 2. Clean Pharma Sales into temp dir
+    cleaned_sales = tmp_path / "cleaned_sales.csv"
+    out_shapes = tmp_path / "demand_shapes.csv"
+    p_stats = clean_pharma_sales(
+        raw_path="data/real/raw/salesdaily.csv",
+        cleaned_csv_path=str(cleaned_sales),
+        out_shapes_path=str(out_shapes)
+    )
+    assert p_stats["total_raw_rows"] > 2000
+    assert p_stats["cleaned_valid_rows"] > 0
+    assert len(p_stats["zero_demand_counts"]) == 8
+    assert os.path.exists(cleaned_sales)
+    assert os.path.exists(out_shapes)
 
 
