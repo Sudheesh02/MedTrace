@@ -86,17 +86,38 @@ class ActionPlannerAgent:
                 }
             ))
 
+        # Check if audit drift / phantom stock was identified
+        if audit_drift > 0:
+            recommendations.append(ActionRecommendation(
+                action_id=f"ACT-ADJ-{facility_id}-{medicine_id}",
+                action_type=ActionType.INVENTORY_AUDIT_ADJUSTMENT,
+                facility_id=facility_id,
+                medicine_id=medicine_id,
+                recommended_units=audit_drift,
+                feasibility_score=0.95,
+                justification=f"Reconcile LMIS inventory ledger: Post debit adjustment of {audit_drift:.0f} units to match verified physical shelf count ({stock_eval.get('usable_stock', 0):.0f} units), eliminating phantom ledger drift.",
+                number_provenance={
+                    "audit_drift": audit_drift,
+                    "ledger_stock": stock_eval.get("ledger_stock", 0.0),
+                    "usable_stock": stock_eval.get("usable_stock", 0.0)
+                }
+            ))
+
         # Check peer transfer feasibility
         transfer_penalty = 0.20 if any("PEER_TRANSFER" in p for p in rejected_patterns) else 0.0
         can_transfer = (best_source_facility is not None and best_surplus >= max(50.0, shortfall))
-        transfer_feasibility = round(max(0.1, (0.90 if can_transfer else 0.35) - transfer_penalty), 2)
         
-        if can_transfer:
-            transfer_justification = f"Transfer {shortfall} units from peer warehouse {best_source_facility} (usable surplus {best_surplus:.0f} units, lead time 24h) to cover {gap_days}-day gap."
-        elif best_source_facility:
-            transfer_justification = f"Peer warehouse {best_source_facility} holds only {best_surplus:.0f} units; partial transfer possible but insufficient for full {shortfall} unit shortfall."
+        if shortfall > 0:
+            transfer_feasibility = round(max(0.1, (0.90 if can_transfer else 0.35) - transfer_penalty), 2)
+            if can_transfer:
+                transfer_justification = f"Transfer {shortfall} units from peer warehouse {best_source_facility} (usable surplus {best_surplus:.0f} units, lead time 24h) to cover {gap_days}-day gap."
+            elif best_source_facility:
+                transfer_justification = f"Peer warehouse {best_source_facility} holds only {best_surplus:.0f} units; partial transfer possible but insufficient for full {shortfall} unit shortfall."
+            else:
+                transfer_justification = f"No peer facility holds surplus of {medicine_id}; inter-facility transfer unavailable."
         else:
-            transfer_justification = f"No peer facility holds surplus of {medicine_id}; inter-facility transfer unavailable."
+            transfer_justification = f"No emergency stock transfer required: Facility holds {trust_cover:.1f} days of verified usable cover, exceeding safety threshold. Inter-facility transfer queue on standby."
+            transfer_feasibility = 0.50
 
         recommendations.append(ActionRecommendation(
             action_id=f"ACT-TRF-{facility_id}-{medicine_id}",
@@ -104,7 +125,7 @@ class ActionPlannerAgent:
             facility_id=facility_id,
             medicine_id=medicine_id,
             recommended_units=shortfall,
-            source_facility_id=best_source_facility if can_transfer else None,
+            source_facility_id=best_source_facility if (can_transfer and shortfall > 0) else None,
             feasibility_score=transfer_feasibility,
             justification=transfer_justification,
             number_provenance={
@@ -116,6 +137,13 @@ class ActionPlannerAgent:
 
         # Secondary: Expedite PO with contracted supplier
         expedite_penalty = 0.20 if any("EXPEDITE_PO" in p for p in rejected_patterns) else 0.0
+        if shortfall > 0:
+            expedite_justification = f"Issue urgent dispatch escalation to contracted supplier {contracted_supplier or 'SUP-001'} to compress delivery slip and cover {gap_days}-day gap."
+            expedite_feasibility = round(max(0.1, 0.75 - expedite_penalty), 2)
+        else:
+            expedite_justification = f"Standard procurement cycle: No expedited dispatch required; existing inventory covers {trust_cover:.1f} days."
+            expedite_feasibility = 0.40
+
         recommendations.append(ActionRecommendation(
             action_id=f"ACT-EXP-{facility_id}-{medicine_id}",
             action_type=ActionType.EXPEDITE_PO,
@@ -123,8 +151,8 @@ class ActionPlannerAgent:
             medicine_id=medicine_id,
             recommended_units=shortfall,
             supplier_id=contracted_supplier or "SUP-001",
-            feasibility_score=round(max(0.1, 0.75 - expedite_penalty), 2),
-            justification=f"Issue urgent dispatch escalation to contracted supplier {contracted_supplier or 'SUP-001'} to compress delivery slip and cover {gap_days}-day gap.",
+            feasibility_score=expedite_feasibility,
+            justification=expedite_justification,
             number_provenance={
                 "shortfall_units": shortfall,
                 "gap_days": gap_days
@@ -133,14 +161,21 @@ class ActionPlannerAgent:
 
         # Fallback: Emergency Purchase
         emerg_penalty = 0.20 if any("EMERGENCY_PURCHASE" in p for p in rejected_patterns) else 0.0
+        if shortfall > 0:
+            emerg_justification = f"Authorise district emergency local procurement quota of {shortfall} units if transfer or supplier dispatch cannot arrive within 48h."
+            emerg_feasibility = round(max(0.1, 0.60 - emerg_penalty), 2)
+        else:
+            emerg_justification = f"Zero emergency procurement required: Local stock is adequate ({trust_cover:.1f} days of cover); emergency quota preserved."
+            emerg_feasibility = 0.30
+
         recommendations.append(ActionRecommendation(
             action_id=f"ACT-EMERG-{facility_id}-{medicine_id}",
             action_type=ActionType.EMERGENCY_PURCHASE,
             facility_id=facility_id,
             medicine_id=medicine_id,
             recommended_units=shortfall,
-            feasibility_score=round(max(0.1, 0.60 - emerg_penalty), 2),
-            justification=f"Authorise district emergency local procurement quota of {shortfall} units if transfer or supplier dispatch cannot arrive within 48h.",
+            feasibility_score=emerg_feasibility,
+            justification=emerg_justification,
             number_provenance={
                 "shortfall_units": shortfall,
                 "gap_days": gap_days

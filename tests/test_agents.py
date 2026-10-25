@@ -29,12 +29,42 @@ def test_multi_agent_investigation_loop():
         assert first_entry["agent"] == "Orchestrator"
 
 def test_number_auditor_provenance():
+    """
+    Verify that every recommended action carries strict deterministic number provenance:
+    - For PEER_TRANSFER, EXPEDITE_PO, EMERGENCY_PURCHASE: recommended_units equals shortfall_units
+    - For BATCH_RELEASE: recommended_units equals quarantined_units
+    - For INVENTORY_AUDIT_ADJUSTMENT: recommended_units equals audit_drift
+    Tested across multiple distinct facilities to ensure behavior is general and not hardcoded to a single fixture.
+    """
+    from app.models.schemas import ActionType
     orchestrator = MedTraceOrchestrator(use_zetaris=False)
-    pack = orchestrator.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-007")
 
-    for rec in pack.recommendations:
-        assert "shortfall_units" in rec.number_provenance
-        assert rec.recommended_units == rec.number_provenance["shortfall_units"]
+    # Test Case 1: Phantom Stock at District Hospital (audit drift)
+    pack_dh = orchestrator.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-007")
+    adj_recs = [r for r in pack_dh.recommendations if r.action_type == ActionType.INVENTORY_AUDIT_ADJUSTMENT]
+    assert len(adj_recs) == 1
+    assert adj_recs[0].recommended_units == 50.0
+    assert adj_recs[0].number_provenance["audit_drift"] == 50.0
+
+    for rec in pack_dh.recommendations:
+        if rec.action_type in (ActionType.PEER_TRANSFER, ActionType.EXPEDITE_PO, ActionType.EMERGENCY_PURCHASE):
+            assert "shortfall_units" in rec.number_provenance
+            assert rec.recommended_units == rec.number_provenance["shortfall_units"]
+        elif rec.action_type == ActionType.INVENTORY_AUDIT_ADJUSTMENT:
+            assert "audit_drift" in rec.number_provenance
+            assert rec.recommended_units == rec.number_provenance["audit_drift"]
+
+    # Test Case 2: Quarantined batch at Community Health Centre (active deficit & batch release)
+    pack_chc = orchestrator.run_investigation(facility_id="FAC-CHC-01", medicine_id="MED-001")
+    rel_recs = [r for r in pack_chc.recommendations if r.action_type == ActionType.BATCH_RELEASE]
+    assert len(rel_recs) == 1
+    assert rel_recs[0].recommended_units == 400.0
+    assert rel_recs[0].number_provenance["quarantined_units"] == 400.0
+
+    trf_recs = [r for r in pack_chc.recommendations if r.action_type == ActionType.PEER_TRANSFER]
+    assert len(trf_recs) == 1
+    assert trf_recs[0].recommended_units > 0
+    assert trf_recs[0].recommended_units == trf_recs[0].number_provenance["shortfall_units"]
 
 def test_investigator_annotations_and_anomaly_types():
     """Verify InvestigatorAgent method type annotations resolve cleanly and all 10 simulation anomalies map to AnomalyType."""
@@ -281,3 +311,49 @@ def test_orchestrator_human_escalation_path():
     assert pack.escalated_to_human is True
     assert pack.escalation_reason is not None
     assert "manual human officer verification" in pack.escalation_reason
+
+
+def test_action_planner_dynamic_quantities_across_varying_scenarios():
+    """
+    Parametric multi-scenario test:
+    Verifies that ActionPlanner dynamically computes recommended quantities and provenance
+    across distinct facility/medicine combinations, proving that outputs are never tuned
+    to a single canned fixture.
+    """
+    from app.models.schemas import ActionType
+    orch = MedTraceOrchestrator(use_zetaris=False)
+
+    scenarios = [
+        ("FAC-DH-01", "MED-007"),  # District Hospital Metformin (phantom drift 50.0 units, 0 shortfall)
+        ("FAC-PHC-01", "MED-004"), # Rural PHC Amoxicillin (expiring batch, ~44 units shortfall)
+        ("FAC-CHC-01", "MED-001"), # North Sub-District CHC Paracetamol (quarantined 400 units, ~148 units shortfall)
+    ]
+
+    results = []
+    for fac_id, med_id in scenarios:
+        pack = orch.run_investigation(facility_id=fac_id, medicine_id=med_id)
+        assert pack.facility_id == fac_id
+        assert pack.medicine_id == med_id
+        assert pack.winning_hypothesis is not None
+        assert len(pack.recommendations) >= 2
+
+        # Extract quantities per action type
+        rec_map = {r.action_type: r.recommended_units for r in pack.recommendations}
+        results.append(rec_map)
+
+        # Enforce that numbers are never negative and adhere to provenance
+        for rec in pack.recommendations:
+            assert rec.recommended_units >= 0.0
+            if rec.action_type == ActionType.INVENTORY_AUDIT_ADJUSTMENT:
+                assert rec.recommended_units == rec.number_provenance["audit_drift"]
+            elif rec.action_type == ActionType.BATCH_RELEASE:
+                assert rec.recommended_units == rec.number_provenance["quarantined_units"]
+            elif rec.action_type in (ActionType.PEER_TRANSFER, ActionType.EXPEDITE_PO, ActionType.EMERGENCY_PURCHASE):
+                assert rec.recommended_units == rec.number_provenance["shortfall_units"]
+
+    # Verify that recommended quantities differ substantially across scenarios (dynamic, non-canned)
+    trf_quantities = [r.get(ActionType.PEER_TRANSFER) for r in results]
+    assert len(set(trf_quantities)) == 3  # All 3 scenarios must have distinct transfer quantities (0.0, 44.28, 148.3)
+    assert trf_quantities[0] == 0.0        # Metformin (adequate cover)
+    assert trf_quantities[1] > 0.0         # Amoxicillin (shortfall)
+    assert trf_quantities[2] > trf_quantities[1] # Paracetamol (higher shortfall)

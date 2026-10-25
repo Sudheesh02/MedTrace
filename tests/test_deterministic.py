@@ -156,3 +156,52 @@ def test_monte_carlo_eta_sensitivity_to_seed_and_distribution():
     # Different random seeds produce distinct sampled distributions
     assert res_seed1["num_simulations"] == 100
     assert res_seed2["num_simulations"] == 100
+
+
+@pytest.mark.parametrize("reported_qty,pack_size,expected_multiplier,expected_normalized", [
+    (12.0, 10, 10.0, 120.0),
+    (5.0, 24, 24.0, 120.0),
+    (30.0, 100, 100.0, 3000.0),
+    (7.5, 1, 1.0, 7.5),
+    (40.0, 50, 50.0, 2000.0),
+])
+def test_uom_normalization_parametric_invariants(reported_qty, pack_size, expected_multiplier, expected_normalized):
+    """Verify UOM normalization computes dynamically without hardcoded multiplier assumptions."""
+    res = DeterministicEngine.normalize_uom_quantity(
+        reported_quantity=reported_qty,
+        reported_unit="pack",
+        dispensing_unit="tablet",
+        pack_size_units=pack_size
+    )
+    assert res["pack_multiplier"] == expected_multiplier
+    assert res["normalized_quantity"] == expected_normalized
+    if pack_size > 1:
+        assert res["uom_mismatch_detected"] is True
+    else:
+        assert res["uom_mismatch_detected"] is False
+
+
+@pytest.mark.parametrize("base_rate,seasonal_mult,tier,expected_epi_mult", [
+    (15.0, 1.0, "STANDARD", 1.0),
+    (20.0, 1.2, "MODERATE", 1.15),
+    (50.0, 1.1, "ELEVATED", 1.35),
+    (32.5, 1.0, "UNKNOWN_TIER", 1.0),
+])
+def test_epidemiological_multiplier_parametric_invariants(base_rate, seasonal_mult, tier, expected_epi_mult):
+    """Verify epidemiological demand calibration respects strict arithmetic and dynamic multiplier scaling."""
+    res = DeterministicEngine.compute_epidemiological_demand_multiplier(
+        base_rate=base_rate,
+        atc_seasonal_multiplier=seasonal_mult,
+        surveillance_data={"epidemiological_risk_tier": tier}
+    )
+    expected_comb = round(seasonal_mult * expected_epi_mult, 3)
+    expected_adj = round(base_rate * expected_comb, 2)
+    assert res["base_daily_rate"] == base_rate
+    assert res["atc_seasonal_multiplier"] == seasonal_mult
+    assert res["who_surveillance_multiplier"] == expected_epi_mult
+    assert res["combined_multiplier"] == expected_comb
+    assert res["adjusted_daily_demand"] == expected_adj
+    if expected_comb >= 1.40:
+        assert res["demand_spike_detected"] is True
+    else:
+        assert res["demand_spike_detected"] is False

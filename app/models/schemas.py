@@ -49,6 +49,7 @@ class ActionType(str, Enum):
     EXPEDITE_PO = "EXPEDITE_PO"
     EMERGENCY_PURCHASE = "EMERGENCY_PURCHASE"
     BATCH_RELEASE = "BATCH_RELEASE"
+    INVENTORY_AUDIT_ADJUSTMENT = "INVENTORY_AUDIT_ADJUSTMENT"
 
 class ActionRecommendation(BaseModel):
     action_id: str

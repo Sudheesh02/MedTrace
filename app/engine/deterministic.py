@@ -126,9 +126,9 @@ class DeterministicEngine:
         multiplier = 1.0
         mismatch_flag = False
 
-        if pack_size_units and pack_size_units > 1:
+        if pack_size_units is not None:
             multiplier = float(pack_size_units)
-            mismatch_flag = True
+            mismatch_flag = (multiplier != 1.0)
         elif u_rep in ["strip", "blister", "strip of 10"] and u_disp in ["tablet", "capsule"]:
             multiplier = 10.0
             mismatch_flag = True

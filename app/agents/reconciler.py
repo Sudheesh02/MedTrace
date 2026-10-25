@@ -5,6 +5,7 @@ Ingests grounded state into the Meterless World Model.
 """
 
 from typing import Dict, List, Any
+from datetime import datetime
 from app.adapters.data_store import DataStore
 from app.engine.deterministic import DeterministicEngine
 from app.engines.world_model import IngestPipelineService
@@ -39,11 +40,31 @@ class ReconcilerAgent:
         else:
             daily_rate = 10.0  # safe default
 
-        # 3. Expected delivery timeline
+        # 3. Expected delivery timeline and empirical supplier slip
         promised_days = 6.0
+        historical_slip_days = 3.0
         if pos:
             latest_po = pos[-1]
-            promised_days = 6.0
+            try:
+                order_dt = datetime.strptime(latest_po["order_date"], "%Y-%m-%d")
+                prom_dt = datetime.strptime(latest_po["promised_date"], "%Y-%m-%d")
+                lead_days = (prom_dt - order_dt).days
+                if lead_days > 0:
+                    promised_days = float(lead_days)
+            except Exception:
+                pass
+
+            # Query empirical vendor slip prior for contracted supplier
+            supplier_id = latest_po.get("supplier_id")
+            if supplier_id:
+                sup_records = [s for s in self.data_store.get_suppliers() if s.get("supplier_id") == supplier_id]
+                if sup_records:
+                    sup_rec = sup_records[0]
+                    raw_slip = sup_rec.get("historical_p90_slip", sup_rec.get("historical_mean_slip", 3.0))
+                    try:
+                        historical_slip_days = max(0.0, float(raw_slip))
+                    except (ValueError, TypeError):
+                        historical_slip_days = 3.0
 
         # Check UOM mismatch between deliveries and POs
         uom_info = None
@@ -79,7 +100,7 @@ class ReconcilerAgent:
             batches=batches,
             daily_rate=daily_rate,
             promised_delivery_days=promised_days,
-            historical_slip_days=3.0,
+            historical_slip_days=historical_slip_days,
             surveillance_data=surveillance_data,
             shortage_signal=shortage_signal,
             uom_info=uom_info,

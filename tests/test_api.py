@@ -62,3 +62,21 @@ def test_api_run_invalid_medicine_returns_404(client):
     detail = response.json().get("detail", "")
     assert "Unrecognized medicine_id" in detail
     assert "MED-INVALID-999" in detail
+
+@pytest.mark.parametrize("fac_id,med_id", [
+    ("FAC-DH-01", "MED-007"),
+    ("FAC-PHC-01", "MED-004"),
+])
+def test_api_run_multiple_facilities_dynamism(client, fac_id, med_id):
+    """Verify API dynamically returns distinct, valid results across varied facilities."""
+    payload = {"facility_id": fac_id, "medicine_id": med_id}
+    response = client.post("/run", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    pack = data["output"]
+    assert pack["facility_id"] == fac_id
+    assert pack["medicine_id"] == med_id
+    assert pack["days_of_cover_trust"] >= 0.0
+    assert len(pack["recommendations"]) >= 2
+    assert "trace_file" in data

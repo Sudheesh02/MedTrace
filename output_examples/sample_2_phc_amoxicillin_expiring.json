@@ -1,24 +1,24 @@
 {
-  "run_id": "run-67c42aaa",
+  "run_id": "run-4aa81618",
   "status": "success",
-  "execution_time_seconds": 0.69,
+  "execution_time_seconds": 0.67,
   "output": {
-    "run_id": "run-67c42aaa",
+    "run_id": "run-4aa81618",
     "facility_id": "FAC-PHC-01",
     "medicine_id": "MED-004",
     "stockout_prevented": true,
     "days_of_cover_trust": 0.0,
     "days_of_cover_naive": 42.0,
     "understated_gap_percent": 100.0,
-    "investigation_summary": "Skeptic approved revised hypothesis 'Upstream Supplier Lead Time Slippage' (Round 2). Differential elimination confirmed against 'Epidemiological Outbreak & Consumption Demand Surge' (separation Delta=0.30). Audited numbers verified: Usable Stock = 0.0 units, Shortfall = 44.28 units across 9.0 gap days. Corroborating evidence: 3 items checked.",
+    "investigation_summary": "Skeptic approved revised hypothesis 'Upstream Supplier Lead Time Slippage' (Round 2). Differential elimination confirmed against 'Epidemiological Outbreak & Consumption Demand Surge' (separation Delta=0.30). Audited numbers verified: Usable Stock = 0.0 units, Shortfall = 59.04 units across 12.0 gap days. Corroborating evidence: 3 items checked.",
     "winning_hypothesis": {
       "hypothesis_id": "H2-SUPPLIER-TRANSIT",
       "title": "Upstream Supplier Lead Time Slippage",
       "cause": "Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window.",
       "likelihood": 0.85,
       "supporting_evidence": [
-        "Promised delivery expected at Day 6, but historical vendor slip adds +3.0 days.",
-        "Leaves a trust-adjusted shortfall of 44.28 units across 9.0 gap days.",
+        "Promised delivery expected at Day 7, but historical vendor slip adds +5.0 days.",
+        "Leaves a trust-adjusted shortfall of 59.04 units across 12.0 gap days.",
         "Differential confirmation: Open PO status and empirical supplier slip distribution confirm replenishment failure originates upstream."
       ],
       "refuting_evidence": [
@@ -32,14 +32,14 @@
         "action_type": "PEER_TRANSFER",
         "facility_id": "FAC-PHC-01",
         "medicine_id": "MED-004",
-        "recommended_units": 44.28,
+        "recommended_units": 59.04,
         "source_facility_id": "FAC-WH-02",
         "supplier_id": null,
         "feasibility_score": 0.9,
-        "justification": "Transfer 44.28 units from peer warehouse FAC-WH-02 (usable surplus 34993 units, lead time 24h) to cover 9.0-day gap.",
+        "justification": "Transfer 59.04 units from peer warehouse FAC-WH-02 (usable surplus 34993 units, lead time 24h) to cover 12.0-day gap.",
         "number_provenance": {
-          "shortfall_units": 44.28,
-          "gap_days": 9.0,
+          "shortfall_units": 59.04,
+          "gap_days": 12.0,
           "peer_surplus": 34993.0
         }
       },
@@ -48,14 +48,14 @@
         "action_type": "EXPEDITE_PO",
         "facility_id": "FAC-PHC-01",
         "medicine_id": "MED-004",
-        "recommended_units": 44.28,
+        "recommended_units": 59.04,
         "source_facility_id": null,
         "supplier_id": "SUP-004",
         "feasibility_score": 0.75,
-        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-004 to compress delivery slip and cover 9.0-day gap.",
+        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-004 to compress delivery slip and cover 12.0-day gap.",
         "number_provenance": {
-          "shortfall_units": 44.28,
-          "gap_days": 9.0
+          "shortfall_units": 59.04,
+          "gap_days": 12.0
         }
       },
       {
@@ -63,19 +63,19 @@
         "action_type": "EMERGENCY_PURCHASE",
         "facility_id": "FAC-PHC-01",
         "medicine_id": "MED-004",
-        "recommended_units": 44.28,
+        "recommended_units": 59.04,
         "source_facility_id": null,
         "supplier_id": null,
         "feasibility_score": 0.6,
-        "justification": "Authorise district emergency local procurement quota of 44.28 units if transfer or supplier dispatch cannot arrive within 48h.",
+        "justification": "Authorise district emergency local procurement quota of 59.04 units if transfer or supplier dispatch cannot arrive within 48h.",
         "number_provenance": {
-          "shortfall_units": 44.28,
-          "gap_days": 9.0
+          "shortfall_units": 59.04,
+          "gap_days": 12.0
         }
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-67c42aaa.jsonl",
+    "trace_file": "logs\\trace_run-4aa81618.jsonl",
     "escalated_to_human": false,
     "escalation_reason": null
   },
@@ -105,5 +105,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-67c42aaa.jsonl"
+  "trace_file": "logs\\trace_run-4aa81618.jsonl"
 }

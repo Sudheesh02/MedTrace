@@ -1,9 +1,9 @@
 {
-  "run_id": "run-42f77ca5",
+  "run_id": "run-de64db94",
   "status": "success",
   "execution_time_seconds": 0.75,
   "output": {
-    "run_id": "run-42f77ca5",
+    "run_id": "run-de64db94",
     "facility_id": "FAC-DH-01",
     "medicine_id": "MED-007",
     "stockout_prevented": false,
@@ -29,15 +29,31 @@
     },
     "recommendations": [
       {
+        "action_id": "ACT-ADJ-FAC-DH-01-MED-007",
+        "action_type": "INVENTORY_AUDIT_ADJUSTMENT",
+        "facility_id": "FAC-DH-01",
+        "medicine_id": "MED-007",
+        "recommended_units": 50.0,
+        "source_facility_id": null,
+        "supplier_id": null,
+        "feasibility_score": 0.95,
+        "justification": "Reconcile LMIS inventory ledger: Post debit adjustment of 50 units to match verified physical shelf count (6362 units), eliminating phantom ledger drift.",
+        "number_provenance": {
+          "audit_drift": 50.0,
+          "ledger_stock": 6412.0,
+          "usable_stock": 6362.0
+        }
+      },
+      {
         "action_id": "ACT-TRF-FAC-DH-01-MED-007",
         "action_type": "PEER_TRANSFER",
         "facility_id": "FAC-DH-01",
         "medicine_id": "MED-007",
         "recommended_units": 0.0,
-        "source_facility_id": "FAC-WH-01",
+        "source_facility_id": null,
         "supplier_id": null,
-        "feasibility_score": 0.9,
-        "justification": "Transfer 0.0 units from peer warehouse FAC-WH-01 (usable surplus 17066 units, lead time 24h) to cover 0.0-day gap.",
+        "feasibility_score": 0.5,
+        "justification": "No emergency stock transfer required: Facility holds 103.9 days of verified usable cover, exceeding safety threshold. Inter-facility transfer queue on standby.",
         "number_provenance": {
           "shortfall_units": 0.0,
           "gap_days": 0.0,
@@ -52,8 +68,8 @@
         "recommended_units": 0.0,
         "source_facility_id": null,
         "supplier_id": "SUP-003",
-        "feasibility_score": 0.75,
-        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-003 to compress delivery slip and cover 0.0-day gap.",
+        "feasibility_score": 0.4,
+        "justification": "Standard procurement cycle: No expedited dispatch required; existing inventory covers 103.9 days.",
         "number_provenance": {
           "shortfall_units": 0.0,
           "gap_days": 0.0
@@ -67,8 +83,8 @@
         "recommended_units": 0.0,
         "source_facility_id": null,
         "supplier_id": null,
-        "feasibility_score": 0.6,
-        "justification": "Authorise district emergency local procurement quota of 0.0 units if transfer or supplier dispatch cannot arrive within 48h.",
+        "feasibility_score": 0.3,
+        "justification": "Zero emergency procurement required: Local stock is adequate (103.9 days of cover); emergency quota preserved.",
         "number_provenance": {
           "shortfall_units": 0.0,
           "gap_days": 0.0
@@ -76,7 +92,7 @@
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-42f77ca5.jsonl",
+    "trace_file": "logs\\trace_run-de64db94.jsonl",
     "escalated_to_human": false,
     "escalation_reason": null
   },
@@ -106,5 +122,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-42f77ca5.jsonl"
+  "trace_file": "logs\\trace_run-de64db94.jsonl"
 }

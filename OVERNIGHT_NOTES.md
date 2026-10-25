@@ -185,3 +185,32 @@
 #### What Is Next
 - Codebase is 100% judge-ready, fully verified, and clean.
 - Ready for final commit packaging and review.
+
+---
+
+### Session: 2026-10-25 05:48 UTC
+**Role**: Senior Staff AI Auditor & Core Maintainer  
+**Phase**: Anti-Hardcoding Invariant Hardening, Canned Output Elimination & Parametric Test Suite
+
+#### What Was Done
+1. **Eliminated Canned Fake Outputs & Added `INVENTORY_AUDIT_ADJUSTMENT` Action**:
+   - Added `ActionType.INVENTORY_AUDIT_ADJUSTMENT` in [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/models/schemas.py).
+   - In [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/action_planner.py), when physical audit drift exists (`audit_drift > 0`), the planner formulates a high-feasibility (0.95) `INVENTORY_AUDIT_ADJUSTMENT` action to post a debit adjustment of `audit_drift` units against the warehouse ledger to match verified physical shelf counts.
+   - For zero-shortfall scenarios (e.g. Metformin at District Hospital with 103.9 days of cover), eliminated canned "Transfer 0.0 units to cover 0.0-day gap" phrasing and replaced with honest, intelligent justifications explaining that local stock is adequate and emergency transfer orders are on standby.
+2. **Derived Promised Lead Time & Empirical Vendor Slip Dynamically in Reconciler**:
+   - In [`app/agents/reconciler.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/reconciler.py), replaced static `promised_days = 6.0` and `historical_slip_days = 3.0` with dynamic derivations: calculates lead time from active PO `order_date` and `promised_date`, and queries [`data_store.get_suppliers()`](file:///C:/Users/Asus/Desktop/Open Agent/app/adapters/data_store.py) for the contracted vendor's empirical p90 delay.
+3. **Dynamic Delivery & Slip Phrasing in Investigator**:
+   - In [`app/agents/investigator.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/agents/investigator.py), replaced hardcoded `"Promised delivery expected at Day 6, but historical vendor slip adds +3.0 days"` with dynamic values computed from deterministic reconciliation.
+4. **Normalized UOM Contract in Deterministic Engine**:
+   - In [`app/engine/deterministic.py`](file:///C:/Users/Asus/Desktop/Open Agent/app/engine/deterministic.py), refined `normalize_uom_quantity` so that when `pack_size_units` is explicitly provided, it is honored directly without falling back to string heuristics.
+5. **Multi-Scenario Parametric Tests (Anti-Hardcoding Guardrails)**:
+   - In [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_agents.py), updated `test_number_auditor_provenance` and added `test_action_planner_dynamic_quantities_across_varying_scenarios` across multiple distinct facilities (`FAC-DH-01`, `FAC-PHC-01`, `FAC-CHC-01`), proving recommended quantities dynamically scale and are never hardcoded constants.
+   - In [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_api.py), added `test_api_run_multiple_facilities_dynamism` testing varied payloads across the FastAPI endpoint.
+   - In [`tests/test_deterministic.py`](file:///C:/Users/Asus/Desktop/Open Agent/tests/test_deterministic.py), added parametric invariant tests for UOM normalization and epidemiological demand multipliers.
+6. **Regenerated Example Outputs**:
+   - Re-ran [`scripts/generate_examples.py`](file:///C:/Users/Asus/Desktop/Open Agent/scripts/generate_examples.py) to synchronize all 3 sample output files in [`output_examples/`](file:///C:/Users/Asus/Desktop/Open Agent/output_examples/) with the new dynamic ledger adjustment and honest justifications.
+7. **Verified Full Test Suite**:
+   - Executed `python -m pytest tests -q` — **49 passed in 30.56s** (up from 37).
+
+#### What Is Next
+- Final senior review and verification.

@@ -1,9 +1,9 @@
 {
-  "run_id": "run-a40e5524",
+  "run_id": "run-5699b02a",
   "status": "success",
-  "execution_time_seconds": 0.68,
+  "execution_time_seconds": 0.69,
   "output": {
-    "run_id": "run-a40e5524",
+    "run_id": "run-5699b02a",
     "facility_id": "FAC-CHC-01",
     "medicine_id": "MED-001",
     "stockout_prevented": true,
@@ -92,7 +92,7 @@
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-a40e5524.jsonl",
+    "trace_file": "logs\\trace_run-5699b02a.jsonl",
     "escalated_to_human": false,
     "escalation_reason": null
   },
@@ -122,5 +122,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-a40e5524.jsonl"
+  "trace_file": "logs\\trace_run-5699b02a.jsonl"
 }

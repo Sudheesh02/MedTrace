@@ -94,8 +94,11 @@ class InvestigatorAgent:
             h2_title = "Upstream Supplier Lead Time Slippage"
             h2_cause = f"Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window."
             h2_likelihood = 0.75
+            naive_shortfall = recon.get("naive_shortfall", {})
+            promised_day_val = naive_shortfall.get("delivery_day", 6.0)
+            slip_added = max(0.0, shortfall.get("delivery_day", 9.0) - promised_day_val)
             h2_evidence = [
-                f"Promised delivery expected at Day 6, but historical vendor slip adds +3.0 days.",
+                f"Promised delivery expected at Day {promised_day_val:.0f}, but historical vendor slip adds +{slip_added:.1f} days.",
                 f"Leaves a trust-adjusted shortfall of {shortfall['shortfall_units']} units across {shortfall['gap_days']} gap days."
             ]
             h2_refuting = ["Supplier confirms expedited dispatch with guaranteed logistics priority."]
