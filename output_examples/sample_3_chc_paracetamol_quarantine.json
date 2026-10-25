@@ -1,9 +1,9 @@
 {
-  "run_id": "run-b3ee596b",
+  "run_id": "run-2e2e05df",
   "status": "success",
-  "execution_time_seconds": 0.03,
+  "execution_time_seconds": 0.02,
   "output": {
-    "run_id": "run-b3ee596b",
+    "run_id": "run-2e2e05df",
     "facility_id": "FAC-CHC-01",
     "medicine_id": "MED-001",
     "stockout_prevented": true,
@@ -11,7 +11,7 @@
     "days_of_cover_naive": 17.94,
     "understated_gap_percent": 100.0,
     "p_stockout_risk": 1.0,
-    "investigation_summary": "Skeptic approved revised hypothesis 'Batch Quality Assurance Quarantine & Regulatory Recall' (Round 2). Differential elimination confirmed against 'Dispatched Purchase Order Lost or Delayed in Transit' (separation Delta=0.35). Audited numbers verified: Usable Stock = 105.0 units, Shortfall = 148.3 units across 5.27 gap days. Corroborating evidence: 4 items checked.",
+    "investigation_summary": "Skeptic approved revised hypothesis 'Batch Quality Assurance Quarantine & Regulatory Recall' (Round 2). Differential elimination confirmed against 'Dispatched Purchase Order Lost or Delayed in Transit' (separation Delta=0.35). Audited numbers verified: Usable Stock = 105.0 units, Shortfall = 148.3 units across 5.27 gap days. Corroborating evidence: 5 items checked.",
     "winning_hypothesis": {
       "hypothesis_id": "H1-INTERNAL-AUDIT",
       "title": "Batch Quality Assurance Quarantine & Regulatory Recall",
@@ -21,7 +21,8 @@
         "400.0 units marked quarantined = true in batch registry.",
         "400.0 units under quarantine hold counted as usable in ledger. Cross-referenced FDA Class II (Novartis Consumer Health): Defective container: products are packaged in pouches which may not have been fully sealed. Storage requirement: 15\u00b0C to 30\u00b0C (Controlled Room Temperature, Protect from Moisture).",
         "Differential confirmation: Physical inventory audit and batch quality records isolate variance directly to facility ledger, refuting external transit delay.",
-        "Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine."
+        "Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine.",
+        "World Model entity ent_inv_2376d83b4a74 (canon hash 63fe8355) corroborates usable inventory."
       ],
       "refuting_evidence": [
         "Quarantine released following lab certificate of analysis (CoA) re-test."
@@ -35,14 +36,17 @@
         "facility_id": "FAC-CHC-01",
         "medicine_id": "MED-001",
         "recommended_units": 148.3,
+        "estimated_cost_usd": 0.44,
         "source_facility_id": "FAC-WH-02",
         "supplier_id": null,
         "feasibility_score": 0.9,
-        "justification": "Transfer 148.3 units from peer warehouse FAC-WH-02 (usable surplus 9099 units, lead time 24h) to cover 5.27-day gap.",
+        "justification": "Transfer 148.3 units from peer warehouse FAC-WH-02 (usable surplus 9099 units, lead time 24h, est transit fee $0.44) to cover 5.27-day gap.",
         "number_provenance": {
           "shortfall_units": 148.3,
           "gap_days": 5.27,
-          "peer_surplus": 9099.0
+          "peer_surplus": 9099.0,
+          "unit_price_usd": 0.02,
+          "estimated_cost_usd": 0.44
         }
       },
       {
@@ -51,6 +55,7 @@
         "facility_id": "FAC-CHC-01",
         "medicine_id": "MED-001",
         "recommended_units": 400.0,
+        "estimated_cost_usd": 0.0,
         "source_facility_id": null,
         "supplier_id": null,
         "feasibility_score": 0.88,
@@ -58,7 +63,9 @@
         "number_provenance": {
           "shortfall_units": 148.3,
           "gap_days": 5.27,
-          "quarantined_units": 400.0
+          "quarantined_units": 400.0,
+          "unit_price_usd": 0.02,
+          "estimated_cost_usd": 0.0
         }
       },
       {
@@ -67,13 +74,16 @@
         "facility_id": "FAC-CHC-01",
         "medicine_id": "MED-001",
         "recommended_units": 148.3,
+        "estimated_cost_usd": 3.26,
         "source_facility_id": null,
         "supplier_id": "SUP-003",
         "feasibility_score": 0.75,
-        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-003 to compress delivery slip and cover 5.27-day gap.",
+        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-003 (est order cost $3.26) to compress delivery slip and cover 5.27-day gap.",
         "number_provenance": {
           "shortfall_units": 148.3,
-          "gap_days": 5.27
+          "gap_days": 5.27,
+          "unit_price_usd": 0.02,
+          "estimated_cost_usd": 3.26
         }
       },
       {
@@ -82,18 +92,21 @@
         "facility_id": "FAC-CHC-01",
         "medicine_id": "MED-001",
         "recommended_units": 148.3,
+        "estimated_cost_usd": 7.42,
         "source_facility_id": null,
         "supplier_id": null,
         "feasibility_score": 0.6,
-        "justification": "Authorise district emergency local procurement quota of 148.3 units if transfer or supplier dispatch cannot arrive within 48h.",
+        "justification": "Authorise district emergency local procurement quota of 148.3 units (est spot cost $7.42 at emergency premium) if transfer or supplier dispatch cannot arrive within 48h.",
         "number_provenance": {
           "shortfall_units": 148.3,
-          "gap_days": 5.27
+          "gap_days": 5.27,
+          "unit_price_usd": 0.02,
+          "estimated_cost_usd": 7.42
         }
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-b3ee596b.jsonl",
+    "trace_file": "logs\\trace_run-2e2e05df.jsonl",
     "action_plan_audit": {
       "audited": true,
       "passed": true,
@@ -101,7 +114,10 @@
       "flagged_inconsistencies": []
     },
     "escalated_to_human": false,
-    "escalation_reason": null
+    "escalation_reason": null,
+    "model_used": "rule-based-sample-mode",
+    "llm_used": false,
+    "fallback": true
   },
   "agents": [
     {
@@ -133,5 +149,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-b3ee596b.jsonl"
+  "trace_file": "logs\\trace_run-2e2e05df.jsonl"
 }

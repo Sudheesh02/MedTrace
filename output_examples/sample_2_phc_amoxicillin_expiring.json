@@ -1,9 +1,9 @@
 {
-  "run_id": "run-2ef0498e",
+  "run_id": "run-2e3113a2",
   "status": "success",
-  "execution_time_seconds": 0.08,
+  "execution_time_seconds": 0.02,
   "output": {
-    "run_id": "run-2ef0498e",
+    "run_id": "run-2e3113a2",
     "facility_id": "FAC-PHC-01",
     "medicine_id": "MED-004",
     "stockout_prevented": true,
@@ -11,7 +11,7 @@
     "days_of_cover_naive": 42.0,
     "understated_gap_percent": 100.0,
     "p_stockout_risk": 1.0,
-    "investigation_summary": "Skeptic approved revised hypothesis 'Upstream Supplier Lead Time Slippage' (Round 2). Differential elimination confirmed against 'Epidemiological Outbreak & Consumption Demand Surge' (separation Delta=0.33). Audited numbers verified: Usable Stock = 0.0 units, Shortfall = 59.04 units across 12.0 gap days. Corroborating evidence: 3 items checked.",
+    "investigation_summary": "Skeptic approved revised hypothesis 'Upstream Supplier Lead Time Slippage' (Round 2). Differential elimination confirmed against 'Epidemiological Outbreak & Consumption Demand Surge' (separation Delta=0.33). Audited numbers verified: Usable Stock = 0.0 units, Shortfall = 59.04 units across 12.0 gap days. Corroborating evidence: 4 items checked.",
     "winning_hypothesis": {
       "hypothesis_id": "H2-SUPPLIER-TRANSIT",
       "title": "Upstream Supplier Lead Time Slippage",
@@ -20,7 +20,8 @@
       "supporting_evidence": [
         "Promised delivery expected at Day 7, but historical vendor slip adds +5.0 days.",
         "Leaves a trust-adjusted shortfall of 59.04 units across 12.0 gap days.",
-        "Differential confirmation: Open PO status and empirical supplier slip distribution confirm replenishment failure originates upstream."
+        "Differential confirmation: Open PO status and empirical supplier slip distribution confirm replenishment failure originates upstream.",
+        "World Model topology verifies supply-chain relations: FOR_MEDICINE, HOLDS_INVENTORY."
       ],
       "refuting_evidence": [
         "Supplier confirms expedited dispatch with guaranteed logistics priority."
@@ -34,14 +35,17 @@
         "facility_id": "FAC-PHC-01",
         "medicine_id": "MED-004",
         "recommended_units": 59.04,
+        "estimated_cost_usd": 1.06,
         "source_facility_id": "FAC-WH-02",
         "supplier_id": null,
         "feasibility_score": 0.9,
-        "justification": "Transfer 59.04 units from peer warehouse FAC-WH-02 (usable surplus 34993 units, lead time 24h) to cover 12.0-day gap.",
+        "justification": "Transfer 59.04 units from peer warehouse FAC-WH-02 (usable surplus 34993 units, lead time 24h, est transit fee $1.06) to cover 12.0-day gap.",
         "number_provenance": {
           "shortfall_units": 59.04,
           "gap_days": 12.0,
-          "peer_surplus": 34993.0
+          "peer_surplus": 34993.0,
+          "unit_price_usd": 0.12,
+          "estimated_cost_usd": 1.06
         }
       },
       {
@@ -50,13 +54,16 @@
         "facility_id": "FAC-PHC-01",
         "medicine_id": "MED-004",
         "recommended_units": 59.04,
+        "estimated_cost_usd": 7.79,
         "source_facility_id": null,
         "supplier_id": "SUP-004",
         "feasibility_score": 0.75,
-        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-004 to compress delivery slip and cover 12.0-day gap.",
+        "justification": "Issue urgent dispatch escalation to contracted supplier SUP-004 (est order cost $7.79) to compress delivery slip and cover 12.0-day gap.",
         "number_provenance": {
           "shortfall_units": 59.04,
-          "gap_days": 12.0
+          "gap_days": 12.0,
+          "unit_price_usd": 0.12,
+          "estimated_cost_usd": 7.79
         }
       },
       {
@@ -65,18 +72,21 @@
         "facility_id": "FAC-PHC-01",
         "medicine_id": "MED-004",
         "recommended_units": 59.04,
+        "estimated_cost_usd": 17.71,
         "source_facility_id": null,
         "supplier_id": null,
         "feasibility_score": 0.6,
-        "justification": "Authorise district emergency local procurement quota of 59.04 units if transfer or supplier dispatch cannot arrive within 48h.",
+        "justification": "Authorise district emergency local procurement quota of 59.04 units (est spot cost $17.71 at emergency premium) if transfer or supplier dispatch cannot arrive within 48h.",
         "number_provenance": {
           "shortfall_units": 59.04,
-          "gap_days": 12.0
+          "gap_days": 12.0,
+          "unit_price_usd": 0.12,
+          "estimated_cost_usd": 17.71
         }
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-2ef0498e.jsonl",
+    "trace_file": "logs\\trace_run-2e3113a2.jsonl",
     "action_plan_audit": {
       "audited": true,
       "passed": true,
@@ -84,7 +94,10 @@
       "flagged_inconsistencies": []
     },
     "escalated_to_human": false,
-    "escalation_reason": null
+    "escalation_reason": null,
+    "model_used": "rule-based-sample-mode",
+    "llm_used": false,
+    "fallback": true
   },
   "agents": [
     {
@@ -116,5 +129,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-2ef0498e.jsonl"
+  "trace_file": "logs\\trace_run-2e3113a2.jsonl"
 }

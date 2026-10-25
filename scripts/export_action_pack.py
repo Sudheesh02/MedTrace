@@ -43,6 +43,7 @@ def generate_memorandum(pack_data: Union[ActionPack, Dict[str, Any]], output_pat
     rounds = data.get("skeptic_rounds", 1)
     summary = data.get("investigation_summary", "No summary provided.")
     win_hyp = data.get("winning_hypothesis", {})
+    win_hyp_conf = float(win_hyp.get("likelihood") or win_hyp.get("confidence") or 0.0)
     recs = data.get("recommendations", [])
     audit = data.get("action_plan_audit", {}) or {}
     model_used = data.get("model_used", "Meterless World Model / NVIDIA API")
@@ -107,10 +108,11 @@ The MedTrace deterministic reconciliation engine audited physical counted stock,
 ### 3. Multi-Agent Root Cause Deliberation
 - **Winning Hypothesis**: `{win_hyp.get('title', 'Unknown Anomaly')}`
 - **Causal Mechanism**: `{win_hyp.get('cause', 'Unspecified Root Cause')}`
-- **Confidence Rating**: `{float(win_hyp.get('confidence', 0.0)) * 100:.1f}%`
+- **Confidence Rating**: `{win_hyp_conf * 100:.1f}%`
 - **Deliberation Iterations**: Tested across **{rounds} adversarial challenge round(s)** between Investigator and Skeptic Number Auditor.
-- **Quantitative Grounding**:
-{chr(10).join([f"  - `{k}`: {v}" for k, v in win_hyp.get("quantitative_claims", {}).items()]) if win_hyp.get("quantitative_claims") else "  - No raw claims extracted."}
+- **Quantitative & Grounded Evidence**:
+{chr(10).join([f"  - {ev}" for ev in win_hyp.get("supporting_evidence", [])]) if win_hyp.get("supporting_evidence") else "  - Grounded deterministic reconciliation."}
+  - **Confirming Data Query**: `{win_hyp.get('confirming_query', 'N/A')}`
 
 **Executive Clinical Summary**:
 > {summary}

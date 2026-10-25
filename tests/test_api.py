@@ -315,9 +315,11 @@ def test_metadata_json_and_docs_integrity():
     assert "89-test" not in sponsor_doc
     assert "96-test" not in sponsor_doc
     assert "101-test" not in sponsor_doc
-    assert "103-test pytest suite" in sponsor_doc
+    assert "103-test" not in sponsor_doc
+    assert "115-test" not in sponsor_doc
+    assert "116-test pytest suite" in sponsor_doc
     assert "Status: 100% Fully Verified" not in sponsor_doc
-    assert "103/103 Automated Tests Verified" in sponsor_doc
+    assert "116/116 Automated Tests Verified" in sponsor_doc
 
     # 3. PRE_EXISTING_COMPONENTS.md declarations
     with open("PRE_EXISTING_COMPONENTS.md", "r", encoding="utf-8") as f:
@@ -325,7 +327,9 @@ def test_metadata_json_and_docs_integrity():
     assert "Gemini Autonomous Coding Assistant & Harness" in pre_existing_doc
     assert "Calibrated Assumption" in pre_existing_doc
     assert "88 automated tests" not in pre_existing_doc
-    assert "103 automated tests passing" in pre_existing_doc
+    assert "103 automated tests" not in pre_existing_doc
+    assert "115 automated tests" not in pre_existing_doc
+    assert "116 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:
@@ -483,4 +487,99 @@ def test_docker_compose_configuration():
     assert "8000:8000" in backend["ports"]
     assert "SAMPLE_MODE=true" in backend["environment"]
     assert "healthcheck" in backend
+    assert "postgres" in compose["services"]
+    postgres = compose["services"]["postgres"]
+    assert postgres["environment"]["POSTGRES_PASSWORD"] == "${POSTGRES_PASSWORD:?set in .env}"
+    with open(".env.example", "r", encoding="utf-8") as f:
+        env_ex = f.read()
+    assert "POSTGRES_PASSWORD" in env_ex
+
+
+def test_api_get_memo_endpoint(client):
+    """Verify GET /memo/{facility_id}/{medicine_id} returns formatted Markdown procurement memo."""
+    res = client.get("/memo/FAC-DH-01/MED-007")
+    assert res.status_code == 200
+    assert "text/markdown" in res.headers.get("content-type", "")
+    content = res.text
+    assert "DISTRICT HEALTH PROCUREMENT & INVENTORY RECONCILIATION MEMORANDUM" in content
+    assert "Target Facility ID**: `FAC-DH-01`" in content
+    assert "Confidence Rating" in content
+    assert "Skeptic Number Auditor" in content
+
+
+def test_api_get_trace_latest_endpoint(client):
+    """Verify GET /trace/latest returns latest structured debate trace events."""
+    res = client.get("/trace/latest")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert "trace_file" in data
+    assert data["events_count"] >= 5
+    assert isinstance(data["events"], list)
+    first_event = data["events"][0]
+    assert "timestamp" in first_event
+    assert "agent" in first_event
+    assert "action" in first_event
+
+
+def test_api_case_insensitive_and_whitespace_tolerant(client):
+    """Verify API handles lowercase and whitespace-padded IDs cleanly."""
+    res = client.post("/run", json={
+        "facility_id": "  fac-dh-01  ",
+        "medicine_id": " med-007 "
+    })
+    assert res.status_code == 200
+    pack = res.json()["output"]
+    assert pack["facility_id"] == "FAC-DH-01"
+    assert pack["medicine_id"] == "MED-007"
+
+
+def test_output_examples_schema_and_financial_costs_conformance():
+    """Verify output_examples/*.json adhere strictly to the live ActionPack schema with financial costs."""
+    ex_dir = "output_examples"
+    assert os.path.exists(ex_dir)
+    files = [f for f in os.listdir(ex_dir) if f.endswith(".json")]
+    assert len(files) == 3
+
+    for f in files:
+        path = os.path.join(ex_dir, f)
+        with open(path, "r", encoding="utf-8") as fp:
+            data = json.load(fp)
+        assert data["status"] == "success"
+        out = data["output"]
+        assert "run_id" in out
+        assert "winning_hypothesis" in out
+        assert "recommendations" in out
+        recs = out["recommendations"]
+        assert len(recs) >= 2
+        for r in recs:
+            assert "estimated_cost_usd" in r
+            assert r["estimated_cost_usd"] >= 0.0
+            assert "number_provenance" in r
+            assert "estimated_cost_usd" in r["number_provenance"]
+
+
+def test_trace_conformance_validator_execution():
+    """Verify scripts/validate_traces.py executes and passes validation on active traces."""
+    import subprocess
+    import sys
+
+    res = subprocess.run(
+        [sys.executable, "scripts/validate_traces.py"],
+        capture_output=True,
+        text=True
+    )
+    assert res.returncode == 0, f"validate_traces.py failed with: {res.stderr}\n{res.stdout}"
+    assert "SUCCESS: All multi-agent deliberation traces strictly conform" in res.stdout
+
+
+def test_dockerfile_configuration():
+    """Verify Dockerfile exists, sets offline defaults (SAMPLE_MODE=true, USE_ZETARIS=false)."""
+    assert os.path.exists("Dockerfile")
+    with open("Dockerfile", "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "SAMPLE_MODE=true" in content
+    assert "USE_ZETARIS=false" in content
+    assert "PORT=8000" in content
+
 

@@ -5,15 +5,15 @@
 ---
 
 ### 1. Document Control & Provenance Metadata
-- **Memorandum ID**: `MEMO-run-61164fd4`
-- **Generated Timestamp**: `2026-10-25 06:31:12 UTC`
+- **Memorandum ID**: `MEMO-run-255db334`
+- **Generated Timestamp**: `2026-10-25 07:48:32 UTC`
 - **Target Facility ID**: `FAC-DH-01`
 - **Target Medicine ID**: `MED-007`
 - **Operational Status**: ✅ **AUTONOMOUS RECONCILIATION APPROVED (ZERO DEFICIT CONFIRMED)**
 - **Escalation Reason**: `N/A — High consensus & verified constraints`
 - **Model Provenance**: `rule-based-sample-mode` (LLM Active: `False`, Fallback Invoked: `True`)
 - **Audit Verification**: `Certified Zero-Hallucination by Skeptic Number Auditor`
-- **Trace Reference**: `logs\trace_run-61164fd4.jsonl`
+- **Trace Reference**: `logs\trace_run-255db334.jsonl`
 
 ---
 
@@ -31,13 +31,18 @@ The MedTrace deterministic reconciliation engine audited physical counted stock,
 ### 3. Multi-Agent Root Cause Deliberation
 - **Winning Hypothesis**: `Phantom Stock Drift in Warehouse Ledger`
 - **Causal Mechanism**: `Physical audit confirms ledger overstates true physical stock by 50.0 units.`
-- **Confidence Rating**: `0.0%`
+- **Confidence Rating**: `93.0%`
 - **Deliberation Iterations**: Tested across **2 adversarial challenge round(s)** between Investigator and Skeptic Number Auditor.
-- **Quantitative Grounding**:
-  - No raw claims extracted.
+- **Quantitative & Grounded Evidence**:
+  - Audit count confirms 6362.0 physical units vs 6412.0 on ledger.
+  - Ledger drift variance of 50.0 units recorded.
+  - Differential confirmation: Physical inventory audit and batch quality records isolate variance directly to facility ledger, refuting external transit delay.
+  - Addressed Skeptic feedback: Confirmed physical count alignment with deterministic engine.
+  - World Model entity ent_inv_a1ad9831b61b (canon hash 82cb1477) corroborates usable inventory.
+  - **Confirming Data Query**: `SELECT counted_stock, date FROM zetaris.lightning.physical_audit WHERE facility_id = 'FAC-DH-01' AND medicine_id = 'MED-007' ORDER BY date DESC LIMIT 1`
 
 **Executive Clinical Summary**:
-> Skeptic approved revised hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 2). Differential elimination confirmed against 'Active National / Global Manufacturing Shortage' (separation Delta=0.43). Audited numbers verified: Usable Stock = 6362.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 4 items checked.
+> Skeptic approved revised hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 2). Differential elimination confirmed against 'Active National / Global Manufacturing Shortage' (separation Delta=0.43). Audited numbers verified: Usable Stock = 6362.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 5 items checked.
 
 ---
 

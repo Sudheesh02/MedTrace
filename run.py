@@ -18,6 +18,7 @@ load_dotenv()
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
 
@@ -150,6 +151,48 @@ def api_run(req: RunRequest):
             orchestrator.llm_client.sample_mode = orig_sample_mode
             orchestrator.data_store.use_zetaris = orig_use_zetaris
 
+@app.get("/memo/{facility_id}/{medicine_id}", response_class=PlainTextResponse)
+def api_get_memo(facility_id: str, medicine_id: str):
+    """Generates and returns an executive procurement memorandum as formatted Markdown."""
+    try:
+        from scripts.export_action_pack import generate_memorandum
+        pack = orchestrator.run_investigation(
+            facility_id=facility_id,
+            medicine_id=medicine_id
+        )
+        memo_path = generate_memorandum(pack)
+        with open(memo_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return PlainTextResponse(content=content, media_type="text/markdown")
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/trace/latest")
+def api_get_latest_trace():
+    """Retrieves the latest multi-agent deliberation trace as structured events."""
+    try:
+        import json
+        from scripts.explain_trace import find_latest_trace
+        trace_path = find_latest_trace()
+        if not trace_path or not os.path.exists(trace_path):
+            raise HTTPException(status_code=404, detail="No trace files found in logs/")
+        events = []
+        with open(trace_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    events.append(json.loads(line))
+        return {
+            "status": "success",
+            "trace_file": trace_path,
+            "events_count": len(events),
+            "events": events
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 def main():
     parser = argparse.ArgumentParser(description="MedTrace Agent Runner")
     parser.add_argument("--cli", action="store_true", help="Run single investigation in CLI mode")
@@ -162,6 +205,7 @@ def main():
     parser.add_argument("--decision", choices=["APPROVED", "REJECTED", "approved", "rejected"], default="APPROVED", help="Decision (APPROVED or REJECTED)")
     parser.add_argument("--reason", default="Manual officer judgment", help="Reason for decision")
     parser.add_argument("--triage", action="store_true", help="Execute proactive district-wide inventory triage scan")
+    parser.add_argument("--auto-triage", action="store_true", help="Proactively scan district and immediately audit top urgent bottleneck")
     parser.add_argument("--top-n", type=int, default=5, help="Number of urgent items to display in triage")
     parser.add_argument("--explain", action="store_true", help="Render executive multi-agent debate timeline after investigation")
     parser.add_argument("--export-memo", action="store_true", help="Export printable Markdown procurement memorandum to output/")
@@ -171,6 +215,21 @@ def main():
         os.environ["SAMPLE_MODE"] = "true"
         orchestrator.llm_client.sample_mode = True
         orchestrator.data_store.use_zetaris = False
+
+    if args.auto_triage:
+        print("[*] Proactive District Triage Scan initiated via TriagePlannerAgent...")
+        triage_res = orchestrator.triage_district(top_n=5)
+        top_items = triage_res.get("top_urgent_items", [])
+        if not top_items:
+            print("[!] No urgent bottlenecks identified in district.")
+            return
+        urgent_target = top_items[0]
+        args.facility = urgent_target["facility_id"]
+        args.medicine = urgent_target["medicine_id"]
+        args.cli = True
+        print(f"[+] Proactive Triage routed investigation to highest bottleneck:")
+        print(f"    Facility: {args.facility} | Medicine: {args.medicine} ({urgent_target['generic_name']})")
+        print(f"    Urgency Tier: {urgent_target['urgency_tier']} | Days of Cover: {urgent_target['trust_cover_days']} d | Shortfall: {urgent_target['shortfall_units']} units\n")
 
     if args.triage:
         print("[*] Running MedTrace Proactive District Triage Scan...")
