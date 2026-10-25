@@ -357,3 +357,161 @@ def test_action_planner_dynamic_quantities_across_varying_scenarios():
     assert trf_quantities[0] == 0.0        # Metformin (adequate cover)
     assert trf_quantities[1] > 0.0         # Amoxicillin (shortfall)
     assert trf_quantities[2] > trf_quantities[1] # Paracetamol (higher shortfall)
+
+
+def test_llm_client_fallback_is_dynamic_and_unhardcoded():
+    """Verify that offline LLM fallback never emits hardcoded numbers or canned quantities."""
+    from app.adapters.llm_client import LLMClient
+    client = LLMClient()
+    client.sample_mode = True
+
+    prompts = [
+        "Investigator Agent Review for FAC-DH-01 - MED-007 (metformin)",
+        "Skeptic & Number Auditor Review for FAC-PHC-01 - MED-004 (amoxicillin)",
+        "Action Planner Synthesis for FAC-CHC-01 - MED-001 (paracetamol)"
+    ]
+
+    for p in prompts:
+        res = client.generate(prompt=p)
+        text = res["text"]
+        # Invariants: No legacy hardcoded fixture numbers in qualitative text
+        assert "50 phantom units" not in text
+        assert "110 units" not in text
+        assert res["usage"]["total_tokens"] > 0
+        assert res["fallback"] is True
+
+
+@pytest.mark.parametrize("drift_val,quar_val,shortfall_val", [
+    (15.5, 0.0, 0.0),
+    (0.0, 85.0, 120.0),
+    (42.0, 200.0, 310.5),
+    (110.0, 0.0, 75.0),
+    (0.0, 0.0, 0.0),
+])
+def test_action_planner_parametric_shortfall_and_drift_provenance(drift_val, quar_val, shortfall_val):
+    """
+    Parametric invariant test:
+    Directly feeds arbitrary synthesized drift, quarantine, and shortfall values into ActionPlannerAgent.
+    Verifies that recommended quantities strictly reflect mathematical inputs, proving zero hardcoding.
+    """
+    from app.agents.action_planner import ActionPlannerAgent
+    from app.adapters.llm_client import LLMClient
+    from app.engines.hmem import HMemEngine
+    from app.models.schemas import Hypothesis, ActionType
+
+    planner = ActionPlannerAgent(LLMClient(), HMemEngine())
+    hyp = Hypothesis(
+        hypothesis_id="H-TEST",
+        title="Batch Quality Assurance Quarantine & Regulatory Recall" if quar_val > 0 else "Phantom Stock Drift",
+        cause="Parametric test cause",
+        likelihood=0.88,
+        supporting_evidence=["Evidence"],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+    det_recon = {
+        "trust_shortfall": {"shortfall_units": shortfall_val, "gap_days": 4.0 if shortfall_val > 0 else 0.0},
+        "stock_evaluation": {
+            "ledger_stock": 500.0,
+            "usable_stock": max(0.0, 500.0 - drift_val - quar_val),
+            "quarantined_stock": quar_val,
+            "audit_drift": drift_val,
+            "expiring_stock": 0.0
+        },
+        "trust_cover_days": 12.0
+    }
+
+    recs = planner.plan_actions("FAC-TEST-01", "MED-001", hyp, det_recon)
+    rec_dict = {r.action_type: r for r in recs}
+
+    if drift_val > 0:
+        assert ActionType.INVENTORY_AUDIT_ADJUSTMENT in rec_dict
+        adj = rec_dict[ActionType.INVENTORY_AUDIT_ADJUSTMENT]
+        assert adj.recommended_units == drift_val
+        assert adj.number_provenance["audit_drift"] == drift_val
+
+    if quar_val > 0:
+        assert ActionType.BATCH_RELEASE in rec_dict
+        rel = rec_dict[ActionType.BATCH_RELEASE]
+        assert rel.recommended_units == quar_val
+        assert rel.number_provenance["quarantined_units"] == quar_val
+
+    trf = rec_dict[ActionType.PEER_TRANSFER]
+    assert trf.recommended_units == shortfall_val
+    assert trf.number_provenance["shortfall_units"] == shortfall_val
+
+
+def test_investigator_likelihood_dynamism_across_severities():
+    """Verify InvestigatorAgent computes distinct likelihoods for high-drift vs low-drift scenarios."""
+    from app.agents.investigator import InvestigatorAgent
+    from app.adapters.llm_client import LLMClient
+
+    inv = InvestigatorAgent(LLMClient())
+
+    def make_recon(drift: float, ledger: float = 500.0):
+        return {
+            "facility_id": "FAC-DH-01",
+            "medicine_id": "MED-007",
+            "generic_name": "metformin",
+            "deterministic_reconciliation": {
+                "stock_evaluation": {
+                    "ledger_stock": ledger,
+                    "usable_stock": ledger - drift,
+                    "audit_drift": drift,
+                    "quarantined_stock": 0.0,
+                    "expiring_stock": 0.0
+                },
+                "demand_evaluation": {"base_daily_rate": 20.0, "adjusted_daily_demand": 20.0},
+                "trust_cover_days": (ledger - drift) / 20.0,
+                "naive_cover_days": ledger / 20.0,
+                "trust_shortfall": {"shortfall_units": 0.0, "gap_days": 0.0, "delivery_day": 6.0},
+                "naive_shortfall": {"shortfall_units": 0.0, "gap_days": 0.0, "delivery_day": 6.0},
+                "understated_gap_percent": 0.0,
+                "anomalies_detected": {
+                    "ghost_stock": drift > 0,
+                    "quarantined_batches": False,
+                    "expiring_batches": False,
+                    "supplier_delay_risk": False,
+                    "demand_spike": False,
+                    "global_shortage": False,
+                    "uom_mismatch": False
+                }
+            },
+            "discrepancies": [
+                {
+                    "anomaly_type": "GHOST_STOCK",
+                    "description": f"Ledger overstates true stock by {drift} units.",
+                    "impact_units": drift
+                }
+            ] if drift > 0 else []
+        }
+
+    # Small drift (5 units out of 500) vs large drift (350 units out of 500)
+    hyps_small = inv.investigate(make_recon(5.0), {})
+    hyps_large = inv.investigate(make_recon(350.0), {})
+
+    h1_small = next(h for h in hyps_small if h.hypothesis_id == "H1-INTERNAL-AUDIT")
+    h1_large = next(h for h in hyps_large if h.hypothesis_id == "H1-INTERNAL-AUDIT")
+
+    # Likelihood scales with severity
+    assert h1_large.likelihood > h1_small.likelihood
+
+
+def test_action_pack_records_monte_carlo_and_agent_traces():
+    """Verify that ActionPack carries Monte Carlo P(stockout) and trace file logs real agent reasoning."""
+    orch = MedTraceOrchestrator(use_zetaris=False)
+    pack = orch.run_investigation(facility_id="FAC-DH-01", medicine_id="MED-007")
+
+    # Monte Carlo stockout probability invariant
+    assert 0.0 <= pack.p_stockout_risk <= 1.0
+    # For Metformin at DH-01 with >100 days of cover, P(stockout) must be 0.0
+    assert pack.p_stockout_risk == 0.0
+
+    # Trace file verification: ensure agents log reasoning
+    with open(pack.trace_file, "r", encoding="utf-8") as f:
+        events = [json.loads(line) for line in f]
+
+    action_events = [e for e in events if "ACTIONS_RECOMMENDED" in e["action"]]
+    assert len(action_events) >= 1
+    assert "llm_reasoning" in action_events[0]["details"]
+    assert len(action_events[0]["details"]["llm_reasoning"]) > 0

@@ -90,6 +90,7 @@ def main():
         print(f"Target: Facility {pack.facility_id} | Medicine {pack.medicine_id}")
         print(f"Trust-Adjusted Days of Cover: {pack.days_of_cover_trust} days (Naive was {pack.days_of_cover_naive} days)")
         print(f"Understated Gap: {pack.understated_gap_percent}%")
+        print(f"Monte Carlo Stockout Risk: {pack.p_stockout_risk * 100:.1f}%")
         print(f"Winning Hypothesis: {pack.winning_hypothesis.title}")
         print(f"Cause: {pack.winning_hypothesis.cause}")
         print(f"Skeptic Rounds: {pack.skeptic_rounds}")

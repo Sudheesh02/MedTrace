@@ -61,7 +61,7 @@ class MedTraceOrchestrator:
             }
             trace_entries.append(entry)
             with open(trace_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(entry) + "\n")
+                f.write(json.dumps(entry, default=str) + "\n")
 
         # Input validation: ensure requested facility and medicine exist
         valid_facs = {f["facility_id"] for f in self.data_store.get_facilities()}
@@ -100,10 +100,15 @@ class MedTraceOrchestrator:
             log_step("InvestigatorAgent", f"ROUND_{rounds}_START", {"round": rounds, "previous_critique": last_critique})
             
             hypotheses = self.investigator.investigate(recon, world_context, skeptic_feedback=last_critique)
+            inv_llm = getattr(self.investigator, "last_llm_response", None)
+            inv_text = inv_llm.get("text", "") if isinstance(inv_llm, dict) else ""
+            inv_usage = inv_llm.get("usage", {}) if isinstance(inv_llm, dict) else {}
             log_step("InvestigatorAgent", "HYPOTHESES_GENERATED", {
                 "hypotheses_count": len(hypotheses),
                 "titles": [h.title for h in hypotheses],
-                "likelihoods": {h.hypothesis_id: h.likelihood for h in hypotheses}
+                "likelihoods": {h.hypothesis_id: h.likelihood for h in hypotheses},
+                "llm_reasoning": inv_text,
+                "token_usage": inv_usage
             })
 
             # Skeptic & Number Auditor
@@ -112,12 +117,17 @@ class MedTraceOrchestrator:
                 deterministic_recon=recon["deterministic_reconciliation"],
                 round_number=rounds
             )
+            skep_llm = getattr(self.skeptic, "last_llm_response", None)
+            skep_text = skep_llm.get("text", "") if isinstance(skep_llm, dict) else ""
+            skep_usage = skep_llm.get("usage", {}) if isinstance(skep_llm, dict) else {}
             log_step("SkepticAgent", f"ROUND_{rounds}_EVALUATION", {
                 "accepted": review.accepted,
                 "confidence": review.confidence_score,
                 "numbers_valid": review.audited_numbers_valid,
                 "critique": review.critique_notes,
-                "flagged_inconsistencies": review.flagged_inconsistencies
+                "flagged_inconsistencies": review.flagged_inconsistencies,
+                "llm_reasoning": skep_text,
+                "token_usage": skep_usage
             })
 
             if review.accepted:
@@ -138,9 +148,14 @@ class MedTraceOrchestrator:
             hypothesis=winning_hyp,
             deterministic_recon=recon["deterministic_reconciliation"]
         )
+        plan_llm = getattr(self.action_planner, "last_llm_response", None)
+        plan_text = plan_llm.get("text", "") if isinstance(plan_llm, dict) else ""
+        plan_usage = plan_llm.get("usage", {}) if isinstance(plan_llm, dict) else {}
         log_step("ActionPlannerAgent", "ACTIONS_RECOMMENDED", {
             "recommendations_count": len(recommendations),
-            "top_action": recommendations[0].action_type
+            "top_action": recommendations[0].action_type,
+            "llm_reasoning": plan_text,
+            "token_usage": plan_usage
         })
 
         det_rec = recon["deterministic_reconciliation"]
@@ -150,6 +165,7 @@ class MedTraceOrchestrator:
             or det_rec["trust_shortfall"]["gap_days"] > 0
             or det_rec["understated_gap_percent"] > 0
         )
+        p_stockout = det_rec.get("monte_carlo_delivery", {}).get("p_stockout_before_arrival", 0.0)
 
         # Execution Plan Phase 3.6: Escalate to human if debate unconcluded or confidence below threshold
         escalated_to_human = False
@@ -171,6 +187,7 @@ class MedTraceOrchestrator:
             days_of_cover_trust=det_rec["trust_cover_days"],
             days_of_cover_naive=det_rec["naive_cover_days"],
             understated_gap_percent=det_rec["understated_gap_percent"],
+            p_stockout_risk=p_stockout,
             investigation_summary=skeptic_review.critique_notes if skeptic_review else "Investigation concluded.",
             winning_hypothesis=winning_hyp,
             recommendations=recommendations,

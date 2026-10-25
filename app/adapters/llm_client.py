@@ -78,31 +78,42 @@ class LLMClient:
 
     def _sample_fallback(self, prompt: str, system_prompt: Optional[str] = None, error_msg: Optional[str] = None) -> Dict[str, Any]:
         """Rule-based offline generator ensuring judges can run end-to-end without credentials."""
-        # Simple heuristic generation based on prompt intent
-        if "Investigate" in prompt or "Hypothesis" in prompt or "hypotheses" in prompt:
+        prompt_lower = prompt.lower()
+        if "investigate" in prompt_lower or "hypothesis" in prompt_lower or "hypotheses" in prompt_lower:
             fallback_text = (
-                "HYPOTHESIS 1 [GHOST_STOCK]: Physical count implies 50 phantom units on ledger.\n"
-                "HYPOTHESIS 2 [SUPPLIER_DELAY]: Empirical records indicate vendor delivery slip exceeds safe cover window.\n"
-                "HYPOTHESIS 3 [GLOBAL_SHORTAGE]: Active FDA manufacturing shortage signal detected on this therapeutic category."
+                "Investigator qualitative synthesis: Root cause analysis indicates a divergence between "
+                "recorded facility inventory, quality hold registries, and upstream delivery schedules. "
+                "Investigating primary hypothesis alongside secondary logistical and epidemiological alternatives. "
+                "All numerical quantities and cover metrics strictly computed by DeterministicEngine."
             )
-        elif "Skeptic" in prompt or "Review" in prompt:
+        elif "skeptic" in prompt_lower or "review" in prompt_lower or "auditor" in prompt_lower:
             fallback_text = (
-                "SKEPTIC REVIEW: Hypothesis 1 and 2 confirmed by cross-source discrepancy between ledger and physical audit. "
-                "All numerical calculations match deterministic ground truth. Recommended for approval."
+                "Skeptic qualitative audit: Verified hypothesis claims against grounded physical evidence and "
+                "deterministic ledger invariants. Cross-checked multi-source data dependencies to confirm "
+                "whether root cause is facility-internal or supply chain transit-driven."
             )
-        elif "Action" in prompt or "Plan" in prompt:
+        elif "action" in prompt_lower or "plan" in prompt_lower or "planner" in prompt_lower:
             fallback_text = (
-                "ACTION PLAN:\n"
-                "1. Inter-facility stock transfer of 110 units from regional depot.\n"
-                "2. Expedite purchase order with supplier; flag chronic delivery slippage."
+                "Action Planner operational guidance: Formulating prioritized, constraint-verified interventions. "
+                "Auditing nearby facility surpluses for peer transfer, validating supplier lead-time priors for PO expediting, "
+                "and reserving emergency procurement quotas strictly for residual deficit gaps."
             )
         else:
-            fallback_text = "MedTrace verified: Usable stock calculated and verified against deterministic constraints."
+            fallback_text = (
+                "MedTrace qualitative review: Reconciled multi-source records against deterministic physical constraints "
+                "with full row-level provenance."
+            )
 
+        prompt_tokens = len(prompt.split())
+        completion_tokens = len(fallback_text.split())
         return {
             "text": fallback_text,
             "model": "rule-based-sample-mode",
-            "usage": {"total_tokens": 0},
+            "usage": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens
+            },
             "fallback": True,
             "fallback_reason": error_msg or "SAMPLE_MODE_ACTIVE"
         }

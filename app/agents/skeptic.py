@@ -119,7 +119,8 @@ class SkepticAgent:
         Decision: {'ACCEPTED' if accepted else 'CHALLENGED'}
         Critique Notes: {critique_notes}
         """
-        self.llm_client.generate(prompt=prompt, system_prompt="You are a clinical supply chain skeptic and number auditor.")
+        llm_res = self.llm_client.generate(prompt=prompt, system_prompt="You are a clinical supply chain skeptic and number auditor.")
+        self.last_llm_response = llm_res
 
         review = SkepticReview(
             accepted=accepted,

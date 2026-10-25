@@ -71,6 +71,7 @@ class ActionPack(BaseModel):
     days_of_cover_trust: float
     days_of_cover_naive: float
     understated_gap_percent: float
+    p_stockout_risk: float = 0.0
     investigation_summary: str
     winning_hypothesis: Hypothesis
     recommendations: List[ActionRecommendation]

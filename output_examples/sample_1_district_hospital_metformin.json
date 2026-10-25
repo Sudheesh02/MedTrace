@@ -1,21 +1,22 @@
 {
-  "run_id": "run-de64db94",
+  "run_id": "run-01a63d03",
   "status": "success",
-  "execution_time_seconds": 0.75,
+  "execution_time_seconds": 0.73,
   "output": {
-    "run_id": "run-de64db94",
+    "run_id": "run-01a63d03",
     "facility_id": "FAC-DH-01",
     "medicine_id": "MED-007",
     "stockout_prevented": false,
     "days_of_cover_trust": 103.94,
     "days_of_cover_naive": 104.75,
     "understated_gap_percent": 0.0,
-    "investigation_summary": "Skeptic approved revised hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 2). Differential elimination confirmed against 'Upstream Supplier Lead Time Slippage' (separation Delta=0.45). Audited numbers verified: Usable Stock = 6362.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 4 items checked.",
+    "p_stockout_risk": 0.0,
+    "investigation_summary": "Skeptic approved revised hypothesis 'Phantom Stock Drift in Warehouse Ledger' (Round 2). Differential elimination confirmed against 'Active National / Global Manufacturing Shortage' (separation Delta=0.43). Audited numbers verified: Usable Stock = 6362.0 units, Shortfall = 0.0 units across 0.0 gap days. Corroborating evidence: 4 items checked.",
     "winning_hypothesis": {
       "hypothesis_id": "H1-INTERNAL-AUDIT",
       "title": "Phantom Stock Drift in Warehouse Ledger",
       "cause": "Physical audit confirms ledger overstates true physical stock by 50.0 units.",
-      "likelihood": 0.95,
+      "likelihood": 0.93,
       "supporting_evidence": [
         "Audit count confirms 6362.0 physical units vs 6412.0 on ledger.",
         "Ledger drift variance of 50.0 units recorded.",
@@ -92,7 +93,7 @@
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-de64db94.jsonl",
+    "trace_file": "logs\\trace_run-01a63d03.jsonl",
     "escalated_to_human": false,
     "escalation_reason": null
   },
@@ -122,5 +123,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-de64db94.jsonl"
+  "trace_file": "logs\\trace_run-01a63d03.jsonl"
 }

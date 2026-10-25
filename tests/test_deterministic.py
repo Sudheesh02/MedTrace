@@ -205,3 +205,38 @@ def test_epidemiological_multiplier_parametric_invariants(base_rate, seasonal_mu
         assert res["demand_spike_detected"] is True
     else:
         assert res["demand_spike_detected"] is False
+
+
+def test_audit_reconcile_item_includes_monte_carlo_delivery():
+    """Verify that audit_reconcile_item deterministically executes Monte Carlo ETA and stockout simulation."""
+    res = DeterministicEngine.audit_reconcile_item(
+        ledger_stock=100.0,
+        last_counted_audit=80.0,
+        batches=[],
+        daily_rate=20.0,
+        promised_delivery_days=6.0,
+        historical_slip_days=4.0
+    )
+    assert "monte_carlo_delivery" in res
+    mc = res["monte_carlo_delivery"]
+    assert mc["promised_days"] == 6.0
+    assert mc["mean_arrival_days"] >= 6.0
+    assert 0.0 <= mc["p_stockout_before_arrival"] <= 1.0
+    assert mc["num_simulations"] == 500
+
+
+@pytest.mark.parametrize("cover_days,expected_stockout_p", [
+    (0.0, 1.0),     # 0 days cover -> 100% stockout
+    (1.0, 1.0),     # 1 day cover << delivery day 6 -> 100% stockout
+    (500.0, 0.0),   # 500 days cover >> delivery day 6 -> 0% stockout
+])
+def test_monte_carlo_stockout_boundary_invariants(cover_days, expected_stockout_p):
+    """Verify Monte Carlo simulation boundary conditions hold strictly across mathematical limits."""
+    mc = DeterministicEngine.simulate_monte_carlo_eta(
+        promised_days=6.0,
+        slip_distribution=[0.0, 2.0, 4.0],
+        days_of_cover=cover_days,
+        num_simulations=200,
+        seed=99
+    )
+    assert mc["p_stockout_before_arrival"] == expected_stockout_p

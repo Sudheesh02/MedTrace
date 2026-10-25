@@ -37,6 +37,8 @@ def test_api_run_valid_investigation(client):
     assert pack["facility_id"] == "FAC-CHC-01"
     assert pack["medicine_id"] == "MED-001"
     assert "winning_hypothesis" in pack
+    assert "p_stockout_risk" in pack
+    assert 0.0 <= pack["p_stockout_risk"] <= 1.0
     assert len(pack["recommendations"]) >= 2
     assert "agents" in data
     assert len(data["agents"]) == 6

@@ -184,4 +184,15 @@ class ActionPlannerAgent:
 
         # Sort recommendations by feasibility score descending
         recommendations.sort(key=lambda r: r.feasibility_score, reverse=True)
+
+        # Call LLM client to log operational action guidance
+        prompt = f"""
+        Action Planner Synthesis for {facility_id} - {medicine_id}:
+        Winning Hypothesis: {hypothesis.title} (Likelihood: {hypothesis.likelihood})
+        Trust Cover: {trust_cover:.1f} days, Shortfall: {shortfall} units across {gap_days} gap days.
+        Prioritized Actions: {[f'{r.action_type.value} ({r.recommended_units} units, feasibility {r.feasibility_score})' for r in recommendations]}
+        """
+        llm_res = self.llm_client.generate(prompt=prompt, system_prompt="You are a clinical supply chain action planner.")
+        self.last_llm_response = llm_res
+
         return recommendations

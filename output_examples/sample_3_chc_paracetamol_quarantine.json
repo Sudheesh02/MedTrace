@@ -1,15 +1,16 @@
 {
-  "run_id": "run-5699b02a",
+  "run_id": "run-2543d040",
   "status": "success",
   "execution_time_seconds": 0.69,
   "output": {
-    "run_id": "run-5699b02a",
+    "run_id": "run-2543d040",
     "facility_id": "FAC-CHC-01",
     "medicine_id": "MED-001",
     "stockout_prevented": true,
     "days_of_cover_trust": 3.73,
     "days_of_cover_naive": 17.94,
     "understated_gap_percent": 100.0,
+    "p_stockout_risk": 1.0,
     "investigation_summary": "Skeptic approved revised hypothesis 'Batch Quality Assurance Quarantine & Regulatory Recall' (Round 2). Differential elimination confirmed against 'Dispatched Purchase Order Lost or Delayed in Transit' (separation Delta=0.35). Audited numbers verified: Usable Stock = 105.0 units, Shortfall = 148.3 units across 5.27 gap days. Corroborating evidence: 4 items checked.",
     "winning_hypothesis": {
       "hypothesis_id": "H1-INTERNAL-AUDIT",
@@ -92,7 +93,7 @@
       }
     ],
     "skeptic_rounds": 2,
-    "trace_file": "logs\\trace_run-5699b02a.jsonl",
+    "trace_file": "logs\\trace_run-2543d040.jsonl",
     "escalated_to_human": false,
     "escalation_reason": null
   },
@@ -122,5 +123,5 @@
       "role": "Cross-session memory of officer approvals/overrides"
     }
   ],
-  "trace_file": "logs\\trace_run-5699b02a.jsonl"
+  "trace_file": "logs\\trace_run-2543d040.jsonl"
 }

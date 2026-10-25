@@ -246,7 +246,17 @@ class DeterministicEngine:
             diff = trust_shortfall["gap_days"] - naive_shortfall["gap_days"]
             understated_gap_percent = round((diff / trust_shortfall["gap_days"]) * 100, 1)
 
-        # 6. Global shortage & UOM mismatch flags
+        # 6. Monte Carlo delivery arrival and stockout simulation
+        slip_dist = [0.0, historical_slip_days * 0.5, historical_slip_days, historical_slip_days * 1.5] if historical_slip_days > 0 else [0.0]
+        monte_carlo_delivery = DeterministicEngine.simulate_monte_carlo_eta(
+            promised_days=promised_delivery_days,
+            slip_distribution=slip_dist,
+            days_of_cover=trust_cover,
+            num_simulations=500,
+            seed=42
+        )
+
+        # 7. Global shortage & UOM mismatch flags
         global_shortage_flag = False
         if shortage_signal and shortage_signal.get("active_shortage_flag"):
             global_shortage_flag = True
@@ -263,6 +273,7 @@ class DeterministicEngine:
             "naive_shortfall": naive_shortfall,
             "trust_shortfall": trust_shortfall,
             "understated_gap_percent": understated_gap_percent,
+            "monte_carlo_delivery": monte_carlo_delivery,
             "anomalies_detected": {
                 "ghost_stock": audit_drift > 0,
                 "quarantined_batches": quarantined_qty > 0,

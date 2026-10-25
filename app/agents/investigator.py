@@ -42,7 +42,8 @@ class InvestigatorAgent:
         if quar_disc:
             h1_title = "Batch Quality Assurance Quarantine & Regulatory Recall"
             h1_cause = f"Warehouse ledger includes {stock_eval['quarantined_stock']} quarantined units subject to regulatory hold."
-            h1_likelihood = 0.90
+            quar_ratio = min(1.0, stock_eval['quarantined_stock'] / max(1.0, stock_eval['ledger_stock']))
+            h1_likelihood = round(min(0.95, 0.78 + 0.17 * quar_ratio), 2)
             h1_evidence = [
                 f"{stock_eval['quarantined_stock']} units marked quarantined = true in batch registry.",
                 quar_disc.get("description", "Quality lockup confirmed.")
@@ -62,7 +63,9 @@ class InvestigatorAgent:
         elif anoms["ghost_stock"]:
             h1_title = "Phantom Stock Drift in Warehouse Ledger"
             h1_cause = f"Physical audit confirms ledger overstates true physical stock by {stock_eval['audit_drift']} units."
-            h1_likelihood = 0.85
+            drift = stock_eval['audit_drift']
+            drift_ratio = min(1.0, drift / max(1.0, stock_eval['ledger_stock']))
+            h1_likelihood = round(min(0.95, 0.80 + 0.15 * drift_ratio), 2)
             h1_evidence = [
                 f"Audit count confirms {stock_eval['usable_stock']} physical units vs {stock_eval['ledger_stock']} on ledger.",
                 f"Ledger drift variance of {stock_eval['audit_drift']} units recorded."
@@ -80,6 +83,9 @@ class InvestigatorAgent:
         # -------------------------------------------------------------
         # 2. Hypothesis 2: Upstream Supplier Delay / Transit Failure
         # -------------------------------------------------------------
+        naive_shortfall = recon.get("naive_shortfall", {})
+        promised_day_val = naive_shortfall.get("delivery_day", 6.0)
+        slip_added = max(0.0, shortfall.get("delivery_day", 9.0) - promised_day_val)
         if po_disc:
             h2_title = "Dispatched Purchase Order Lost or Delayed in Transit"
             h2_cause = f"Supplier marked order dispatched, but goods were never logged at receiving dock."
@@ -93,10 +99,8 @@ class InvestigatorAgent:
         elif anoms["supplier_delay_risk"]:
             h2_title = "Upstream Supplier Lead Time Slippage"
             h2_cause = f"Empirical supplier slip priors indicate typical delivery delays push arrival past the safety cover window."
-            h2_likelihood = 0.75
-            naive_shortfall = recon.get("naive_shortfall", {})
-            promised_day_val = naive_shortfall.get("delivery_day", 6.0)
-            slip_added = max(0.0, shortfall.get("delivery_day", 9.0) - promised_day_val)
+            slip_ratio = min(1.0, slip_added / max(1.0, promised_day_val))
+            h2_likelihood = round(min(0.92, 0.65 + 0.25 * slip_ratio), 2)
             h2_evidence = [
                 f"Promised delivery expected at Day {promised_day_val:.0f}, but historical vendor slip adds +{slip_added:.1f} days.",
                 f"Leaves a trust-adjusted shortfall of {shortfall['shortfall_units']} units across {shortfall['gap_days']} gap days."
@@ -117,9 +121,10 @@ class InvestigatorAgent:
         if demand_disc:
             who_tier = demand_eval.get("epidemiological_risk_tier", "ELEVATED")
             mult = demand_eval.get("who_surveillance_multiplier", 1.35)
+            surge_ratio = min(1.0, max(0.0, (mult - 1.0) / 0.5))
+            h3_likelihood = round(min(0.92, 0.68 + 0.24 * surge_ratio), 2)
             h3_title = "Epidemiological Outbreak & Consumption Demand Surge"
             h3_cause = f"WHO disease surveillance indicates {who_tier} transmission risk, driving consumption +{int((mult - 1.0) * 100)}% above baseline."
-            h3_likelihood = 0.80
             h3_evidence = [
                 demand_disc.get("description", "Epidemiological demand spike verified."),
                 f"Adjusted daily demand rose from {demand_eval['base_daily_rate']} to {demand_eval['adjusted_daily_demand']} units/day."
@@ -129,7 +134,7 @@ class InvestigatorAgent:
         elif global_disc:
             h3_title = "Active National / Global Manufacturing Shortage"
             h3_cause = f"Upstream API synthesis bottlenecks or GMP holds reported on {gname}."
-            h3_likelihood = 0.72
+            h3_likelihood = 0.75
             h3_evidence = [
                 global_disc.get("description", "Active drug shortage reported."),
                 f"Corroborated across openFDA shortages registry."
@@ -231,6 +236,7 @@ class InvestigatorAgent:
         - Skeptic Critique: {skeptic_feedback or 'Initial Round'}
         Formulated hypotheses: {[h.title for h in hypotheses]}
         """
-        self.llm_client.generate(prompt=prompt, system_prompt="You are a clinical supply chain investigator.")
+        llm_res = self.llm_client.generate(prompt=prompt, system_prompt="You are a clinical supply chain investigator.")
+        self.last_llm_response = llm_res
 
         return hypotheses
