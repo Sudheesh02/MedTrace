@@ -29,9 +29,9 @@
    - Tuned on seeds 1–2 and verified on held-out seeds 3–4 (94.7% F1 on held-out seeds 3–4; 94.8% F1 overall).
    - Dropped artificial lead-time headline; documented baseline parity on uncorrupted stock and 94.8% root-cause accuracy in `README.md`, `scripts/run_backtest.py`, and `output/backtest_seed_*.json`.
    - Verified 103 unit and integration tests passing cleanly.
-6. [ ] [IN PROGRESS] Truth pass on SPONSOR_TECH.md, PRE_EXISTING_COMPONENTS.md, metadata.json, README: correct test counts, remove tests that do not exist, remove claims such as 100% verified or via NVIDIA NIM unless true, label rule-assigned DailyMed fields and invented WHO multipliers / Monte Carlo slip as assumptions, declare the Gemini overnight automation.
+6. [x] [DONE] Truth pass on SPONSOR_TECH.md, PRE_EXISTING_COMPONENTS.md, metadata.json, README: correct test counts, remove tests that do not exist, remove claims such as 100% verified or via NVIDIA NIM unless true, label rule-assigned DailyMed fields and invented WHO multipliers / Monte Carlo slip as assumptions, declare the Gemini overnight automation.
    - Completed: `SPONSOR_TECH.md` updated to 103 tests and qualified status badges; `metadata.json` updated to NVIDIA API / Meterless; `data/README.md` and `PRE_EXISTING_COMPONENTS.md` annotate assumptions; Gemini overnight harness declared.
-   - Pending verification: `PRE_EXISTING_COMPONENTS.md` line 84 still contains stale `88 automated tests` count (must be updated to 103 to achieve 100% truth verification across all files).
+   - Completed verification: `PRE_EXISTING_COMPONENTS.md` line 84 updated to 103 automated tests across 7 test suites; verified by `test_metadata_json_and_docs_integrity` in `tests/test_api.py`.
 7. [x] [DONE] Track a sample trace (un-ignore one sanitized logs/*.jsonl) and commit scripts/explain_trace.py wired to --explain.
    - Tracked `logs/sample_trace_FAC-DH-01_MED-007.jsonl` in git with `.gitignore` exception `!logs/sample_trace_*.jsonl`.
    - Wired `scripts/explain_trace.py` `find_latest_trace()` to automatically fall back to the tracked sample trace on fresh clones.
@@ -74,7 +74,7 @@
 
 | Area | Current Code State | Identified Gap / Risk | Judging Impact | Priority |
 | :--- | :--- | :--- | :--- | :---: |
-| **Docs & Provenance** | 103 tests pass; README & SPONSOR_TECH updated. | `PRE_EXISTING_COMPONENTS.md` line 84 still says `(88 automated tests passing)`; needs synchronization with 103-test reality. | **-2 pts** (Compliance / Transparency) | **P0 (Item 6)** |
+| **Docs & Provenance** | 103 tests pass; README, SPONSOR_TECH & PRE_EXISTING_COMPONENTS updated. | Synchronized with 103-test reality across all files; zero stale references. | **Verified** | **DONE** |
 | **Sponsor Integration** | `DataStore` queries Zetaris via REST SQL. | Participant Setup Guide lines 786-804 & 1620-1623 & 1799-1808 specify `ZETARIS_REST_URL` (`http://localhost:8888/api/v1.0`) and `POST /sql-editor/sqls/run`. `DataStore` only reads `ZETARIS_BASE_URL` (`http://localhost:3000`) and hits `/api/proxy/sql-editor/sqls/run-query`. | **-4 pts** (Sponsor Tech 10 pts) | **P1** |
 | **Multi-Agent Shared State** | World Model builds context; passes to Investigator. | `InvestigatorAgent.investigate()` declares `context: Dict[str, Any]` but never references it in the method body! Skeptic also does not inspect World Model conflicts. | **-4 pts** (Innovation 15 pts / Technical) | **P1** |
 | **Output Examples** | 3 input and 3 output samples present. | `ActionRecommendation` in `output_examples/*.json` was not regenerated after financial costs were implemented (`estimated_cost_usd` missing in sample JSONs). | **-2 pts** (Demo 15 pts / Submission Specs) | **P1** |
@@ -93,7 +93,7 @@
 
 ### Item 1: Complete Priority 0 Item 6 — Update Stale Test Count in `PRE_EXISTING_COMPONENTS.md`
 - **Priority**: P0 (Docs Integrity, Hackathon Compliance)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: [`PRE_EXISTING_COMPONENTS.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/PRE_EXISTING_COMPONENTS.md), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
 - **Problem**: In `PRE_EXISTING_COMPONENTS.md` line 84, the text states `Comprehensive test suite in tests/ (88 automated tests passing with 100% success rate)`. The test suite has grown to 103 tests across 7 test suites. Leaving "88" violates Priority 0 Item 6 ("truth pass on PRE_EXISTING_COMPONENTS.md... correct test counts").
 - **Action**:

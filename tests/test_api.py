@@ -324,6 +324,8 @@ def test_metadata_json_and_docs_integrity():
         pre_existing_doc = f.read()
     assert "Gemini Autonomous Coding Assistant & Harness" in pre_existing_doc
     assert "Calibrated Assumption" in pre_existing_doc
+    assert "88 automated tests" not in pre_existing_doc
+    assert "103 automated tests passing" in pre_existing_doc
 
     # 4. data/README.md modeling assumptions
     with open("data/README.md", "r", encoding="utf-8") as f:
