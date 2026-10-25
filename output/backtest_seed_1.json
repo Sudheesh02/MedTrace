@@ -2,6 +2,11 @@
   "seed": 1,
   "evaluation_period_days": 180,
   "total_actual_stockouts": 30,
+  "performance_benchmarks": {
+    "replay_duration_seconds": 3.261,
+    "total_transactions_evaluated": 25920,
+    "throughput_events_per_sec": 7949.1
+  },
   "metrics": {
     "early_warning_lead_time_days": {
       "alert_threshold_days": 14.0,
@@ -17,11 +22,29 @@
     },
     "anomaly_detection": {
       "ground_truth_anomalies_count": 10,
-      "detected_anomalies_count": 11,
+      "detected_anomalies_count": 12,
       "true_positives": 10,
-      "precision_pct": 90.9,
+      "precision_pct": 83.3,
       "recall_pct": 100.0,
-      "f1_score_pct": 95.2
+      "f1_score_pct": 90.9,
+      "naive_lmis_f1": 18.2,
+      "heuristic_f1": 18.2,
+      "baseline_comparisons": {
+        "naive_lmis": {
+          "detected_count": 1,
+          "true_positives": 1,
+          "precision_pct": 100.0,
+          "recall_pct": 10.0,
+          "f1_score_pct": 18.2
+        },
+        "heuristic_rule_based": {
+          "detected_count": 1,
+          "true_positives": 1,
+          "precision_pct": 100.0,
+          "recall_pct": 10.0,
+          "f1_score_pct": 18.2
+        }
+      }
     },
     "capital_lockup_false_reorders": {
       "naive_lmis": 0,

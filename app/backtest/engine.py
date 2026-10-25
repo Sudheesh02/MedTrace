@@ -66,6 +66,10 @@ class BacktestEngine:
         """
         Replays the simulation across the 180-day timeline.
         """
+        import time
+        t_start = time.time()
+        total_evaluations = 0
+
         active_dir = sim_dir or self.sim_dir
         true_stock_map = self.load_true_stock(active_dir)
         ground_truth_anomalies = self.load_ground_truth(active_dir)
@@ -157,6 +161,9 @@ class BacktestEngine:
                         transfers_by_fac_med[key] = []
                     transfers_by_fac_med[key].append(r)
 
+        # Preload cross border shortages once in-memory
+        shortages_by_med = {m.get("medicine_id"): self.store.get_cross_border_shortages(medicine_id=m.get("medicine_id")) for m in self.store.get_medicines()}
+
         # Track model alerts: {facility_id: {medicine_id: alert_day}}
         naive_alerts = {}
         heuristic_alerts = {}
@@ -172,19 +179,10 @@ class BacktestEngine:
         heuristic_false_reorders = 0
         medtrace_false_reorders = 0
 
-        # Track anomalies detected by MedTrace
+        # Track anomalies detected by each model
+        naive_detected_anomalies = []
+        heuristic_detected_anomalies = []
         detected_anomalies = []
-
-        # Determine dynamic anomaly inspection window from ground truth schedule
-        if ground_truth_anomalies:
-            gt_day_indices = [
-                int(g["day_index"]) for g in ground_truth_anomalies
-                if "day_index" in g and str(g["day_index"]).isdigit()
-            ]
-            min_anom_day = min(gt_day_indices) if gt_day_indices else 0
-            max_anom_day = min(len(true_stock_map) - 1, max(gt_day_indices) + 3) if gt_day_indices else (len(true_stock_map) - 1)
-        else:
-            min_anom_day, max_anom_day = 0, len(true_stock_map) - 1
 
         # Find true stockouts: when true physical stock hits 0
         actual_stockouts = {}
@@ -203,6 +201,7 @@ class BacktestEngine:
             records_today = ledger_by_date.get(dt, [])
             
             for rec in records_today:
+                total_evaluations += 1
                 fac = rec["facility_id"]
                 med = rec["medicine_id"]
                 ledger_stock = float(rec["ledger_stock"])
@@ -283,126 +282,142 @@ class BacktestEngine:
                     if true_val > (consumption * 30):
                         medtrace_false_reorders += 1
 
-                # Planted anomaly detection check at trigger points (dynamically bounded by ground truth schedule)
-                if min_anom_day <= day_idx <= max_anom_day:
-                    fac_meta = facilities_dict.get(fac, {})
-                    catchment = float(fac_meta.get("catchment_scale", 1.0))
-                    expected_daily = base_demands.get(med, 20.0) * catchment
+                fac_meta = facilities_dict.get(fac, {})
+                catchment = float(fac_meta.get("catchment_scale", 1.0))
+                expected_daily = base_demands.get(med, 20.0) * catchment
 
-                    # 1. GHOST_STOCK: Significant discrepancy between ledger and physical count on audit date
-                    if phantom_drift >= 45:
+                # Baseline anomaly detector (Naive LMIS & Heuristic): consumption spike evaluation
+                if expected_daily > 0 and (consumption / expected_daily) >= 2.0 and consumption >= 50:
+                    naive_detected_anomalies.append({
+                        "type": "DEMAND_SPIKE",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "consumption": consumption
+                    })
+                    heuristic_detected_anomalies.append({
+                        "type": "DEMAND_SPIKE",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "consumption": consumption
+                    })
+
+                # MedTrace Multi-Source Anomaly Detection: evaluated across all 180 simulation days
+                # 1. GHOST_STOCK: Significant discrepancy between ledger and physical count on audit date
+                if phantom_drift >= 45:
+                    detected_anomalies.append({
+                        "type": "GHOST_STOCK",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "variance": phantom_drift
+                    })
+
+                # 2. EXPIRING_BATCH_UNUSABLE: Active batch expiring within lead time (<7 days)
+                for b in fac_batches:
+                    exp_dt = datetime.strptime(b["expiry_date"], "%Y-%m-%d")
+                    if 0 <= (exp_dt - curr_date).days <= 7 and str(b.get("quarantined", "")).lower() != "true":
                         detected_anomalies.append({
-                            "type": "GHOST_STOCK",
+                            "type": "EXPIRING_BATCH_UNUSABLE",
                             "facility_id": fac,
                             "medicine_id": med,
                             "day_index": day_idx,
-                            "variance": phantom_drift
+                            "batch_id": b.get("batch_id")
                         })
 
-                    # 2. EXPIRING_BATCH_UNUSABLE: Active batch expiring within lead time (<7 days)
-                    for b in fac_batches:
-                        exp_dt = datetime.strptime(b["expiry_date"], "%Y-%m-%d")
-                        if 0 <= (exp_dt - curr_date).days <= 7 and str(b.get("quarantined", "")).lower() != "true":
-                            detected_anomalies.append({
-                                "type": "EXPIRING_BATCH_UNUSABLE",
-                                "facility_id": fac,
-                                "medicine_id": med,
-                                "day_index": day_idx,
-                                "batch_id": b.get("batch_id")
-                            })
-
-                    # 3 & 10. QUARANTINED_BATCH & COLD_CHAIN_TEMPERATURE_EXCURSION
-                    if quarantined_qty >= 200:
-                        if "Warehouse" in fac_meta.get("level", "") or "Depot" in fac_meta.get("level", ""):
-                            detected_anomalies.append({
-                                "type": "COLD_CHAIN_TEMPERATURE_EXCURSION",
-                                "facility_id": fac,
-                                "medicine_id": med,
-                                "day_index": day_idx,
-                                "quarantined_qty": quarantined_qty
-                            })
-                        else:
-                            detected_anomalies.append({
-                                "type": "QUARANTINED_BATCH",
-                                "facility_id": fac,
-                                "medicine_id": med,
-                                "day_index": day_idx,
-                                "quarantined_qty": quarantined_qty
-                            })
-
-                    # 4 & 5. PO_DISPATCHED_NOT_RECEIVED & CHRONIC_SUPPLIER_SLIP
-                    if open_pos:
-                        for opo in open_pos:
-                            placed_dt = datetime.strptime(opo["order_date"], "%Y-%m-%d")
-                            prom_dt = datetime.strptime(opo["promised_date"], "%Y-%m-%d")
-                            days_since_order = (curr_date - placed_dt).days
-                            slip_days = (curr_date - prom_dt).days
-                            if days_since_order > 9 and slip_days >= 3:
-                                if slip_days >= 12:
-                                    detected_anomalies.append({
-                                        "type": "CHRONIC_SUPPLIER_SLIP",
-                                        "facility_id": fac,
-                                        "medicine_id": med,
-                                        "day_index": day_idx,
-                                        "po_id": opo.get("po_id")
-                                    })
-                                elif days_since_order >= 10:
-                                    detected_anomalies.append({
-                                        "type": "PO_DISPATCHED_NOT_RECEIVED",
-                                        "facility_id": fac,
-                                        "medicine_id": med,
-                                        "day_index": day_idx,
-                                        "po_id": opo.get("po_id")
-                                    })
-
-                    # 6. DEMAND_SPIKE: Unseasonal consumption jump (>= 2.0x base and >= 50 units)
-                    if expected_daily > 0 and (consumption / expected_daily) >= 2.0 and consumption >= 50:
+                # 3 & 10. QUARANTINED_BATCH & COLD_CHAIN_TEMPERATURE_EXCURSION
+                if quarantined_qty >= 200:
+                    if "Warehouse" in fac_meta.get("level", "") or "Depot" in fac_meta.get("level", ""):
                         detected_anomalies.append({
-                            "type": "DEMAND_SPIKE",
+                            "type": "COLD_CHAIN_TEMPERATURE_EXCURSION",
                             "facility_id": fac,
                             "medicine_id": med,
                             "day_index": day_idx,
-                            "consumption": consumption
+                            "quarantined_qty": quarantined_qty
+                        })
+                    else:
+                        detected_anomalies.append({
+                            "type": "QUARANTINED_BATCH",
+                            "facility_id": fac,
+                            "medicine_id": med,
+                            "day_index": day_idx,
+                            "quarantined_qty": quarantined_qty
                         })
 
-                    # 7. UOM_MISMATCH: Delivery logged with 10x pack multiplier vs PO
-                    fac_delivs = delivs_by_fac_med.get(pair_key, [])
-                    for dlv in fac_delivs:
-                        p_ref = dlv.get("po_id")
-                        matching_p = next((p for p in pos_by_fac_med.get(pair_key, []) if p.get("po_id") == p_ref), None)
-                        if matching_p:
-                            p_q = float(matching_p.get("quantity", 0))
-                            r_q = float(dlv.get("received_qty", 0))
-                            if p_q > 0 and (r_q >= p_q * 8.0 or p_q >= r_q * 8.0):
+                # 4 & 5. PO_DISPATCHED_NOT_RECEIVED & CHRONIC_SUPPLIER_SLIP
+                if open_pos:
+                    for opo in open_pos:
+                        placed_dt = datetime.strptime(opo["order_date"], "%Y-%m-%d")
+                        prom_dt = datetime.strptime(opo["promised_date"], "%Y-%m-%d")
+                        days_since_order = (curr_date - placed_dt).days
+                        slip_days = (curr_date - prom_dt).days
+                        if days_since_order > 9 and slip_days >= 3:
+                            if slip_days >= 12:
                                 detected_anomalies.append({
-                                    "type": "UOM_MISMATCH",
+                                    "type": "CHRONIC_SUPPLIER_SLIP",
                                     "facility_id": fac,
                                     "medicine_id": med,
                                     "day_index": day_idx,
-                                    "multiplier": round(r_q / p_q, 1) if r_q > p_q else round(p_q / r_q, 1)
+                                    "po_id": opo.get("po_id")
+                                })
+                            elif days_since_order >= 10:
+                                detected_anomalies.append({
+                                    "type": "PO_DISPATCHED_NOT_RECEIVED",
+                                    "facility_id": fac,
+                                    "medicine_id": med,
+                                    "day_index": day_idx,
+                                    "po_id": opo.get("po_id")
                                 })
 
-                    # 8. GLOBAL_SHORTAGE: Cross-border shortage signal with stalled replenishment
-                    shortage_sig = self.store.get_cross_border_shortages(medicine_id=med)
-                    if shortage_sig and shortage_sig.get("active_shortage_flag") and len(open_pos) >= 2 and fac_meta.get("level") == "CHC":
-                        detected_anomalies.append({
-                            "type": "GLOBAL_SHORTAGE",
-                            "facility_id": fac,
-                            "medicine_id": med,
-                            "day_index": day_idx,
-                            "source": "cross_border_shortages.json"
-                        })
+                # 6. DEMAND_SPIKE: Unseasonal consumption jump (>= 2.0x base and >= 50 units)
+                if expected_daily > 0 and (consumption / expected_daily) >= 2.0 and consumption >= 50:
+                    detected_anomalies.append({
+                        "type": "DEMAND_SPIKE",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "consumption": consumption
+                    })
 
-                    # 9. UNRECORDED_EMERGENCY_TRANSFER: Emergency stock transferred without ledger credit
-                    fac_transfers = transfers_by_fac_med.get(pair_key, [])
-                    if fac_transfers:
-                        detected_anomalies.append({
-                            "type": "UNRECORDED_EMERGENCY_TRANSFER",
-                            "facility_id": fac,
-                            "medicine_id": med,
-                            "day_index": day_idx,
-                            "quantity": float(fac_transfers[0].get("quantity", 0))
-                        })
+                # 7. UOM_MISMATCH: Delivery logged with 10x pack multiplier vs PO
+                fac_delivs = delivs_by_fac_med.get(pair_key, [])
+                for dlv in fac_delivs:
+                    p_ref = dlv.get("po_id")
+                    matching_p = next((p for p in pos_by_fac_med.get(pair_key, []) if p.get("po_id") == p_ref), None)
+                    if matching_p:
+                        p_q = float(matching_p.get("quantity", 0))
+                        r_q = float(dlv.get("received_qty", 0))
+                        if p_q > 0 and (r_q >= p_q * 8.0 or p_q >= r_q * 8.0):
+                            detected_anomalies.append({
+                                "type": "UOM_MISMATCH",
+                                "facility_id": fac,
+                                "medicine_id": med,
+                                "day_index": day_idx,
+                                "multiplier": round(r_q / p_q, 1) if r_q > p_q else round(p_q / r_q, 1)
+                            })
+
+                # 8. GLOBAL_SHORTAGE: Cross-border shortage signal with stalled replenishment
+                shortage_sig = shortages_by_med.get(med)
+                if shortage_sig and shortage_sig.get("active_shortage_flag") and len(open_pos) >= 2 and fac_meta.get("level") == "CHC":
+                    detected_anomalies.append({
+                        "type": "GLOBAL_SHORTAGE",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "source": "cross_border_shortages.json"
+                    })
+
+                # 9. UNRECORDED_EMERGENCY_TRANSFER: Emergency stock transferred without ledger credit
+                fac_transfers = transfers_by_fac_med.get(pair_key, [])
+                if fac_transfers:
+                    detected_anomalies.append({
+                        "type": "UNRECORDED_EMERGENCY_TRANSFER",
+                        "facility_id": fac,
+                        "medicine_id": med,
+                        "day_index": day_idx,
+                        "quantity": float(fac_transfers[0].get("quantity", 0))
+                    })
 
         # Calculate Comparative Metrics
         # 1. Early Warning Lead Time
@@ -466,6 +481,7 @@ class BacktestEngine:
         for g in ground_truth_anomalies:
             gt_types.add((g["type"], g["facility_id"], g["medicine_id"]))
 
+        # 1. MedTrace Multi-Source Anomaly Metrics
         det_types = set()
         for d in detected_anomalies:
             det_types.add((d["type"], d["facility_id"], d["medicine_id"]))
@@ -478,10 +494,31 @@ class BacktestEngine:
         anomaly_precision = (true_positives / len(det_types) * 100.0) if det_types else 100.0
         anomaly_f1 = (2 * anomaly_precision * anomaly_recall / (anomaly_precision + anomaly_recall)) if (anomaly_precision + anomaly_recall) > 0 else 0.0
 
+        # 2. Baseline Models Anomaly Metrics (Consumption Spike Detector)
+        naive_det_types = {(d["type"], d["facility_id"], d["medicine_id"]) for d in naive_detected_anomalies}
+        naive_tp = len(naive_det_types.intersection(gt_types))
+        naive_anomaly_recall = (naive_tp / len(gt_types) * 100.0) if gt_types else 0.0
+        naive_anomaly_precision = (naive_tp / len(naive_det_types) * 100.0) if naive_det_types else 0.0
+        naive_anomaly_f1 = (2 * naive_anomaly_precision * naive_anomaly_recall / (naive_anomaly_precision + naive_anomaly_recall)) if (naive_anomaly_precision + naive_anomaly_recall) > 0 else 0.0
+
+        heuristic_det_types = {(d["type"], d["facility_id"], d["medicine_id"]) for d in heuristic_detected_anomalies}
+        heuristic_tp = len(heuristic_det_types.intersection(gt_types))
+        heuristic_anomaly_recall = (heuristic_tp / len(gt_types) * 100.0) if gt_types else 0.0
+        heuristic_anomaly_precision = (heuristic_tp / len(heuristic_det_types) * 100.0) if heuristic_det_types else 0.0
+        heuristic_anomaly_f1 = (2 * heuristic_anomaly_precision * heuristic_anomaly_recall / (heuristic_anomaly_precision + heuristic_anomaly_recall)) if (heuristic_anomaly_precision + heuristic_anomaly_recall) > 0 else 0.0
+
+        elapsed_sec = time.time() - t_start
+        throughput_eps = round(total_evaluations / max(0.001, elapsed_sec), 1)
+
         return {
             "seed": seed,
             "evaluation_period_days": 180,
             "total_actual_stockouts": total_stockouts,
+            "performance_benchmarks": {
+                "replay_duration_seconds": round(elapsed_sec, 3),
+                "total_transactions_evaluated": total_evaluations,
+                "throughput_events_per_sec": throughput_eps
+            },
             "metrics": {
                 "early_warning_lead_time_days": {
                     "alert_threshold_days": 14.0,
@@ -501,7 +538,25 @@ class BacktestEngine:
                     "true_positives": true_positives,
                     "precision_pct": round(anomaly_precision, 1),
                     "recall_pct": round(anomaly_recall, 1),
-                    "f1_score_pct": round(anomaly_f1, 1)
+                    "f1_score_pct": round(anomaly_f1, 1),
+                    "naive_lmis_f1": round(naive_anomaly_f1, 1),
+                    "heuristic_f1": round(heuristic_anomaly_f1, 1),
+                    "baseline_comparisons": {
+                        "naive_lmis": {
+                            "detected_count": len(naive_det_types),
+                            "true_positives": naive_tp,
+                            "precision_pct": round(naive_anomaly_precision, 1),
+                            "recall_pct": round(naive_anomaly_recall, 1),
+                            "f1_score_pct": round(naive_anomaly_f1, 1)
+                        },
+                        "heuristic_rule_based": {
+                            "detected_count": len(heuristic_det_types),
+                            "true_positives": heuristic_tp,
+                            "precision_pct": round(heuristic_anomaly_precision, 1),
+                            "recall_pct": round(heuristic_anomaly_recall, 1),
+                            "f1_score_pct": round(heuristic_anomaly_f1, 1)
+                        }
+                    }
                 },
                 "capital_lockup_false_reorders": {
                     "naive_lmis": naive_false_reorders,

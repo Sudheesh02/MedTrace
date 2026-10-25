@@ -2,6 +2,11 @@
   "seed": 4,
   "evaluation_period_days": 180,
   "total_actual_stockouts": 16,
+  "performance_benchmarks": {
+    "replay_duration_seconds": 3.249,
+    "total_transactions_evaluated": 25920,
+    "throughput_events_per_sec": 7977.6
+  },
   "metrics": {
     "early_warning_lead_time_days": {
       "alert_threshold_days": 14.0,
@@ -17,11 +22,29 @@
     },
     "anomaly_detection": {
       "ground_truth_anomalies_count": 10,
-      "detected_anomalies_count": 9,
-      "true_positives": 9,
-      "precision_pct": 100.0,
-      "recall_pct": 90.0,
-      "f1_score_pct": 94.7
+      "detected_anomalies_count": 11,
+      "true_positives": 10,
+      "precision_pct": 90.9,
+      "recall_pct": 100.0,
+      "f1_score_pct": 95.2,
+      "naive_lmis_f1": 18.2,
+      "heuristic_f1": 18.2,
+      "baseline_comparisons": {
+        "naive_lmis": {
+          "detected_count": 1,
+          "true_positives": 1,
+          "precision_pct": 100.0,
+          "recall_pct": 10.0,
+          "f1_score_pct": 18.2
+        },
+        "heuristic_rule_based": {
+          "detected_count": 1,
+          "true_positives": 1,
+          "precision_pct": 100.0,
+          "recall_pct": 10.0,
+          "f1_score_pct": 18.2
+        }
+      }
     },
     "capital_lockup_false_reorders": {
       "naive_lmis": 0,

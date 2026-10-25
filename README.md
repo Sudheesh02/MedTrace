@@ -67,13 +67,13 @@ All models are evaluated under the **identical 14.0-day replenishment alert thre
 | **Shared Alert Threshold** | 14.0 days | 14.0 days | **14.0 days** | Identical baseline parity |
 | **Clean Stock Lead Time** | 58.4 days | 58.4 days | **58.5 days** | Baseline parity on uncorrupted stock |
 | **Stockout Recall** | 100.0 % | 100.0 % | **100.0 %** | 100% intercept across all stockouts |
-| **Ground-Truth Anomaly Precision** | 0.0 % | 0.0 % | **97.7 %** | Planted failure mode precision (>85% target) |
-| **Ground-Truth Anomaly Recall** | 0.0 % | 0.0 % | **92.5 %** | Planted failure mode recall (>85% target) |
-| **Ground-Truth Anomaly F1 Score** | 0.0 % | 0.0 % | **94.8 %** | Planted anomaly detection F1 (>85% target) |
-| **Held-Out Test F1 (Seeds 3–4)** | 0.0 % | 0.0 % | **94.7 %** | Unseen simulation generalization |
+| **Ground-Truth Anomaly Precision** | 100.0 % | 100.0 % | **93.5 %** | Planted failure mode precision |
+| **Ground-Truth Anomaly Recall** | 10.0 % | 10.0 % | **95.0 %** | Planted failure mode recall (>85% target) |
+| **Ground-Truth Anomaly F1 Score** | 18.2 % | 18.2 % | **93.9 %** | Planted anomaly detection F1 (>85% target) |
+| **Held-Out Test F1 (Seeds 3–4)** | 18.2 % | 18.2 % | **95.0 %** | Unseen simulation generalization |
 | **False Emergency Reorders** | 0 | 0 | **0** | Zero capital lockup across 180-day simulation |
 
-*Note: All metrics reflect empirical evaluation executed across development seeds 1–2 and held-out test seeds 3–4 via `python scripts/run_backtest.py` on synthetic multi-tier facility simulation data with 10 planted ground-truth failure modes. Under identical alert thresholds, routine lead times are equivalent on clean data; MedTrace's decisive advantage is **94.8% detection and root-cause explanation of planted failure modes** (where naive LMIS has 0.0% capability as it lacks discrepancy auditing).*
+*Note: All metrics reflect empirical evaluation executed across development seeds 1–2 and held-out test seeds 3–4 via `python scripts/run_backtest.py` on synthetic multi-tier facility simulation data with 10 planted ground-truth failure modes evaluated across all 180 simulation days with zero window leakage. Under identical alert thresholds, routine lead times are equivalent on clean data; traditional LMIS baselines equipped with consumption spike detection achieve 18.2% F1 (blind to phantom stock, batch quarantines, and delivery slippage); MedTrace's multi-source federated audit achieves **95.0% F1 generalization on held-out test seeds 3–4**.*
 
 ---
 
