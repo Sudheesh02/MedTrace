@@ -160,10 +160,15 @@ export default function Dashboard() {
   const last = useMemo(() => {
     const withRun = (alerts.data?.items || []).filter((i) => i.latest_run_at);
     if (!withRun.length) return null;
-    return withRun.reduce((a, b) => (new Date(b.latest_run_at) > new Date(a.latest_run_at) ? b : a));
+    // Prefer the pairs that have a stored live (real LLM + Zetaris) pack, so the header does not report an incidental sample-mode test run.
+    const live = withRun.filter((i) => i.pack_live);
+    const pool = live.length ? live : withRun;
+    return pool.reduce((a, b) => (new Date(b.latest_run_at) > new Date(a.latest_run_at) ? b : a));
   }, [alerts.data]);
   const lastChip = last
-    ? `Latest run ${ago(last.latest_run_at)} · ${last.latest_run?.llm_used ? 'LLM pipeline' : 'sample mode'}${last.latest_run?.accepted === true ? ' · accepted' : last.latest_run?.accepted === false ? ' · rejected' : ''}`
+    ? (alerts.data?.mode === 'bundle'
+      ? `Stored ${last.pack_live ? 'live' : 'demo'} run \u00b7 ${new Date(last.latest_run_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+      : `Latest run ${ago(last.latest_run_at)} \u00b7 ${last.latest_run?.llm_used ? 'LLM pipeline' : 'sample mode'}${last.latest_run?.accepted === true ? ' \u00b7 accepted' : last.latest_run?.accepted === false ? ' \u00b7 rejected' : ''}`)
     : null;
 
   return (
