@@ -137,8 +137,8 @@ button.kpi:hover:not(:disabled) { background: var(--surface2); border-color: var
 .metric-c span { color: var(--muted); font-size: 11px; }
 .metric-c.hl { border-color: var(--crit-line); } .metric-c.hl b { color: var(--crit); }
 .dgrid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 14px; align-items: start; }
-.stack { display: grid; gap: 14px; min-width: 0; }
-@media (max-width: 1320px) { .dgrid { grid-template-columns: 1fr; } }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+@media (max-width: 1320px) { .dgrid { grid-template-columns: minmax(0, 1fr); } }
 
 .sec { padding: 14px; border-top: 1px solid var(--line); }
 .sec:first-child { border-top: 0; }
@@ -147,7 +147,7 @@ button.kpi:hover:not(:disabled) { background: var(--surface2); border-color: var
 .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch; }
 .vs-mid { display: grid; place-items: center; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; }
 .vs-mid span { background: var(--surface3); border: 1px solid var(--line2); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; }
-@media (max-width: 760px) { .vs { grid-template-columns: 1fr; } .vs-mid { display: none; } }
+@media (max-width: 760px) { .vs { grid-template-columns: minmax(0, 1fr); } .vs-mid { display: none; } }
 .vcard { border: 1px solid var(--line); border-top: 3px solid var(--vc, var(--line2)); border-radius: 10px; padding: 12px; background: var(--surface2); min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .vcard.inv { --vc: var(--accent); }
 .vcard.skep { --vc: var(--skep); }
@@ -205,7 +205,7 @@ pre { white-space: pre-wrap; word-break: break-word; font-family: var(--mono); f
 .flipwrap { display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); gap: 0; align-items: stretch; }
 .flipmid { display: grid; place-items: center; color: var(--accent); }
 .flipmid .ic { width: 28px; height: 28px; }
-@media (max-width: 860px) { .flipwrap { grid-template-columns: 1fr; gap: 10px; } .flipmid { transform: rotate(90deg); height: 30px; } }
+@media (max-width: 860px) { .flipwrap { grid-template-columns: minmax(0, 1fr); gap: 10px; } .flipmid { transform: rotate(90deg); height: 30px; } }
 .side { border: 1px solid var(--line); border-radius: 12px; background: var(--surface2); padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .side.before { border-top: 3px solid var(--muted); }
 .side.after { border-top: 3px solid var(--accent); background: linear-gradient(180deg, var(--accent-bg), var(--surface2) 40%); }
@@ -229,7 +229,7 @@ pre { white-space: pre-wrap; word-break: break-word; font-family: var(--mono); f
 .cmp-r b { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 560px) { .cmp-r { grid-template-columns: 100px 1fr 46px; } }
 .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 14px; align-items: start; }
-@media (max-width: 1000px) { .two { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .two { grid-template-columns: minmax(0, 1fr); } }
 
 
 /* ================= iteration 2 ================= */
@@ -295,7 +295,7 @@ button.icon { padding: 4px 6px; } button.icon.on { color: var(--accent); backgro
   .topbar-in { padding: 8px 12px; gap: 10px; }
   .hide-s { display: none; }
   .nav button span { display: inline; }
-  .md { grid-template-columns: 1fr; }
+  .md { grid-template-columns: minmax(0, 1fr); }
   .listcol { position: static; max-height: none; }
   .list-scroll { max-height: calc(100vh - 250px); min-height: 320px; }
   .md.drill .listcol { display: none; }
@@ -353,3 +353,6 @@ td.neg { color: var(--warn); font-weight: 600; }
   .tablewrap th, .tablewrap td { white-space: nowrap; }
   .card h3 { flex-wrap: wrap; row-gap: 4px; }
 }
+
+/* mobile: grid items must be allowed to shrink below their content width (prevents horizontal page overflow) */
+.md > *, .dgrid > *, .two > *, .vs > *, .flipwrap > * { min-width: 0; }
