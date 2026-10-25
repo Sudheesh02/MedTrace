@@ -116,7 +116,7 @@ All visualizations are generated programmatically via [`scripts/generate_eda_cha
 2. **Multi-Seed Benchmark Performance (Right Panel)**:
    - **Tuning Seeds 1–2**: MedTrace achieves 94.7% F1 (Seed 1) and 90.0% F1 (Seed 2).
    - **Held-Out Test Seeds 3–4**: MedTrace achieves **94.7% F1** on both Seeds 3 and 4, demonstrating that multi-agent anomaly detection generalizes robustly to unseen facility networks.
-   - **Overall Comparative Benchmark**: MedTrace achieves **93.5% F1** with **100.0% stockout intercept** across all 180 days, while baseline models (Naive LMIS and Heuristic Rule-Based) collapse to **18.2% F1** when confronted with non-linear clinical discrepancies.
+   - **Overall Comparative Benchmark**: MedTrace achieves **93.5% F1** with **100.0% stockout intercept** across all 180 days, while baseline models (Naive LMIS and Heuristic Rule-Based equipped with unrigged z-score detectors) achieve **23.5% typed F1** (23.9% type-agnostic F1) when confronted with multi-tier clinical discrepancies.
 
 ---
 

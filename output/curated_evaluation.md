@@ -1,6 +1,6 @@
 # MedTrace Curated Multi-Agent Benchmark Evaluation Report
 
-**Evaluation Target**: Open Agent Hackathon 2026 — Track 2 (*The Agent That Can Explain Why*)  
+**Evaluation Target**: Open Agent Hackathon 2026 - Track 2 (*The Agent That Can Explain Why*)  
 **Generated**: 2026-10-25T20:14:38.088169  
 **Total Hand-Crafted Clinical Scenarios**: 20  
 **Evaluation Scope**: Multi-agent adversarial deliberation loop, Number Auditor zero-hallucination guardrail, and clinical action formulation against rules-only baseline.
@@ -10,7 +10,7 @@
 
 ---
 
-## 🏆 Executive Comparative Benchmark Summary
+## 1. Executive Comparative Benchmark Summary
 
 | Metric | Rules-Only Baseline (Standard LMIS) | MedTrace Multi-Agent Loop | Advantage / Delta | Grounding Method |
 | :--- | :---: | :---: | :---: | :--- |
@@ -22,7 +22,7 @@
 
 ---
 
-## 📊 Category-Wise Failure Mode Breakdown
+## 2. Category-Wise Failure Mode Breakdown
 
 | Clinical Category | Scenario Count | Rules Baseline Detected | MedTrace Detected | Clinical Consequence of Baseline Failure |
 | :--- | :---: | :---: | :---: | :--- |
@@ -35,34 +35,34 @@
 
 ---
 
-## 🔬 Scenario-by-Scenario Deliberation & Audit Table
+## 3. Scenario-by-Scenario Deliberation & Audit Table
 
 | Case ID | Facility | Medicine | Category | Expected Ground Truth | Rules Baseline | MedTrace Verdict | Number Audit | Top Action Recommended |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- |
-| **CASE-01** | `FAC-DH-01` | `MED-004` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | ✅ PASSED | `MONITOR_BUFFER` (0 units) |
-| **CASE-02** | `FAC-CHC-01` | `MED-009` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | ✅ PASSED | `MONITOR_BUFFER` (0 units) |
-| **CASE-03** | `FAC-PHC-01` | `MED-001` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | ✅ PASSED | `MONITOR_BUFFER` (0 units) |
-| **CASE-04** | `FAC-DH-01` | `MED-007` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | ✅ PASSED | `MONITOR_BUFFER` (0 units) |
-| **CASE-05** | `FAC-CHC-02` | `MED-008` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | ✅ PASSED | `MONITOR_BUFFER` (0 units) |
-| **CASE-06** | `FAC-DH-01` | `MED-003` | `PHANTOM_DRIFT` | GHOST_STOCK | GHOST_STOCK | **GHOST_STOCK** | ✅ PASSED | `INVENTORY_AUDIT_ADJUSTMENT` (220 units) |
-| **CASE-07** | `FAC-CHC-01` | `MED-002` | `PHANTOM_DRIFT` | GHOST_STOCK | GHOST_STOCK | **GHOST_STOCK** | ✅ PASSED | `INVENTORY_AUDIT_ADJUSTMENT` (230 units) |
-| **CASE-08** | `FAC-PHC-01` | `MED-005` | `PHANTOM_DRIFT` | GHOST_STOCK | GHOST_STOCK | **GHOST_STOCK** | ✅ PASSED | `INVENTORY_AUDIT_ADJUSTMENT` (250 units) |
-| **CASE-09** | `FAC-PHC-02` | `MED-001` | `PHANTOM_DRIFT` | GHOST_STOCK | NO_ALERT (0 units) | **GHOST_STOCK** | ✅ PASSED | `INVENTORY_AUDIT_ADJUSTMENT` (120 units) |
-| **CASE-10** | `FAC-DH-01` | `MED-001` | `QUARANTINED_BATCH` | QUARANTINED_BATCH | NO_ALERT (0 units) | **QUARANTINED_BATCH** | ✅ PASSED | `PEER_TRANSFER` (149 units) |
-| **CASE-11** | `FAC-CHC-01` | `MED-004` | `QUARANTINED_BATCH` | QUARANTINED_BATCH | NO_ALERT (0 units) | **QUARANTINED_BATCH** | ✅ PASSED | `PEER_TRANSFER` (30 units) |
-| **CASE-12** | `FAC-PHC-01` | `MED-006` | `QUARANTINED_BATCH` | QUARANTINED_BATCH | NO_ALERT (0 units) | **QUARANTINED_BATCH** | ✅ PASSED | `MONITOR_BUFFER` (0 units) |
-| **CASE-13** | `FAC-DH-01` | `MED-010` | `CHRONIC_SUPPLIER_SLIP` | CHRONIC_SUPPLIER_SLIP | NO_ALERT (0 units) | **CHRONIC_SUPPLIER_SLIP** | ✅ PASSED | `PEER_TRANSFER` (105 units) |
-| **CASE-14** | `FAC-CHC-01` | `MED-006` | `CHRONIC_SUPPLIER_SLIP` | CHRONIC_SUPPLIER_SLIP | NO_ALERT (0 units) | **CHRONIC_SUPPLIER_SLIP** | ✅ PASSED | `PEER_TRANSFER` (90 units) |
-| **CASE-15** | `FAC-PHC-01` | `MED-011` | `CHRONIC_SUPPLIER_SLIP` | CHRONIC_SUPPLIER_SLIP | NO_ALERT (0 units) | **CHRONIC_SUPPLIER_SLIP** | ✅ PASSED | `PEER_TRANSFER` (132 units) |
-| **CASE-16** | `FAC-DH-01` | `MED-009` | `PO_TRANSIT_LOSS` | PO_DISPATCHED_NOT_RECEIVED | NO_ALERT (0 units) | **PO_DISPATCHED_NOT_RECEIVED** | ✅ PASSED | `PEER_TRANSFER` (30 units) |
-| **CASE-17** | `FAC-CHC-02` | `MED-004` | `PO_TRANSIT_LOSS` | PO_DISPATCHED_NOT_RECEIVED | NO_ALERT (0 units) | **PO_DISPATCHED_NOT_RECEIVED** | ✅ PASSED | `PEER_TRANSFER` (48 units) |
-| **CASE-18** | `FAC-PHC-02` | `MED-007` | `PO_TRANSIT_LOSS` | PO_DISPATCHED_NOT_RECEIVED | NO_ALERT (0 units) | **PO_DISPATCHED_NOT_RECEIVED** | ✅ PASSED | `PEER_TRANSFER` (60 units) |
-| **CASE-19** | `FAC-DH-01` | `MED-004` | `UOM_MISMATCH` | UOM_MISMATCH | STOCK_DEFICIT | **UOM_MISMATCH** | ✅ PASSED | `PEER_TRANSFER` (125 units) |
-| **CASE-20** | `FAC-CHC-01` | `MED-001` | `UOM_MISMATCH` | UOM_MISMATCH | STOCK_DEFICIT | **UOM_MISMATCH** | ✅ PASSED | `PEER_TRANSFER` (140 units) |
+| **CASE-01** | `FAC-DH-01` | `MED-004` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | [PASS] | `MONITOR_BUFFER` (0 units) |
+| **CASE-02** | `FAC-CHC-01` | `MED-009` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | [PASS] | `MONITOR_BUFFER` (0 units) |
+| **CASE-03** | `FAC-PHC-01` | `MED-001` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | [PASS] | `MONITOR_BUFFER` (0 units) |
+| **CASE-04** | `FAC-DH-01` | `MED-007` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | [PASS] | `MONITOR_BUFFER` (0 units) |
+| **CASE-05** | `FAC-CHC-02` | `MED-008` | `CLEAN_STOCK` | CLEAN (Adequate Stock) | NO_ALERT (0 units) | **CLEAN (Buffer Intact)** | [PASS] | `MONITOR_BUFFER` (0 units) |
+| **CASE-06** | `FAC-DH-01` | `MED-003` | `PHANTOM_DRIFT` | GHOST_STOCK | GHOST_STOCK | **GHOST_STOCK** | [PASS] | `INVENTORY_AUDIT_ADJUSTMENT` (220 units) |
+| **CASE-07** | `FAC-CHC-01` | `MED-002` | `PHANTOM_DRIFT` | GHOST_STOCK | GHOST_STOCK | **GHOST_STOCK** | [PASS] | `INVENTORY_AUDIT_ADJUSTMENT` (230 units) |
+| **CASE-08** | `FAC-PHC-01` | `MED-005` | `PHANTOM_DRIFT` | GHOST_STOCK | GHOST_STOCK | **GHOST_STOCK** | [PASS] | `INVENTORY_AUDIT_ADJUSTMENT` (250 units) |
+| **CASE-09** | `FAC-PHC-02` | `MED-001` | `PHANTOM_DRIFT` | GHOST_STOCK | NO_ALERT (0 units) | **GHOST_STOCK** | [PASS] | `INVENTORY_AUDIT_ADJUSTMENT` (120 units) |
+| **CASE-10** | `FAC-DH-01` | `MED-001` | `QUARANTINED_BATCH` | QUARANTINED_BATCH | NO_ALERT (0 units) | **QUARANTINED_BATCH** | [PASS] | `PEER_TRANSFER` (149 units) |
+| **CASE-11** | `FAC-CHC-01` | `MED-004` | `QUARANTINED_BATCH` | QUARANTINED_BATCH | NO_ALERT (0 units) | **QUARANTINED_BATCH** | [PASS] | `PEER_TRANSFER` (30 units) |
+| **CASE-12** | `FAC-PHC-01` | `MED-006` | `QUARANTINED_BATCH` | QUARANTINED_BATCH | NO_ALERT (0 units) | **QUARANTINED_BATCH** | [PASS] | `MONITOR_BUFFER` (0 units) |
+| **CASE-13** | `FAC-DH-01` | `MED-010` | `CHRONIC_SUPPLIER_SLIP` | CHRONIC_SUPPLIER_SLIP | NO_ALERT (0 units) | **CHRONIC_SUPPLIER_SLIP** | [PASS] | `PEER_TRANSFER` (105 units) |
+| **CASE-14** | `FAC-CHC-01` | `MED-006` | `CHRONIC_SUPPLIER_SLIP` | CHRONIC_SUPPLIER_SLIP | NO_ALERT (0 units) | **CHRONIC_SUPPLIER_SLIP** | [PASS] | `PEER_TRANSFER` (90 units) |
+| **CASE-15** | `FAC-PHC-01` | `MED-011` | `CHRONIC_SUPPLIER_SLIP` | CHRONIC_SUPPLIER_SLIP | NO_ALERT (0 units) | **CHRONIC_SUPPLIER_SLIP** | [PASS] | `PEER_TRANSFER` (132 units) |
+| **CASE-16** | `FAC-DH-01` | `MED-009` | `PO_TRANSIT_LOSS` | PO_DISPATCHED_NOT_RECEIVED | NO_ALERT (0 units) | **PO_DISPATCHED_NOT_RECEIVED** | [PASS] | `PEER_TRANSFER` (30 units) |
+| **CASE-17** | `FAC-CHC-02` | `MED-004` | `PO_TRANSIT_LOSS` | PO_DISPATCHED_NOT_RECEIVED | NO_ALERT (0 units) | **PO_DISPATCHED_NOT_RECEIVED** | [PASS] | `PEER_TRANSFER` (48 units) |
+| **CASE-18** | `FAC-PHC-02` | `MED-007` | `PO_TRANSIT_LOSS` | PO_DISPATCHED_NOT_RECEIVED | NO_ALERT (0 units) | **PO_DISPATCHED_NOT_RECEIVED** | [PASS] | `PEER_TRANSFER` (60 units) |
+| **CASE-19** | `FAC-DH-01` | `MED-004` | `UOM_MISMATCH` | UOM_MISMATCH | STOCK_DEFICIT | **UOM_MISMATCH** | [PASS] | `PEER_TRANSFER` (125 units) |
+| **CASE-20** | `FAC-CHC-01` | `MED-001` | `UOM_MISMATCH` | UOM_MISMATCH | STOCK_DEFICIT | **UOM_MISMATCH** | [PASS] | `PEER_TRANSFER` (140 units) |
 
 ---
 
-## 🛡️ Zero-Hallucination Number Auditor Verification Invariants
+## 4. Zero-Hallucination Number Auditor Verification Invariants
 Across all 20 clinical scenarios, the MedTrace multi-agent loop enforced 4 deterministic mathematical invariants:
 1. **Non-Negative Inventory**: $\text{usable\_stock} \ge 0$ and $\text{shortfall\_units} \ge 0$ validated across 100% of cases.
 2. **Trust-Adjusted Stock Identity**: $\text{usable\_stock} = \max(0, \text{ledger\_stock} - \text{drift} - \text{quarantined} - \text{expired})$ checked within 0.01 tolerance.

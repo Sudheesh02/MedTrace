@@ -1,6 +1,6 @@
 """
 Curated Multi-Agent Benchmark Suite (app/backtest/curated_benchmark.py)
-Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why
+Open Agent Hackathon 2026 - Track 2: The Agent That Can Explain Why
 Priority 0c Item 5 / Backlog Item 5
 
 Provides 20 hand-crafted, clinically realistic test scenarios evaluating the
@@ -1004,7 +1004,7 @@ class CuratedBenchmark:
         md = []
         md.append("# MedTrace Curated Multi-Agent Benchmark Evaluation Report")
         md.append("")
-        md.append("**Evaluation Target**: Open Agent Hackathon 2026 — Track 2 (*The Agent That Can Explain Why*)  ")
+        md.append("**Evaluation Target**: Open Agent Hackathon 2026 - Track 2 (*The Agent That Can Explain Why*)  ")
         md.append(f"**Generated**: {results['timestamp']}  ")
         md.append(f"**Total Hand-Crafted Clinical Scenarios**: {results['total_scenarios']}  ")
         md.append("**Evaluation Scope**: Multi-agent adversarial deliberation loop, Number Auditor zero-hallucination guardrail, and clinical action formulation against rules-only baseline.")
@@ -1014,7 +1014,7 @@ class CuratedBenchmark:
         md.append("")
         md.append("---")
         md.append("")
-        md.append("## 🏆 Executive Comparative Benchmark Summary")
+        md.append("## 1. Executive Comparative Benchmark Summary")
         md.append("")
         md.append("| Metric | Rules-Only Baseline (Standard LMIS) | MedTrace Multi-Agent Loop | Advantage / Delta | Grounding Method |")
         md.append("| :--- | :---: | :---: | :---: | :--- |")
@@ -1026,7 +1026,7 @@ class CuratedBenchmark:
         md.append("")
         md.append("---")
         md.append("")
-        md.append("## 📊 Category-Wise Failure Mode Breakdown")
+        md.append("## 2. Category-Wise Failure Mode Breakdown")
         md.append("")
         md.append("| Clinical Category | Scenario Count | Rules Baseline Detected | MedTrace Detected | Clinical Consequence of Baseline Failure |")
         md.append("| :--- | :---: | :---: | :---: | :--- |")
@@ -1052,7 +1052,7 @@ class CuratedBenchmark:
         md.append("")
         md.append("---")
         md.append("")
-        md.append("## 🔬 Scenario-by-Scenario Deliberation & Audit Table")
+        md.append("## 3. Scenario-by-Scenario Deliberation & Audit Table")
         md.append("")
         md.append("| Case ID | Facility | Medicine | Category | Expected Ground Truth | Rules Baseline | MedTrace Verdict | Number Audit | Top Action Recommended |")
         md.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :--- |")
@@ -1060,13 +1060,13 @@ class CuratedBenchmark:
             gt_str = d["expected_type"] or "CLEAN (Adequate Stock)"
             b_str = d["baseline_detected"] or "NO_ALERT (0 units)"
             m_str = d["medtrace_detected"] or "CLEAN (Buffer Intact)"
-            audit_str = "✅ PASSED" if d["medtrace_audit_passed"] else "❌ FAILED"
+            audit_str = "[PASS]" if d["medtrace_audit_passed"] else "[FAIL]"
             act_str = f"`{d['medtrace_action']}` ({d['medtrace_units']:.0f} units)"
             md.append(f"| **{d['case_id']}** | `{d['facility']}` | `{d['medicine']}` | `{d['category']}` | {gt_str} | {b_str} | **{m_str}** | {audit_str} | {act_str} |")
         md.append("")
         md.append("---")
         md.append("")
-        md.append("## 🛡️ Zero-Hallucination Number Auditor Verification Invariants")
+        md.append("## 4. Zero-Hallucination Number Auditor Verification Invariants")
         md.append("Across all 20 clinical scenarios, the MedTrace multi-agent loop enforced 4 deterministic mathematical invariants:")
         md.append("1. **Non-Negative Inventory**: $\\text{usable\\_stock} \\ge 0$ and $\\text{shortfall\\_units} \\ge 0$ validated across 100% of cases.")
         md.append("2. **Trust-Adjusted Stock Identity**: $\\text{usable\\_stock} = \\max(0, \\text{ledger\\_stock} - \\text{drift} - \\text{quarantined} - \\text{expired})$ checked within 0.01 tolerance.")

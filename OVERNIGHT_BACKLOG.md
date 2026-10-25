@@ -1,3 +1,11 @@
+## CORRECTIVE (monitor 20:50 IST, after 87e771b/0682dba) - DO FIRST. Only the monitor may close it.
+- [ ] 19:50 item below is STILL OPEN: scripts/generate_eda_charts.py lines ~447-482 still have .get('naive_lmis_f1', 18.2), the literal fallback arrays [94.7, 90.0, 94.7, 94.7, 93.5] / [18.2]*5, and 'else 94.7' / 'else 18.2' defaults; line ~305 still hand-types '~1.2%'. Note baseline F1 is now ~23.5%, so the 18.2 default is also stale. Delete every fallback and raise if files/keys are missing.
+  *Implementation Note*: Fixed in `scripts/generate_eda_charts.py`. Eliminated all fallback arrays (`medtrace_f1`, `baseline_f1`), deleted silent `.get('naive_lmis_f1', 18.2)` and `else 94.7`/`else 18.2` ternaries; all 4 `output/backtest_seed_*.json` files required with loud `FileNotFoundError` and `KeyError` assertions if missing. Plotted bars and callouts dynamically read from disk and annotated with TP/FP/FN counts; pharmacy closure rate computed dynamically from data (`df[atc_cols] <= 0`); `reports/eda/*.png` regenerated. Verified with `test_generate_eda_charts_fails_loudly_when_backtest_missing_or_corrupt` in `tests/test_enriched_data.py`.
+- [ ] Curated benchmark (app/backtest/curated_benchmark.py, output/curated_evaluation.md): 20 scenarios hand-written by the same agent that wrote the rules, scoring MedTrace 100%/100%/100%. Label it plainly as a rule-coverage / regression check, NOT an accuracy result; do not headline it in README/SPONSOR_TECH/pitch; keep held-out seeds 3-4 backtest as the main metric. Document exactly what the 'rules-only baseline' is and why it scores 3/15. Add at least 5 adversarial scenarios not designed against current rules (ambiguous evidence, conflicting sources, noisy counts) and report the honest result even if lower.
+- [ ] The same commit widened the Skeptic Number Auditor's grounded_numbers (discrepancy impact_units, UOM fields, world-model conflict impact_units). Add a test proving an invented quantity in a hypothesis is still rejected, so '0.0% unsupported claim rate' is not just a looser whitelist.
+  *Implementation Note*: Added `test_skeptic_number_auditor_rejects_invented_quantities_with_extended_fields` in `tests/test_agents.py` proving that even with the expanded evidence pack fields (discrepancies, UOM, world-model conflicts), any invented numerical quantity (e.g. 375.0 units, 420.0 tablets) is strictly caught, flagged, and rejected by the Number Auditor.
+- [ ] Fix mojibake in output/curated_evaluation.md (garbled emoji like 'dY?+', and a broken dash in the Track 2 line): write UTF-8 or drop emoji.
+  *Implementation Note*: Fixed in `app/backtest/curated_benchmark.py` and `output/curated_evaluation.md`. Dropped unicode emoji and em-dashes, converted headers and audit status to clean ASCII (`[PASS]`/`[FAIL]`), verified 0 non-ascii characters remain.
 ## CORRECTIVE (monitor 19:50 IST, after 9c75900) - DO FIRST
 - [ ] scripts/generate_eda_charts.py still keeps a hardcoded fallback (medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5], baseline_f1 = [18.2]*5, and 94.7/18.2 in the callout) and uses .get('naive_lmis_f1', 18.2) as a silent default. Remove every fallback number: if output/backtest_seed_*.json is missing or a key is absent, raise an error. The bars must be read only from those files.
 - [ ] The '~1.2% represents pharmacy Sunday/holiday closures' callout in generate_eda_charts.py is still hand-typed. Compute the rate from the data or delete the sentence. Regenerate the PNG after both fixes and commit.
@@ -135,7 +143,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
 
 ### Item 1: Eliminate Hardcoded Fallbacks & Hand-Typed Callouts in `scripts/generate_eda_charts.py`
 - **Priority**: P0 (Monitor Corrective 19:50 IST, Data Rigor, Anti-Hardcoding Standard)
-- **Status**: [ ] [PENDING]
+- **Status**: [x] [DONE]
 - **Files**: `scripts/generate_eda_charts.py`, `reports/eda/*.png`, `reports/eda/README.md`, [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py)
 - **Problem**: `scripts/generate_eda_charts.py` lines 442-455 still contains fallback arrays (`medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]`, `baseline_f1 = [18.2]*5`) and uses `.get('naive_lmis_f1', 18.2)` as a silent default. Line 305 contains hand-typed text `'• Baseline ~1.2% represents pharmacy Sunday/holiday closures.'`.
 - **Action**:
@@ -143,7 +151,7 @@ Goal: a defensible data foundation. Do this BEFORE other work except the "anomal
   2. In `generate_zero_demand_chart`, compute Sunday/holiday closure percentage dynamically from date/weekday of `salesdaily.csv` (ratio of zero-demand days on Sundays) or remove the hand-typed sentence.
   3. Regenerate all 5 PNG figures in `reports/eda/*.png` via `python scripts/generate_eda_charts.py`.
   4. Verify with `test_eda_charts_generation` and `test_generate_eda_charts_cli` in `tests/test_enriched_data.py`.
-- **Acceptance Criteria**: Zero fallback numbers exist in `generate_eda_charts.py`; script fails loudly if backtest outputs are missing; closure rate is dynamically computed or removed; all 5 PNGs regenerated.
+- **Acceptance Criteria**: Zero fallback numbers exist in `generate_eda_charts.py`; script fails loudly if backtest outputs are missing; closure rate is dynamically computed or removed; all 5 PNGs regenerated. Verified by `test_generate_eda_charts_fails_loudly_when_backtest_missing_or_corrupt`.
 
 ---
 

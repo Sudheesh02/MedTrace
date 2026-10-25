@@ -296,13 +296,18 @@ def generate_zero_demand_chart(data_dir: str = "data", output_dir: str = "report
     ax.set_xlabel("Zero-Demand Share (% of 2,106 Evaluated Days)", fontsize=10, color=SLATE)
     ax.grid(True, axis="x")
 
+    # Dynamically compute pharmacy facility-wide closure percentage across all tracked ATC classes
+    all_zero_mask = (df[atc_cols] <= 0).all(axis=1)
+    all_zero_count = int(all_zero_mask.sum())
+    all_zero_pct = (all_zero_count / total_days) * 100.0 if total_days > 0 else 0.0
+
     # Add explanatory callout
     callout_txt = (
         "Grounding Rationale:\n"
         "• Low Zeros (<5%): Routine maintenance & analgesics (continuous demand)\n"
         "• Moderate Zeros (10-25%): Seasonal & episodic treatments (R03, R06)\n"
         "• High Zeros (>65%): Specialized hypnotics (N05C: intermittent demand)\n"
-        "• Baseline ~1.2% represents pharmacy Sunday/holiday closures."
+        f"• Baseline {all_zero_pct:.1f}% ({all_zero_count}/{total_days} days) represents pharmacy facility closures/holidays."
     )
     ax.text(
         0.52, 0.28, callout_txt, transform=ax.transAxes,
@@ -399,9 +404,29 @@ def generate_stockout_lead_time_chart(data_dir: str = "data", output_dir: str = 
     backtest_seeds = []
     for s in [1, 2, 3, 4]:
         seed_path = os.path.join("output", f"backtest_seed_{s}.json")
-        if os.path.exists(seed_path):
-            with open(seed_path, "r", encoding="utf-8") as f:
-                backtest_seeds.append(json.load(f))
+        if not os.path.exists(seed_path):
+            raise FileNotFoundError(
+                f"Required backtest output file not found: '{seed_path}'. "
+                "All 4 backtest seed files (output/backtest_seed_1.json .. backtest_seed_4.json) "
+                "must be generated via scripts/run_backtest.py before generating Figure 5."
+            )
+        with open(seed_path, "r", encoding="utf-8") as f:
+            seed_data = json.load(f)
+
+        if "metrics" not in seed_data or "anomaly_detection" not in seed_data["metrics"]:
+            raise KeyError(f"Missing 'metrics.anomaly_detection' section in {seed_path}")
+
+        ad = seed_data["metrics"]["anomaly_detection"]
+        if "f1_score_pct" not in ad:
+            raise KeyError(f"Missing required metric 'f1_score_pct' in {seed_path} anomaly_detection")
+        if "naive_lmis_f1" not in ad:
+            raise KeyError(f"Missing required metric 'naive_lmis_f1' in {seed_path} anomaly_detection")
+        if "true_positives" not in ad or "false_positives" not in ad or "false_negatives" not in ad:
+            raise KeyError(f"Missing raw count metrics in {seed_path} anomaly_detection")
+        if "baseline_comparisons" not in ad or "naive_lmis" not in ad["baseline_comparisons"]:
+            raise KeyError(f"Missing 'baseline_comparisons.naive_lmis' in {seed_path} anomaly_detection")
+
+        backtest_seeds.append(seed_data)
 
     # Read true stock daily for stock cover distribution
     true_stock_path = os.path.join(data_dir, "simulated", "true_stock_daily.csv")
@@ -437,21 +462,24 @@ def generate_stockout_lead_time_chart(data_dir: str = "data", output_dir: str = 
     ax1.grid(True)
     ax1.legend(loc="lower right", fontsize=8.5, framealpha=0.9)
 
-    # Subplot 2: Multi-Seed Anomaly Detection F1 Performance Breakdown
+    # Subplot 2: Multi-Seed Anomaly Detection F1 Performance Breakdown (Strictly Read from Disk)
     seeds = ["Seed 1", "Seed 2", "Seed 3 (Test)", "Seed 4 (Test)", "Overall Avg"]
-    if len(backtest_seeds) >= 4:
-        medtrace_f1 = [
-            float(r["metrics"]["anomaly_detection"]["f1_score_pct"]) for r in backtest_seeds[:4]
-        ]
-        baseline_f1 = [
-            float(r["metrics"]["anomaly_detection"].get("naive_lmis_f1", 18.2)) for r in backtest_seeds[:4]
-        ]
-        medtrace_f1.append(float(np.mean(medtrace_f1[:4])))
-        baseline_f1.append(float(np.mean(baseline_f1[:4])))
-    else:
-        # Graceful fallback when executed prior to backtest suite generation
-        medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]
-        baseline_f1 = [18.2, 18.2, 18.2, 18.2, 18.2]
+    medtrace_f1 = [
+        float(r["metrics"]["anomaly_detection"]["f1_score_pct"]) for r in backtest_seeds
+    ]
+    baseline_f1 = [
+        float(r["metrics"]["anomaly_detection"]["naive_lmis_f1"]) for r in backtest_seeds
+    ]
+    medtrace_f1.append(float(np.mean(medtrace_f1)))
+    baseline_f1.append(float(np.mean(baseline_f1)))
+
+    medtrace_tps = [int(r["metrics"]["anomaly_detection"]["true_positives"]) for r in backtest_seeds]
+    medtrace_fps = [int(r["metrics"]["anomaly_detection"]["false_positives"]) for r in backtest_seeds]
+    medtrace_fns = [int(r["metrics"]["anomaly_detection"]["false_negatives"]) for r in backtest_seeds]
+
+    baseline_tps = [int(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["true_positives"]) for r in backtest_seeds]
+    baseline_fps = [int(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["false_positives"]) for r in backtest_seeds]
+    baseline_fns = [int(r["metrics"]["anomaly_detection"]["baseline_comparisons"]["naive_lmis"]["false_negatives"]) for r in backtest_seeds]
 
     x = np.arange(len(seeds))
     width = 0.35
@@ -459,18 +487,22 @@ def generate_stockout_lead_time_chart(data_dir: str = "data", output_dir: str = 
     b1 = ax2.bar(x - width/2, medtrace_f1, width, label="MedTrace (Multi-Agent)", color=EMERALD, alpha=0.9)
     b2 = ax2.bar(x + width/2, baseline_f1, width, label="Baselines (Naive/Heuristic)", color=SLATE, alpha=0.6)
 
-    # Value labels on top of bars
-    for bar in b1:
+    # Value labels on top of bars with raw TP/FP counts
+    for i, bar in enumerate(b1):
         h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.1f}%", ha="center", va="bottom", fontsize=8.5, fontweight="bold", color=EMERALD)
+        tp = medtrace_tps[i] if i < len(medtrace_tps) else sum(medtrace_tps)
+        fp = medtrace_fps[i] if i < len(medtrace_fps) else sum(medtrace_fps)
+        ax2.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.1f}%\n(TP:{tp} FP:{fp})", ha="center", va="bottom", fontsize=7.5, fontweight="bold", color=EMERALD)
 
-    for bar in b2:
+    for i, bar in enumerate(b2):
         h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.1f}%", ha="center", va="bottom", fontsize=8, color=SLATE)
+        tp = baseline_tps[i] if i < len(baseline_tps) else sum(baseline_tps)
+        fp = baseline_fps[i] if i < len(baseline_fps) else sum(baseline_fps)
+        ax2.text(bar.get_x() + bar.get_width()/2, h + 1.5, f"{h:.1f}%\n(TP:{tp} FP:{fp})", ha="center", va="bottom", fontsize=7.0, color=SLATE)
 
     ax2.set_xticks(x)
     ax2.set_xticklabels(seeds, fontsize=9)
-    ax2.set_ylim(0, 115)
+    ax2.set_ylim(0, 125)
     ax2.set_title("Planted Anomaly Detection F1 Score by Simulation Seed", fontsize=12, fontweight="bold", color=NAVY)
     ax2.set_xlabel("Simulation Seed & Evaluation Role", fontsize=10, color=SLATE)
     ax2.set_ylabel("Anomaly Detection F1 Score (%)", fontsize=10, color=SLATE)
@@ -478,10 +510,10 @@ def generate_stockout_lead_time_chart(data_dir: str = "data", output_dir: str = 
     ax2.legend(loc="upper right", fontsize=8.5, framealpha=0.9)
 
     # Highlight generalization box derived dynamically from measured seed values
-    heldout_f1_val = float(np.mean(medtrace_f1[2:4])) if len(medtrace_f1) >= 4 else 94.7
-    baseline_heldout_val = float(np.mean(baseline_f1[2:4])) if len(baseline_f1) >= 4 else 18.2
+    heldout_f1_val = float(np.mean(medtrace_f1[2:4]))
+    baseline_heldout_val = float(np.mean(baseline_f1[2:4]))
     ax2.text(
-        0.03, 0.95, f"Held-Out Test Generalization (Seeds 3-4):\nMedTrace achieves {heldout_f1_val:.1f}% F1 on unseen facilities\nwhile baselines achieve {baseline_heldout_val:.1f}% (100% intercept).",
+        0.03, 0.95, f"Held-Out Test Generalization (Seeds 3-4):\nMedTrace achieves {heldout_f1_val:.1f}% F1 on unseen facilities\nwhile baselines achieve {baseline_heldout_val:.1f}% (unrigged z-score).",
         transform=ax2.transAxes, verticalalignment="top", fontsize=8,
         bbox=dict(boxstyle="round,pad=0.5", facecolor=LIGHT_GRAY, edgecolor="#CBD5E1")
     )

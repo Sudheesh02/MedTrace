@@ -384,3 +384,45 @@ def test_generate_eda_charts_cli(tmp_path):
     assert len(png_files) == 5
 
 
+def test_generate_eda_charts_fails_loudly_when_backtest_missing_or_corrupt(tmp_path, monkeypatch):
+    """
+    Priority 0b Corrective Gate: Verifies that scripts/generate_eda_charts.py has zero
+    silent fallback arrays or defaults, and fails loudly with FileNotFoundError if
+    any seed file is missing, or KeyError if required metrics are missing.
+    """
+    import os
+    import pytest
+    from scripts.generate_eda_charts import generate_stockout_lead_time_chart
+
+    out_dir = str(tmp_path / "fail_loud_eda")
+
+    # 1. Missing seed file triggers FileNotFoundError
+    orig_exists = os.path.exists
+    def mock_exists_missing_seed(path):
+        if "backtest_seed_4.json" in str(path):
+            return False
+        return orig_exists(path)
+
+    monkeypatch.setattr(os.path, "exists", mock_exists_missing_seed)
+    with pytest.raises(FileNotFoundError, match="Required backtest output file not found"):
+        generate_stockout_lead_time_chart(data_dir="data", output_dir=out_dir)
+
+    monkeypatch.undo()
+
+    # 2. Missing naive_lmis_f1 key triggers KeyError
+    import json
+    orig_load = json.load
+    def mock_load_missing_key(fp):
+        data = orig_load(fp)
+        if isinstance(data, dict) and "metrics" in data:
+            ad = data.get("metrics", {}).get("anomaly_detection", {})
+            if "naive_lmis_f1" in ad:
+                del ad["naive_lmis_f1"]
+        return data
+
+    monkeypatch.setattr(json, "load", mock_load_missing_key)
+    with pytest.raises(KeyError, match="Missing required metric 'naive_lmis_f1'"):
+        generate_stockout_lead_time_chart(data_dir="data", output_dir=out_dir)
+
+
+

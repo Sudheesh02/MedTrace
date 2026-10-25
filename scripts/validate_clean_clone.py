@@ -90,12 +90,12 @@ def main():
             "Printable Procurement Memorandum successfully written to"
         ),
         (
-            [sys.executable, "scripts/generate_eda_charts.py", "--quiet"],
+            [sys.executable, "scripts/generate_eda_charts.py", "--quiet", "--output-dir", os.path.join(os.environ.get("TEMP", "/tmp"), "validate_eda_out")],
             "Automated Empirical EDA Visual Figures Generator (scripts/generate_eda_charts.py)",
             ""
         ),
         (
-            [sys.executable, "scripts/run_curated_eval.py", "--quiet"],
+            [sys.executable, "scripts/run_curated_eval.py", "--quiet", "--output-dir", os.path.join(os.environ.get("TEMP", "/tmp"), "validate_curated_out")],
             "Curated Multi-Agent Benchmark Evaluation (scripts/run_curated_eval.py)",
             ""
         ),

@@ -983,6 +983,78 @@ def test_number_auditor_rejects_hallucinated_numbers_not_in_evidence_pack():
     assert "9999.0" in review2.critique_notes or "850.0" in review2.critique_notes
 
 
+def test_skeptic_number_auditor_rejects_invented_quantities_with_extended_fields():
+    """
+    Monitor Corrective Gate: Proves that even with expanded grounded_numbers whitelist
+    (discrepancies impact_units, uom_info pack sizes, world_model conflicts), an invented
+    numerical quantity in an LLM hypothesis is strictly caught and rejected.
+    """
+    from app.agents.skeptic import SkepticAgent
+    from app.adapters.llm_client import LLMClient
+    from app.models.schemas import Hypothesis
+
+    skeptic = SkepticAgent(LLMClient())
+    deterministic_recon = {
+        "stock_evaluation": {
+            "ledger_stock": 500.0,
+            "usable_stock": 380.0,
+            "audit_drift": 0.0,
+            "quarantined_stock": 120.0,
+            "expiring_stock": 0.0
+        },
+        "trust_shortfall": {
+            "shortfall_units": 40.0,
+            "gap_days": 2.0,
+            "delivery_day": 5.0
+        },
+        "trust_cover_days": 19.0,
+        "naive_cover_days": 25.0,
+        "understated_gap_percent": 24.0,
+        "discrepancies": [
+            {"anomaly_type": "QUARANTINED_BATCH", "impact_units": 120.0}
+        ],
+        "uom_info": {
+            "reported_quantity": 50.0,
+            "normalized_quantity": 500.0,
+            "pack_size_units": 10.0
+        }
+    }
+    world_context = {
+        "conflicts": [
+            {"type": "BATCH_RECALL", "details": {"impact_units": 80.0}}
+        ]
+    }
+
+    # Case A: Legitimate hypothesis citing real quantities (120 units quarantined, 10 units per pack)
+    valid_hyp = Hypothesis(
+        hypothesis_id="H1-QA",
+        title="Quarantined Lot Discrepancy",
+        cause="Regulatory recall isolates 120.0 units under QA quarantine across 10.0 units packs.",
+        likelihood=0.90,
+        supporting_evidence=["Ledger reports 500.0 units but 120.0 units cannot be dispensed."],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+    _, valid_rev = skeptic.review_and_audit([valid_hyp], deterministic_recon, world_context=world_context, round_number=1)
+    assert valid_rev.audited_numbers_valid is True
+    assert valid_rev.accepted is True
+
+    # Case B: Adversarial hallucinated hypothesis claiming invented quantity 375.0 units
+    invented_hyp = Hypothesis(
+        hypothesis_id="H2-INVENTED",
+        title="Unverified Vendor Shortage",
+        cause="Vendor invoice shows an ungrounded discrepancy of 375.0 units missing in transit.",
+        likelihood=0.90,
+        supporting_evidence=["Auditor finds 420.0 tablets missing without ledger trail."],
+        refuting_evidence=[],
+        confirming_query="SELECT 1"
+    )
+    _, invalid_rev = skeptic.review_and_audit([invented_hyp], deterministic_recon, world_context=world_context, round_number=1)
+    assert invalid_rev.audited_numbers_valid is False
+    assert invalid_rev.accepted is False
+    assert any("375.0" in note or "420.0" in note for note in invalid_rev.flagged_inconsistencies)
+
+
 def test_multi_agent_debate_flips_winning_hypothesis():
     """
     Verify multi-agent adversarial debate dynamics:

@@ -1185,3 +1185,36 @@
   - Backlog Item 5: Implement real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
   - Backlog Item 6: Create lightweight interactive Streamlit dashboard (`app/ui.py`).
   - Backlog Item 7: Author consolidated sponsor conformance test suite (`tests/test_sponsor_conformance.py`).
+
+---
+
+### Session: 2026-10-25 21:05 IST
+**Role**: Senior Staff AI Engineer & Core Maintainer  
+**Phase**: Backlog Item 1 Implementation & Monitor Corrective Resolution (Data Rigor & Zero Fallbacks)
+
+#### What Was Done
+1. **Eliminated Hardcoded Fallbacks & Hand-Typed Callouts in `scripts/generate_eda_charts.py`**:
+   - Removed fallback arrays `medtrace_f1 = [94.7, 90.0, 94.7, 94.7, 93.5]` and `baseline_f1 = [18.2]*5`.
+   - Removed silent default `.get('naive_lmis_f1', 18.2)` and ternary defaults `else 94.7` and `else 18.2`.
+   - Enforced strict loud assertions: required all 4 `output/backtest_seed_*.json` files to exist, raising `FileNotFoundError` if missing and `KeyError` if required anomaly detection metrics or raw counts are absent.
+   - Annotated plotted bars with exact true positive (TP) and false positive (FP) counts dynamically extracted from seed outputs.
+   - Replaced hand-typed `~1.2%` Sunday/holiday closure callout with dynamic calculation from pharmacological sales dataset (`all_zero_mask = (df[atc_cols] <= 0).all(axis=1)`: 26/2,106 days = 1.2%).
+   - Updated `reports/eda/README.md` to reference the unrigged baseline F1 (23.5% typed / 23.9% type-agnostic).
+   - Regenerated all 5 empirical EDA figures in `reports/eda/*.png`.
+2. **Hardened Number Auditor Zero-Hallucination Verification Test**:
+   - Added `test_skeptic_number_auditor_rejects_invented_quantities_with_extended_fields` in [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py), proving that even with expanded evidence pack fields (discrepancy impacts, UOM pack sizes, world model conflicts), any invented quantity in an LLM hypothesis (e.g. 375.0 units, 420.0 tablets) is strictly detected and rejected.
+3. **Eliminated Mojibake in Curated Benchmark Artifacts**:
+   - Cleaned Unicode emojis and em-dashes in [`app/backtest/curated_benchmark.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/curated_benchmark.py) and [`output/curated_evaluation.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/output/curated_evaluation.md) to clean ASCII markdown (`[PASS]`/`[FAIL]`), eliminating console encoding exceptions.
+   - Updated [`scripts/validate_clean_clone.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/validate_clean_clone.py) to pass isolated temporary directories for `run_curated_eval.py` and `generate_eda_charts.py`, protecting tracked repository files.
+4. **Added Unit Tests**:
+   - Added `test_generate_eda_charts_fails_loudly_when_backtest_missing_or_corrupt` in [`tests/test_enriched_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_enriched_data.py) asserting `FileNotFoundError` on missing seed files and `KeyError` on missing metric keys.
+5. **Marked Item 1 Completed**:
+   - Updated [`OVERNIGHT_BACKLOG.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/OVERNIGHT_BACKLOG.md) recording Item 1 as `[x] [DONE]` with detailed implementation notes for the monitor.
+6. **Full Test Suite Verification**:
+   - Executed full test suite (`python -m pytest tests -q`): **130 passed, 1 warning in 274.23s** (100% green across all 7 test suites).
+
+#### What Is Next
+- **Backlog Item 2 (P0 / Monitor 20:50)**: Complete Curated Benchmark documentation & honest scenario framing: label 20 scenarios as a rule-coverage / regression check (not general accuracy), keep held-out seeds 3-4 backtest as primary, document the rules baseline, and add 5 adversarial scenarios with ambiguous/conflicting evidence.
+- **Backlog Item 3 (P0)**: Document and highlight Curated Multi-Agent Benchmark in `README.md` and `SPONSOR_TECH.md`.
+- **Backlog Item 4 (P0)**: Reframe `README.md` narrative around audit accuracy, faithful explanations, and remove `(>85% target)` language.
+- **Backlog Item 5 (P1)**: Real-time openFDA REST API adapter with offline cache-aside in `app/adapters/data_store.py`.
