@@ -11,6 +11,9 @@ import os
 
 class HMemEngine:
     def __init__(self, persistence_file: Optional[str] = "logs/hmem_store.json"):
+        # MEDTRACE_HMEM_FILE lets tests / sandboxes redirect the default store so they never pollute real officer memory.
+        if persistence_file == "logs/hmem_store.json" and os.environ.get("MEDTRACE_HMEM_FILE"):
+            persistence_file = os.environ["MEDTRACE_HMEM_FILE"]
         self.persistence_file = persistence_file
         self.working_memory: List[Dict[str, Any]] = []
         self.episodic_memory: List[Dict[str, Any]] = []

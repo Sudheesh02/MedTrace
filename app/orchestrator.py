@@ -24,7 +24,7 @@ from app.models.schemas import ActionPack
 class MedTraceOrchestrator:
     def __init__(
         self,
-        use_zetaris: bool = False,
+        use_zetaris: Optional[bool] = None,
         logs_dir: str = "logs",
         hmem: Optional[HMemEngine] = None,
         data_store: Optional[DataStore] = None
@@ -95,6 +95,7 @@ class MedTraceOrchestrator:
         if valid_meds and medicine_id not in valid_meds:
             raise ValueError(f"Unrecognized medicine_id '{medicine_id}'. Registered medicines: {sorted(list(valid_meds))}")
 
+        DataStore.reset_zetaris_stats()
         log_step("Orchestrator", "START_RUN", {"facility_id": facility_id, "medicine_id": medicine_id})
 
         # 1. Reconciliation Step
@@ -276,6 +277,13 @@ class MedTraceOrchestrator:
             expiring_stock=det_rec["stock_evaluation"].get("expiring_stock", 0.0)
         )
 
+        zstats = DataStore.get_zetaris_stats()
+        log_step("ZetarisDataLayer", "DATA_SOURCE_SUMMARY", {
+            "use_zetaris": bool(self.data_store.use_zetaris),
+            "database": "MEDTRACE_LH" if self.data_store.use_zetaris else None,
+            "source": "zetaris-lightning-sql" if zstats["queries_ok"] else "local-csv-sample-data",
+            **zstats
+        }, llm_used=False, fallback=bool(self.data_store.use_zetaris and zstats["queries_fallback_to_csv"] > 0 and zstats["queries_ok"] == 0))
         log_step("Orchestrator", "RUN_COMPLETE", {"run_id": run_id, "status": "SUCCESS"}, llm_used=False, fallback=False)
         return pack
 

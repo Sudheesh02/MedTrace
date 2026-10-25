@@ -1,4 +1,4 @@
-﻿"""Tests for LLM output hygiene: reasoning-model <think> leak stripping."""
+"""Tests for LLM output hygiene: reasoning-model <think> leak stripping."""
 import os
 from types import SimpleNamespace
 

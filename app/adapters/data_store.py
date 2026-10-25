@@ -15,6 +15,22 @@ class DataStore:
     _shared_csv_cache: Dict[str, List[Dict[str, Any]]] = {}
     _shared_pair_indexes: Dict[str, Dict[Tuple[str, str], List[Dict[str, Any]]]] = {}
     _shared_openfda_cache: Dict[str, List[Dict[str, Any]]] = {}
+    # Per-process Zetaris telemetry so traces can prove (or disprove) that Zetaris actually served data.
+    zetaris_stats: Dict[str, Any] = {"queries_attempted": 0, "queries_ok": 0, "queries_fallback_to_csv": 0, "tables": {}}
+
+    @classmethod
+    def reset_zetaris_stats(cls) -> None:
+        cls.zetaris_stats = {"queries_attempted": 0, "queries_ok": 0, "queries_fallback_to_csv": 0, "tables": {}}
+
+    @classmethod
+    def get_zetaris_stats(cls) -> Dict[str, Any]:
+        s = cls.zetaris_stats
+        return {
+            "queries_attempted": s["queries_attempted"],
+            "queries_ok": s["queries_ok"],
+            "queries_fallback_to_csv": s["queries_fallback_to_csv"],
+            "tables": dict(s["tables"]),
+        }
 
     def __init__(self, use_zetaris: Optional[bool] = None, sim_dir: Optional[str] = None):
         sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
@@ -92,15 +108,38 @@ class DataStore:
         return None
 
     def _query_zetaris(self, sql: str) -> Optional[List[Dict[str, Any]]]:
+        """Run one Lightning SQL statement; records telemetry (ok vs. fell back to local CSV)."""
+        if not self.use_zetaris:
+            return None
+        import re as _re
+        stats = DataStore.zetaris_stats
+        stats["queries_attempted"] += 1
+        m = _re.search(r"FROM\s+MEDTRACE_LH\.([A-Za-z0-9_]+)", sql, _re.IGNORECASE)
+        table = m.group(1) if m else "other"
+        result = self._query_zetaris_raw(sql)
+        if result:
+            stats["queries_ok"] += 1
+            stats["tables"][table] = stats["tables"].get(table, 0) + 1
+        else:
+            stats["queries_fallback_to_csv"] += 1
+        return result
+
+    def _query_zetaris_raw(self, sql: str) -> Optional[List[Dict[str, Any]]]:
         if not self.use_zetaris:
             return None
         token = self._get_token()
         if not token:
             return None
 
-        # Dual-endpoint compatibility: Participant Setup Guide (port 8888 /api/v1.0) & UI proxy (port 3000)
-        primary_url = f"{self.rest_url}/sql-editor/sqls/run" if self.rest_url else f"{self.base_url}/api/proxy/sql-editor/sqls/run-query"
-        fallback_url = f"{self.base_url}/sql-editor/sqls/run" if not self.rest_url else f"{self.base_url}/api/proxy/sql-editor/sqls/run-query"
+        # Endpoint order. Participant-guide REST route (ZETARIS_REST_URL, e.g. :8888/api/v1.0) first when it is a
+        # distinct service; otherwise the UI proxy `run-query` route (verified working on the local stack).
+        # NOTE: a rest_url that merely points at the UI proxy (".../api/proxy") must NOT use the `/sqls/run` shape,
+        # which expects queryId/source and returns 400.
+        proxy_url = f"{self.base_url}/api/proxy/sql-editor/sqls/run-query"
+        if self.rest_url and not self.rest_url.rstrip("/").endswith("/api/proxy"):
+            urls = [f"{self.rest_url}/sql-editor/sqls/run", proxy_url]
+        else:
+            urls = [proxy_url]
 
         headers = {
             "Authorization": f"Bearer {token}",
@@ -112,7 +151,7 @@ class DataStore:
             "limit": 5000
         }
 
-        for url in [primary_url, fallback_url]:
+        for url in urls:
             try:
                 res = requests.post(url, headers=headers, json=body, timeout=5)
                 if res.status_code == 200:
@@ -129,8 +168,8 @@ class DataStore:
                         return rows
                     elif rows and headers_list:
                         return [dict(zip(headers_list, row)) for row in rows]
-                elif res.status_code != 404:
-                    # Non-404 error (e.g. auth failure or bad request), don't retry route
+                elif res.status_code not in (400, 404, 405):
+                    # Auth failure / server error: do not retry another route
                     break
             except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
                 # Host is down or port closed; immediately break to allow fast offline fallback

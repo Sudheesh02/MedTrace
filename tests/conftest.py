@@ -11,6 +11,8 @@ import pytest
 # before any test module (e.g. tests/test_api.py importing run.py) is imported.
 os.environ.setdefault("SAMPLE_MODE", "true")
 os.environ.setdefault("USE_ZETARIS", "false")
+# Isolate persisted H-MEM officer memory so test runs never pollute logs/hmem_store.json (the real demo memory).
+os.environ.setdefault("MEDTRACE_HMEM_FILE", os.path.join(tempfile.mkdtemp(prefix="medtrace_test_hmem_"), "hmem_store.json"))
 
 def pytest_configure(config):
     """Enforce offline sample mode during test collection and configuration."""
