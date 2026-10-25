@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   backend:
     build:
@@ -10,8 +8,9 @@ services:
       - "8000:8000"
     environment:
       - PORT=8000
-      - SAMPLE_MODE=true
-      - USE_ZETARIS=false
+      # Offline judge mode by default. For live runs set SAMPLE_MODE=false and the Nightshift/Zetaris variables from .env.example.
+      - SAMPLE_MODE=${SAMPLE_MODE:-true}
+      - USE_ZETARIS=${USE_ZETARIS:-false}
       - LOGS_DIR=logs
     volumes:
       - ./logs:/app/logs
@@ -23,25 +22,3 @@ services:
       retries: 3
       start_period: 5s
     restart: unless-stopped
-
-  # Optional Postgres service for offline Zetaris metastore / tabular warehouse emulation
-  postgres:
-    image: postgres:15-alpine
-    container_name: medtrace-postgres
-    profiles: ["full-stack"]
-    environment:
-      POSTGRES_USER: medtrace_admin
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
-      POSTGRES_DB: medtrace_warehouse
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U medtrace_admin -d medtrace_warehouse"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  pgdata:
