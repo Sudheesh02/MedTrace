@@ -1,46 +1,48 @@
 # MedTrace Senior Reviewer Comprehensive Audit & Prioritized Overnight Backlog
 
-**Audit Timestamp**: 2026-10-25 07:15 UTC  
+**Audit Timestamp**: 2026-10-25 08:15 UTC  
 **Reviewer Role**: Senior Staff AI Reviewer & Hackathon Judge Auditor  
 **Evaluation Target**: Open Agent Hackathon 2026 — Track 2 (*The Agent That Can Explain Why*)  
 **Scope**: README Claims vs. Real Code, Multi-Agent Loop, Data Layer, Backtest Engine, Test Suite, FastAPI/CLI App, Docker Packaging, Docs, and Hackathon Details Alignment.  
-**Status**: Application code unchanged in this audit step. Full test suite baseline verified (63 passed in 33.43s). Exactly 12 prioritized, concrete, small items formulated below replacing stale backlog entries.
+**Status**: Application code untouched in this audit step. Full test suite baseline verified (**72 passed, 1 warning in 80.84s**). Exactly 12 prioritized, concrete, small items formulated below replacing completed/stale entries.
 
 ---
 
-## 🏛 Executive Audit Summary: README Claims vs. Real Code
+## 🏛 Executive Senior Audit: README Claims vs. Real Code Reality
 
-An exhaustive audit of [README.md](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [MedTrace_Research_and_Execution_Plan.md](file:///C:/Users/Asus/Desktop/Open%20Agent/MedTrace_Research_and_Execution_Plan.md), the hackathon specifications in `hackathon details/` ([16page.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/16page.md), [How to Win Hackathons!.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/How%20to%20Win%20Hackathons!.md), [Meterless_ Overview.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/Meterless_%20Overview.md), [participant-setup-guide.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/participant-setup-guide.md), [zetaris-*.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/zetaris-sponsor-overview.md)), and the active codebase reveals substantial technical maturity alongside critical production and judge-readiness gaps against the 100-point rubric:
+An exhaustive audit of [README.md](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [MedTrace_Research_and_Execution_Plan.md](file:///C:/Users/Asus/Desktop/Open%20Agent/MedTrace_Research_and_Execution_Plan.md), and all hackathon specifications in `hackathon details/` ([16page.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/16page.md), [How to Win Hackathons!.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/How%20to%20Win%20Hackathons!.md), [Meterless_ Overview.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/Meterless_%20Overview.md), [participant-setup-guide.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/participant-setup-guide.md), [zetaris-*.md](file:///C:/Users/Asus/Desktop/Open%20Agent/hackathon%20details/zetaris-sponsor-overview.md)) against the active codebase reveals exceptional technical rigor alongside targeted optimizations needed for maximum judge scoring:
 
-### 🌟 Strengths & Provenance Verified:
-1. **Zero LLM Hallucinated Math**: The core design principle—isolating deterministic arithmetic to [`DeterministicEngine`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engine/deterministic.py)—is strictly upheld across all code paths. Days of cover, trust-adjusted usable stock, and Monte Carlo ETA are computed mathematically with zero numerical generation by the LLM.
-2. **Empirical Public Health Datasets**: Curated medicine formulary (12 medicines), 10,324 public USAID shipments, empirical supplier slip priors, openFDA shortages, FDA recall events, NIH RxNorm codes, and DailyMed packaging standards are integrated with clean provenance in [`data/README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/data/README.md).
-3. **Zetaris Federated SQL Layer**: [`DataStore`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py) connects dynamically to Zetaris Lightning REST SQL proxy (`/api/proxy/sql-editor/sqls/run-query`) with automated JWT caching, query parameterization, and seamless offline fallback (`SAMPLE_MODE=true`).
-4. **Meterless World Model & H-MEM Conformance**: Grounded entity state graph (`ent_inv_*`), content-hash idempotency (Test W1), planted conflict recording (Test W2), cross-session memory (Test H1), and deterministic contradiction resolution (Test H2) are implemented and covered by automated tests in [`tests/test_world_model.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_world_model.py).
-5. **180-Day Comparative Backtest**: Replay engine runs across development seeds 1–3 and held-out seed 4, measuring real early-warning lead times (+13.1d) and high anomaly F1 scores (94.8%) against Naive LMIS.
-
----
-
-### 🔍 Critical Gaps, Vulnerabilities & Unimplemented Features Uncovered:
-
-| # | Domain | Plan / Rubric Requirement | Real Code Reality | Judging Impact |
-|---|---|---|---|---|
-| 1 | **Shared Memory & UX** | "H-MEM: Learns from officer's approvals and rejections across sessions" (Plan §1.5, §4.2) | `HMemEngine.record_officer_decision()` works in unit tests, but neither FastAPI (`run.py`) nor the CLI exposes an endpoint or command to record decisions (`POST /decision`). Judges cannot interactively trigger or demonstrate cross-session learning. | **-5 pts** (Product & UX / Sponsor Tech) |
-| 2 | **Multi-Agent Architecture** | "Phase 3.2: Triage Planner, Reconciler, Investigator, Skeptic, Action Planner" | `TriagePlannerAgent` is completely missing from `app/agents/`. Investigations are strictly 1-to-1 (`facility_id`, `medicine_id`). An officer cannot run a district-wide proactive scan to rank at-risk stockouts. | **-6 pts** (Technical & Innovation) |
-| 3 | **Action Planner Logic** | "Trust-adjusted availability applied to transfer source" | `ActionPlannerAgent` deducts quarantined lots at candidate peer warehouses but ignores `get_latest_physical_audit(peer_id, medicine_id)`, risking peer transfers of phantom stock. | **-4 pts** (Technical Depth) |
-| 4 | **Verification Loop** | "Number Auditor: every figure in a memo is re-checked against computed values" (Plan §4.3) | Skeptic and Number Auditor audit only Investigator hypotheses; the final Action Plan (recommended units, feasibility, source facility) is never audited by the Number Auditor. | **-5 pts** (Track 2: Explain-Why) |
-| 5 | **Action Formulation** | Professional clinical actions for healthy stock | For facilities with adequate stock (>100d cover) and zero shortfall, the top recommendation is `PEER_TRANSFER: 0.0 units` (feasibility 0.50). Lacks a first-class `MONITOR_BUFFER` action type. | **-3 pts** (Product & UX) |
-| 6 | **Secret Hygiene** | "Never commit keys... zero secret leaks" (Hackathon Rule 05) | `scripts/fetch_enriched_real_data.py` line 41 prints `api_key[:6]`. Printing key prefixes in console logs violates strict secret hygiene rules. | **-3 pts** (Security & Compliance) |
-| 7 | **Explain-Why Visualizer** | "Traces showing how it got there" (Hackathon Rubric) | Traces are saved to `logs/trace_*.jsonl`, but there is no CLI visualizer (`--explain`) or script to render the multi-agent debate transcript into a human-readable format for judges. | **-4 pts** (Demo 15 pts) |
-| 8 | **DataStore Reusability** | Configurable data directory across seeds | `DataStore` hardcodes `data/simulated/` internally, forcing `BacktestEngine` to bypass `DataStore` and write separate CSV reading code for seeds 2, 3, and 4. | **-2 pts** (Technical Cleanliness) |
-| 9 | **Backtest Metrics** | "Action sizing error: \|recommended − true required\| ÷ required" (Plan §5.3) | Backtest measures lead time and anomaly detection, but omits the planned Action Sizing Error percentage metric. | **-3 pts** (Impact & Evaluation) |
-| 10 | **Docker Packaging** | Lean, production container context | `.dockerignore` fails to exclude `meterless-repo/` (50MB+), `zetaris-getting-started/`, and root `.zip` archives, bloating the image context. | **-2 pts** (Technical Packaging) |
-| 11 | **CLI UX Formatting** | Clean human-readable presentation | `run.py` prints `- Type: ActionType.PEER_TRANSFER` (raw Python enum object string) instead of clean `- Type: PEER_TRANSFER`. | **-1 pt** (Product & UX) |
-| 12 | **Documentation Sync** | Zero-fluff metric alignment | `SPONSOR_TECH.md` states 62 passing tests while test suite currently has 63 passing tests. | **-1 pt** (Documentation Rigor) |
+### 🌟 Verified Architecture & Major Milestones (100% Provenance):
+1. **Zero LLM Hallucinated Math**: Isolating all arithmetic to [`DeterministicEngine`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/engine/deterministic.py) is strictly maintained across 100% of code paths. Stock reconciliation, days of cover, Monte Carlo ETA, and inventory audit adjustments are computed mathematically with zero numerical generation by the LLM.
+2. **True Adversarial Multi-Agent Loop**: The debate loop between `InvestigatorAgent` and `SkepticAgent` actively executes Round 1 differential challenges, triggers reactive Round 2 hypothesis revisions, and passes through the `Number Auditor` to verify mathematical invariants and Action Plan recommendations.
+3. **5-Agent Autonomous System**: With `TriagePlannerAgent`, `ReconcilerAgent`, `InvestigatorAgent`, `SkepticAgent`, and `ActionPlannerAgent` fully operational, MedTrace fulfills Phase 3.2 of the Execution Plan.
+4. **Meterless Sponsor Integration**: The headless **Meterless World Model** (canonical entities, content-hash idempotency [Test W1], planted conflict tracking [Test W2]) and **Meterless H-MEM** (cross-session episodic memory [Test H1], deterministic contradiction resolution [Test H2], interactive `POST /decision` API and `--record-decision` CLI) are fully verified.
+5. **Backtest Reproducibility**: Multi-seed 180-day replay measures real early-warning lead times (**+13.1d** over Naive LMIS, 100% stockout recall, 97.7% anomaly precision, 92.5% anomaly recall, 94.8% F1 score, and 0 false emergency orders), exactly matching `README.md`.
 
 ---
 
-## 📋 Previously Completed & Verified Items (Permanent Architecture Baseline)
+### 🔍 Identified Gaps, Performance Bottlenecks & Opportunities:
+
+| # | Domain | Audit Finding & Impact | Judging Impact | Priority |
+|---|---|---|---|:---:|
+| 1 | **Data Layer Performance** | `DataStore._read_csv` has no in-memory cache. In `TriagePlannerAgent.scan_district()`, 144 facility-medicine pairs read `ledger_daily.csv` (25,920 rows) and `consumption_daily.csv` (25,920 rows) 144 times sequentially (>7.4 million rows parsed). This inflates `GET /triage` to ~23s and causes test suite execution to take 81s. | **-4 pts** (Product & UX / Technical) | **P0** |
+| 2 | **Output Examples Drift** | `output_examples/*.json` and `scripts/generate_examples.py` have not been re-generated since recent feature additions. They omit `action_plan_audit`, omit `TriagePlanner` from the `agents` list, and show `PEER_TRANSFER: 0.0 units` instead of `MONITOR_BUFFER`. | **-3 pts** (Product & UX / Conformance) | **P0** |
+| 3 | **Explain-Why Trace Visualizer** | `scripts/explain_trace.py` renders beautiful multi-agent debate transcripts but remains untracked in git, lacks CLI `--explain` integration in `run.py`, and is undocumented in `README.md`. | **-4 pts** (Demo 15 pts / Track 2) | **P1** |
+| 4 | **Backtest Metric Gap** | Execution Plan §5.3 specifies `Action sizing error: \|recommended − true required units\| ÷ required, MedTrace vs baseline`. While BacktestEngine measures lead times and anomalies, it does not currently compute or display this metric. | **-3 pts** (Impact & Evaluation) | **P1** |
+| 5 | **Documentation Sync** | `SPONSOR_TECH.md` states "65 passed in ~34s", whereas 72 tests now pass. `README.md` architecture diagram and quickstart omit `TriagePlannerAgent`, `GET /triage`, and `--triage`. | **-2 pts** (Documentation Integrity) | **P1** |
+| 6 | **Test Suite Isolation** | Missing `tests/conftest.py` setting `SAMPLE_MODE=true` and `USE_ZETARIS=false` by default, leaving unit tests vulnerable to environment timeouts when external APIs are unconfigured. | **-2 pts** (Technical Cleanliness) | **P1** |
+| 7 | **Trace Visualizer Test** | `scripts/explain_trace.py` lacks an automated regression test in `tests/test_agents.py`, risking silent breakage if trace event formats evolve. | **-2 pts** (Test Robustness) | **P2** |
+| 8 | **API Error Contract** | In `run.py`, unhandled exceptions in `POST /run` return HTTP 200 with an error JSON body rather than a standard HTTP 500 status code, inconsistent with REST standards. | **-2 pts** (API Cleanliness) | **P2** |
+| 9 | **CLI Integration Tests** | Subprocess invocation of `run.py` CLI modes (`--cli`, `--triage`, `--record-decision`, `--sample-mode`) lacks automated test coverage. | **-2 pts** (Test Rigor) | **P2** |
+| 10 | **Backtest Hardcoding** | `BacktestEngine` lines 76-80 uses a static dictionary for base medicine demands rather than dynamically querying `DataStore.get_medicines()`. | **-1 pt** (Zero-Hardcoding Standard) | **P2** |
+| 11 | **One-Command Demo** | Lacks a dedicated 30-second judge walkthrough script (`scripts/quick_demo.py`) executing triage -> deep investigation -> debate -> action pack -> trace visualizer in one command. | **-3 pts** (Demo 15 pts) | **P1** |
+| 12 | **Zetaris Federated SQL Test** | While `smoke_test.py` tests `SELECT 1`, there is no automated mock test validating the 4-way federated join query specified in `SPONSOR_TECH.md` §2.3. | **-2 pts** (Sponsor Tech 10 pts) | **P2** |
+
+---
+
+## 📋 Previously Completed & Verified Architecture Baseline
+
+The following items from previous cycles have been implemented, verified with passing tests, and permanently committed to `main`:
 
 - **Item A [DONE]**: Fixed `InvestigatorAgent` typing annotations (`Optional` import) and mapped all 10 simulation anomalies to `AnomalyType`.
 - **Item B [DONE]**: Wired live Zetaris Lightning REST SQL querying into `DataStore` with auto-discovery, Bearer token caching, and offline fallback.
@@ -53,172 +55,179 @@ An exhaustive audit of [README.md](file:///C:/Users/Asus/Desktop/Open%20Agent/RE
 - **Item I [DONE]**: Synchronized `README.md` evaluation table with measured backtest numbers (+13.1d lead time, 100% recall, 97.7% precision, 92.5% recall, 94.8% F1, 0 false emergency orders).
 - **Item J [DONE]**: Hardened `Dockerfile` with container `HEALTHCHECK` and created initial `.dockerignore`.
 - **Item K [DONE]**: Authored `scripts/register_zetaris_sources.md` and `data/lmis_export_contract.md`.
-- **Item L [DONE]**: Regenerated sample Action Packs in `output_examples/` matching `POST /run` schema.
-- **Item M [DONE]**: Authored `SPONSOR_TECH.md` and `PRE_EXISTING_COMPONENTS.md`, and added automated tests for offline `SAMPLE_MODE=true` conformance.
+- **Item L [DONE]**: Implemented `POST /decision` in `run.py` and `--record-decision` in CLI with H-MEM dynamic feasibility steering.
+- **Item M [DONE]**: Implemented `TriagePlannerAgent` (`app/agents/triage_planner.py`), `GET /triage`, and `--triage` district scanning.
+- **Item N [DONE]**: Deduce peer phantom drift in `ActionPlannerAgent` before selecting transfer source facilities.
+- **Item O [DONE]**: Added `ActionType.MONITOR_BUFFER` for zero-shortfall / healthy stock inventory scenarios.
+- **Item P [DONE]**: Extended Skeptic Number Auditor to independently verify Action Plan recommendations (`audit_action_plan`).
+- **Item Q [DONE]**: Eradicated API key prefix logging in `scripts/fetch_enriched_real_data.py`.
+- **Item R [DONE]**: Pruned `.dockerignore` to exclude `meterless-repo/`, `zetaris-getting-started/`, and archives.
+- **Item S [DONE]**: Added parametric simulation directory support (`sim_dir`) in `DataStore`.
 
 ---
 
 ## 🚀 Prioritized Overnight Backlog (Exactly 12 Concrete, Small Items)
 
-### Item 1: Officer Decision & Feedback API/CLI Endpoint (`POST /decision` & H-MEM Bridge)
-- **Priority**: P0 (Product & UX 10 pts, Sponsor Tech 10 pts, Execution Plan §1.5 & §4.2)
-- **Status**: [x] DONE (Verified with 2 new automated API tests; 65 passed in 34.28s)
-- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md)
-- **Problem**: `HMemEngine.record_officer_decision()` works internally, but there is no external route for a user, officer, or judge to record approvals or rejections (`POST /decision` or `python run.py --record-decision`). Consequently, cross-session memory adaptation cannot be evaluated or demonstrated live from the API or CLI.
-- **Action Taken**:
-  1. In `run.py`, defined `DecisionRequest` model (`facility_id`, `medicine_id`, `action_type`, `decision`, `reason`) and implemented `POST /decision` endpoint with structured HTTP 400/404 error handling.
-  2. Implemented `orchestrator.record_decision(...)` with input entity validation, normalising action types, delegating to `self.hmem.record_officer_decision(...)`, and returning the updated preference and rejected pattern state.
-  3. Added CLI flags `--record-decision`, `--action-type`, `--decision` (`APPROVED`|`REJECTED`), and `--reason` in `run.py`, displaying a clean formatted summary card.
-  4. Added comprehensive tests `test_api_record_officer_decision_and_hmem_adaptation` and `test_api_decision_validation_errors` in `tests/test_api.py`, asserting that officer rejection penalizes action feasibility by 0.20 and subsequent approval deterministically resolves the contradiction and restores feasibility.
-  5. Updated `README.md` and `SPONSOR_TECH.md` with interactive CLI and API documentation.
-- **Verification**: `python -m pytest tests/test_api.py -v` (9 passed); full suite `python -m pytest tests -q` (65 passed in 34.28s). Clean CLI execution tested via `python run.py --record-decision`.
-
----
-
-### Item 2: Implement Triage Planner Agent for Proactive District-Wide Stockout Scanning
-- **Priority**: P0 (Track 2 Core Architecture & Execution Plan Phase 3.2)
-- **Status**: [ ] PROPOSED
-- **Files**: [`app/agents/triage_planner.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/triage_planner.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
-- **Problem**: Phase 3.2 specifies 5 agents (`Triage Planner`, `Reconciler`, `Investigator`, `Skeptic`, `Action Planner`). Currently, `TriagePlannerAgent` is missing, limiting the system to manual 1-to-1 lookups. An officer cannot ask "What are the top 5 at-risk medicines across the district?"
-- **Action**:
-  1. Create `app/agents/triage_planner.py` defining `TriagePlannerAgent`.
-  2. Implement `triage_facility(facility_id)` and `triage_district()`: iterates through registered facilities and medicines via `DataStore`, calculates rapid days-of-cover and anomaly signals, and ranks top items by stockout urgency.
-  3. Wire into `orchestrator.triage_district()` and expose `GET /triage` in `run.py` (and CLI `--triage`).
-  4. Add test `test_triage_planner_identifies_top_at_risk_items` in `tests/test_agents.py`.
-- **Acceptance Criteria**: `TriagePlannerAgent` scans district inventory, returning a ranked leaderboard of at-risk facilities and medicines with days-of-cover and discrepancy indicators.
-
----
-
-### Item 3: Add `ActionType.MONITOR_BUFFER` for Zero-Shortfall / Healthy Stock Scenarios
-- **Priority**: P1 (Product & UX 10 pts, Operational Realism)
-- **Status**: [ ] PROPOSED
-- **Files**: [`app/models/schemas.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/models/schemas.py), [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/action_planner.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
-- **Problem**: When a facility has adequate stock (e.g. Metformin at District Hospital with 103.9 days of cover) and zero shortfall, `ActionPlannerAgent` outputs `PEER_TRANSFER` of 0.0 units with feasibility 0.50 as its top action. Recommending a transfer of 0 units is unintuitive for healthcare officers.
-- **Action**:
-  1. Add `MONITOR_BUFFER = "MONITOR_BUFFER"` to `ActionType` enum in `schemas.py`.
-  2. In `action_planner.py`, when `shortfall == 0`, `audit_drift == 0`, and `not has_quarantine`, formulate `MONITOR_BUFFER` as the primary recommendation with feasibility 0.98.
-  3. Provide explicit clinical justification: "Inventory levels are secure; routine monitoring active; emergency transfer on standby."
-  4. Update unit tests in `tests/test_agents.py` and synchronize output examples.
-- **Acceptance Criteria**: Healthy inventory scenarios formulate `MONITOR_BUFFER` as the top recommendation with $>0.95$ feasibility and 0.0 units, eliminating false 0-unit transfer recommendations.
-
----
-
-### Item 4: Deduce Phantom Stock at Peer Source Facilities in Action Planner
-- **Priority**: P1 (Deterministic Integrity & Core "Audit-First" Principle)
-- **Status**: [ ] PROPOSED
-- **Files**: [`app/agents/action_planner.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/action_planner.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
-- **Problem**: When scanning peer facilities for `PEER_TRANSFER` surplus (`action_planner.py:48-56`), the planner checks `peer_ledger` and subtracts `quarantined` batches, but does NOT inspect `get_latest_physical_audit(peer_id, medicine_id)` for peer phantom stock drift. A depleted peer with phantom ledger stock could be erroneously selected as a transfer source.
-- **Action**:
-  1. In `action_planner.py:53`, query `self.data_store.get_latest_physical_audit(peer_id, medicine_id)`.
-  2. Deduce peer audit drift: `peer_drift = max(0.0, peer_stock - peer_audit_counted)` if audit exists.
-  3. Calculate true usable peer surplus: `usable_peer = max(0.0, peer_stock - quar_at_peer - peer_drift)`.
-  4. Add unit test `test_action_planner_disqualifies_peer_with_phantom_drift` in `tests/test_agents.py`.
-- **Acceptance Criteria**: Peer facilities with unrecorded phantom drift are not selected as transfer sources; only facilities with physically verified surplus are recommended.
-
----
-
-### Item 5: Extend Skeptic & Number Auditor to Formally Verify Action Recommendations
-- **Priority**: P1 (Track 2: "The Agent That Can Explain Why" & Phase 3.5)
-- **Status**: [ ] PROPOSED
-- **Files**: [`app/agents/skeptic.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/agents/skeptic.py), [`app/orchestrator.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/orchestrator.py), [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
-- **Problem**: SkepticAgent and the Number Auditor currently audit only Investigator hypotheses. The final Action Plan produced by `ActionPlannerAgent` is never audited. Unverified action quantities or invalid source facilities could slip through unscrutinized.
-- **Action**:
-  1. Add `audit_action_plan(recommendations, deterministic_recon)` method to `SkepticAgent`.
-  2. Assert mathematical invariants: (a) recommended units match shortfall or audit drift, (b) transfer quantity does not exceed peer surplus, (c) no self-transfers exist, and (d) justification strings do not contradict computed numbers.
-  3. In `orchestrator.py`, invoke `skeptic.audit_action_plan(...)` and log the audit result in `logs/trace_*.jsonl`.
-  4. Add unit test `test_skeptic_action_plan_audit_rejects_quantity_mismatch` in `tests/test_agents.py`.
-- **Acceptance Criteria**: The Number Auditor independently audits the Action Plan before final packaging, ensuring 100% of recommended quantities and source facilities are mathematically verified.
-
----
-
-### Item 6: Eradicate Secret API Key Prefix Print in `fetch_enriched_real_data.py`
-- **Priority**: P1 (Hackathon Rule Compliance & Zero-Secret-Leakage)
-- **Status**: [ ] PROPOSED
-- **Files**: [`scripts/fetch_enriched_real_data.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/fetch_enriched_real_data.py)
-- **Problem**: Line 41 prints `print(f"[*] Fetching openFDA Drug Enforcement/Recalls using API Key ({api_key[:6]}...)...")`. Printing any portion of API keys in console logs violates strict secret hygiene rules.
-- **Action**:
-  1. Replace line 41 with: `print(f"[*] Fetching openFDA Drug Enforcement/Recalls (API Key: {'configured' if api_key else 'public rate-limit'})...")`.
-  2. Verify that no other scripts print key slices or token substrings.
-- **Acceptance Criteria**: Zero API key prefixes or credentials are printed to stdout or logs during data ingestion.
-
----
-
-### Item 7: CLI Output Formatting & Clean ActionType String Representation
-- **Priority**: P2 (Product & UX 10 pts, Presentation Polish)
-- **Status**: [ ] PROPOSED
-- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py)
-- **Problem**: In `run.py:111`, printing `top_act.action_type` outputs `- Type: ActionType.PEER_TRANSFER` (raw Python enum object) instead of clean `- Type: PEER_TRANSFER`.
-- **Action**:
-  1. Update `run.py` CLI printer to use `top_act.action_type.value` and display a clean terminal summary card.
-  2. Include formatted financial provenance or delivery timeline in the terminal output.
-- **Acceptance Criteria**: CLI outputs clean enum values (e.g. `- Type: PEER_TRANSFER`) and an executive-ready action summary.
-
----
-
-### Item 8: Explain-Why Multi-Agent Trace Visualizer (`scripts/explain_trace.py`)
-- **Priority**: P1 (Demo 15 pts & Track 2 "Explain Why" Core Deliverable)
-- **Status**: [ ] PROPOSED
-- **Files**: [`scripts/explain_trace.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/explain_trace.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py)
-- **Problem**: Multi-agent reasoning is stored as raw JSONL in `logs/trace_*.jsonl`. In a live hackathon demo or judge review, reading raw JSONL is cumbersome. Judges reward clear visual evidence of debate, critique, and recovery.
-- **Action**:
-  1. Create `scripts/explain_trace.py` (and CLI `--explain` flag in `run.py`).
-  2. Parses any trace JSONL file and renders a clean terminal timeline:
-     - **Reconciler**: Discrepancies found with source row provenance.
-     - **Investigator**: 3 competing hypotheses with initial likelihoods.
-     - **Skeptic (Round 1)**: Adversarial challenge note and Number Auditor checks.
-     - **Investigator (Round 2)**: Revised likelihoods, differential refutations, and corroborations.
-     - **Skeptic (Round 2)**: Final approval criteria.
-     - **Action Plan**: Formulated interventions and H-MEM biases.
-- **Acceptance Criteria**: Running `python scripts/explain_trace.py --latest` outputs a clean, readable visual transcript explaining step-by-step how the multi-agent system reached its decision.
-
----
-
-### Item 9: Prune Bloated Docker Build Context in `.dockerignore`
-- **Priority**: P2 (Packaging & Judge Portability)
-- **Status**: [ ] PROPOSED
-- **Files**: [`.dockerignore`](file:///C:/Users/Asus/Desktop/Open%20Agent/.dockerignore)
-- **Problem**: `.dockerignore` currently ignores only `.git`, `__pycache__`, and `logs/*.jsonl`. It does not exclude `meterless-repo/` (50MB+), `zetaris-getting-started/` (10MB+), `hackathon details/` (300KB+), or root `.zip` archives, resulting in an unnecessarily bloated Docker build context.
-- **Action**:
-  1. Update `.dockerignore` to explicitly ignore `meterless-repo/`, `zetaris-getting-started/`, `hackathon details/`, `*.zip`, `*.tar.gz`, `output/*.json`, and `tests/`.
-  2. Verify build context size is minimized to core application and data files.
-- **Acceptance Criteria**: Docker build context transfers in $<5$ seconds with zero non-essential repositories or archives included.
-
----
-
-### Item 10: Parametric Simulation Directory Support in `DataStore`
-- **Priority**: P2 (Technical Architecture & Modular Testing)
+### Item 1: In-Memory CSV Caching in `DataStore` to Eliminate 23s Triage Bottleneck
+- **Priority**: P0 (Product & UX 10 pts, Technical Depth 20 pts)
 - **Status**: [ ] PROPOSED
 - **Files**: [`app/adapters/data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/adapters/data_store.py), [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py)
-- **Problem**: `DataStore` hardcodes `data/simulated/` in its path references, preventing it from reading held-out simulation seeds (`data/simulated_seed_2`, `data/simulated_seed_4`) dynamically.
+- **Problem**: `DataStore._read_csv` reads from disk every time it is called. In `TriagePlannerAgent.scan_district()`, 144 facility-medicine pairs read `ledger_daily.csv` (25,920 rows) and `consumption_daily.csv` (25,920 rows) 144 times, parsing >7.4 million rows. This causes `scan_district()` to take ~23.6s and inflates the test suite runtime to >80s.
 - **Action**:
-  1. Add `sim_dir: str = "data/simulated"` parameter to `DataStore.__init__`, also configurable via `SIM_DIR` environment variable.
-  2. Replace hardcoded `"data/simulated/"` strings in `_read_csv` calls with `self.sim_dir`.
-  3. Add unit test `test_data_store_configurable_simulation_dir` in `tests/test_data_store.py`.
-- **Acceptance Criteria**: `DataStore(sim_dir="data/simulated_seed_4")` successfully reads facility records from the specified simulation seed directory.
+  1. Add `self._csv_cache: Dict[str, List[Dict[str, Any]]] = {}` to `DataStore.__init__`.
+  2. In `_read_csv(self, rel_path: str, use_cache: bool = True)`, check `self._csv_cache` before reading disk; cache parsed dictionaries.
+  3. Provide `clear_cache()` method for test isolation.
+  4. Benchmark `scan_district()` execution time (expect drop from ~23s to <0.15s).
+  5. Add unit test `test_data_store_in_memory_caching` in `tests/test_data_store.py`.
+- **Acceptance Criteria**: `TriagePlannerAgent.scan_district()` completes in $<0.5$ seconds; full pytest suite executes in $<20$ seconds (down from 81s).
 
 ---
 
-### Item 11: Action Sizing Error Metric in Backtest Harness (Plan Section 5.3)
-- **Priority**: P2 (Methodological Rigor & Evaluation Depth)
+### Item 2: Synchronize `output_examples/*.json` and `scripts/generate_examples.py`
+- **Priority**: P0 (Product & UX 10 pts, Technical Execution Compliance)
 - **Status**: [ ] PROPOSED
-- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py)
-- **Problem**: Execution Plan §5.3 defines `Action sizing error: |recommended − true required units| ÷ required, MedTrace vs baseline`. While BacktestEngine measures lead times and anomaly detection, it does not currently compute or display this metric.
+- **Files**: [`scripts/generate_examples.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/generate_examples.py), [`output_examples/sample_1_district_hospital_metformin.json`](file:///C:/Users/Asus/Desktop/Open%20Agent/output_examples/sample_1_district_hospital_metformin.json), [`output_examples/sample_2_phc_amoxicillin_expiring.json`](file:///C:/Users/Asus/Desktop/Open%20Agent/output_examples/sample_2_phc_amoxicillin_expiring.json), [`output_examples/sample_3_chc_paracetamol_quarantine.json`](file:///C:/Users/Asus/Desktop/Open%20Agent/output_examples/sample_3_chc_paracetamol_quarantine.json)
+- **Problem**: Output examples were generated prior to recent feature additions. They omit `action_plan_audit` from the output payload, list only 6 agents instead of all 7 (omitting `TriagePlanner`), and sample 1 shows `PEER_TRANSFER: 0.0 units` instead of `MONITOR_BUFFER`.
 - **Action**:
-  1. In `BacktestEngine.run_backtest()`, evaluate action sizing error: compare recommended units against true required units at the time of stockout crisis.
-  2. Output `action_sizing_error_pct` in `output/backtest_seed_*.json` and comparative summary table.
-- **Acceptance Criteria**: `scripts/run_backtest.py` computes and prints Action Sizing Error percentage comparing MedTrace against Naive LMIS.
+  1. In `scripts/generate_examples.py`, update `agents` metadata list to include `TriagePlanner`.
+  2. Execute `python scripts/generate_examples.py` to regenerate all 3 output files matching the exact current `POST /run` API schema.
+  3. Validate that `action_plan_audit` is populated and sample 1 reflects `MONITOR_BUFFER` with 0.98 feasibility.
+- **Acceptance Criteria**: All 3 output examples pass schema validation against `POST /run` with `action_plan_audit`, `TriagePlanner`, and `MONITOR_BUFFER` present.
 
 ---
 
-### Item 12: Synchronize Documentation Test Counts & Conformance Tables
-- **Priority**: P2 (Documentation Integrity & Zero-Fluff Standard)
+### Item 3: Integrate `scripts/explain_trace.py` with CLI Flag `--explain` in `run.py`
+- **Priority**: P1 (Demo 15 pts, Innovation 15 pts, Track 2 "Explain Why")
+- **Status**: [ ] PROPOSED
+- **Files**: [`scripts/explain_trace.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/explain_trace.py), [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
+- **Problem**: `scripts/explain_trace.py` renders executive multi-agent debate transcripts from JSONL trace logs, but it is untracked in git, cannot be invoked directly from `run.py --explain`, and is not documented in `README.md`.
+- **Action**:
+  1. Add `scripts/explain_trace.py` to git tracking.
+  2. Add `--explain` flag to `run.py`: when passed, automatically invokes `render_trace` on the generated trace log (or latest trace) to print the executive debate timeline.
+  3. Document `python run.py --cli --explain` and `python scripts/explain_trace.py --latest` in `README.md`.
+- **Acceptance Criteria**: `python run.py --cli --explain` displays the full multi-agent debate timeline (Reconciler -> Investigator -> Skeptic Round 1 Challenge -> Investigator Round 2 Revision -> Number Auditor Audit Passed).
+
+---
+
+### Item 4: Implement Action Sizing Error Metric in Backtest Harness (Plan Section 5.3)
+- **Priority**: P1 (Impact 30 pts, Technical Depth 20 pts)
+- **Status**: [ ] PROPOSED
+- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py), [`scripts/run_backtest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/run_backtest.py), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
+- **Problem**: Execution Plan §5.3 defines `Action sizing error: |recommended − true required units| ÷ required, MedTrace vs baseline`. While BacktestEngine measures lead times and anomalies, it does not currently compute or display this metric.
+- **Action**:
+  1. In `BacktestEngine.run_backtest()`, evaluate action sizing accuracy during stockout alerts: compute `true_required = max(0.0, consumption * lead_time - true_stock)`.
+  2. Compute percentage error for Naive LMIS (`|naive_shortfall - true_required| / true_required`) vs. MedTrace (`|trust_shortfall - true_required| / true_required`).
+  3. Aggregate average sizing error across actual stockouts and include `action_sizing_error_pct` in benchmark outputs and summary table.
+- **Acceptance Criteria**: `scripts/run_backtest.py` reports Action Sizing Error percentage, demonstrating MedTrace sizes transfers and orders significantly closer to physical truth than Naive LMIS.
+
+---
+
+### Item 5: Synchronize Documentation Test Counts & Architecture Specifications
+- **Priority**: P1 (Documentation Rigor & Hackathon Compliance)
 - **Status**: [ ] PROPOSED
 - **Files**: [`SPONSOR_TECH.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/SPONSOR_TECH.md), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md), [`metadata.json`](file:///C:/Users/Asus/Desktop/Open%20Agent/metadata.json)
-- **Problem**: `SPONSOR_TECH.md` line 182 references "62 passed" while pytest currently passes 63 tests (`tests/test_agents.py` 22, `tests/test_api.py` 6, `tests/test_backtest.py` 2, `tests/test_data_store.py` 6, `tests/test_deterministic.py` 18, `tests/test_enriched_data.py` 5, `tests/test_world_model.py` 4 = 63 tests).
+- **Problem**: `SPONSOR_TECH.md` line 187 references "65 passed in ~34s", whereas 72 tests now pass (`test_agents.py` 23, `test_api.py` 10, `test_backtest.py` 2, `test_data_store.py` 7, `test_deterministic.py` 21, `test_enriched_data.py` 5, `test_world_model.py` 4 = 72 tests). `README.md` architecture diagram omits `TriagePlannerAgent` and CLI quickstart omits `--triage`.
 - **Action**:
-  1. Update `SPONSOR_TECH.md` to reflect exact test suite count (63 passed in ~33s).
-  2. Verify all markdown links in `README.md` and `metadata.json` match current file locations and test counts.
-- **Acceptance Criteria**: All documents state the exact measured test suite count of 63 tests with zero discrepancy.
+  1. Update `SPONSOR_TECH.md` to state exact measured test suite count (72 passed).
+  2. Update `README.md` architecture diagram to include `TriagePlannerAgent` and document `GET /triage` and `python run.py --triage`.
+  3. Verify all internal markdown links and commands in `metadata.json` and `README.md`.
+- **Acceptance Criteria**: Documentation reflects exact 72-test count and documents `TriagePlannerAgent` across all guides.
+
+---
+
+### Item 6: Create Pytest `conftest.py` with Default `SAMPLE_MODE=true` Environment
+- **Priority**: P1 (Technical Cleanliness & Environment Isolation)
+- **Status**: [ ] PROPOSED
+- **Files**: [`tests/conftest.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/conftest.py)
+- **Problem**: Running `pytest` without an active `.env` or in a fresh CI container can cause `LLMClient` to look for external credentials or attempt network connections, leading to timeouts.
+- **Action**:
+  1. Create `tests/conftest.py` with an autouse fixture setting `os.environ["SAMPLE_MODE"] = "true"` and `os.environ["USE_ZETARIS"] = "false"`.
+  2. Ensure clean teardown/reset after test runs.
+  3. Verify tests execute completely offline without network latency.
+- **Acceptance Criteria**: `python -m pytest tests -q` executes cleanly in any air-gapped or fresh environment with zero network calls.
+
+---
+
+### Item 7: Automated Regression Test for `scripts/explain_trace.py`
+- **Priority**: P2 (Test Robustness & Judge Reliability)
+- **Status**: [ ] PROPOSED
+- **Files**: [`tests/test_agents.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_agents.py)
+- **Problem**: `scripts/explain_trace.py` has no automated unit test. Any changes to orchestrator trace event schemas could cause visualizer crashes during judge demos.
+- **Action**:
+  1. In `tests/test_agents.py`, add `test_explain_trace_visualizer_renders_cleanly`.
+  2. Run an investigation to generate a real trace file, invoke `explain_trace.render_trace(trace_file)`, and assert that output contains all expected section headers (`RECONCILE_COMPLETE`, `ROUND_1_START`, `SkepticAgent`, `ACTION_PLAN_AUDITED`).
+- **Acceptance Criteria**: Automated test verifies `scripts/explain_trace.py` parses and prints all multi-agent trace events without exceptions.
+
+---
+
+### Item 8: Standardize HTTP 500 Error Handling in `run.py` `/run` Endpoint
+- **Priority**: P2 (API Cleanliness & Production Quality)
+- **Status**: [ ] PROPOSED
+- **Files**: [`run.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/run.py), [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: In `run.py` lines 106-112, unhandled exceptions return HTTP 200 with `{"status": "error", ...}` instead of raising `HTTPException(status_code=500)`. This violates REST design principles.
+- **Action**:
+  1. In `run.py`, update exception handling: catch unexpected `Exception as e` and raise `HTTPException(status_code=500, detail=str(e))`.
+  2. Add unit test in `tests/test_api.py` asserting that unexpected orchestrator failures return HTTP 500.
+- **Acceptance Criteria**: Unhandled exceptions return standard HTTP 500 status codes with structured detail JSON.
+
+---
+
+### Item 9: Automated Subprocess CLI Integration Tests
+- **Priority**: P2 (Product & UX 10 pts, Test Rigor)
+- **Status**: [ ] PROPOSED
+- **Files**: [`tests/test_api.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_api.py)
+- **Problem**: CLI commands (`python run.py --cli`, `python run.py --triage`, `python run.py --record-decision`) are only tested via FastAPI `TestClient`, not through actual subprocess execution.
+- **Action**:
+  1. In `tests/test_api.py`, add `test_cli_subprocess_execution_modes`.
+  2. Use `subprocess.run` to test:
+     - `python run.py --cli --sample-mode --facility FAC-DH-01 --medicine MED-007`
+     - `python run.py --triage --sample-mode --top-n 3`
+     - `python run.py --record-decision --sample-mode --facility FAC-CHC-01 --medicine MED-001 --action-type PEER_TRANSFER --decision APPROVED`
+  3. Assert exit code 0 and verify expected stdout keywords.
+- **Acceptance Criteria**: Automated test proves all CLI modes execute successfully via subprocess without crashing.
+
+---
+
+### Item 10: Dynamic `base_demands` Resolution in `BacktestEngine`
+- **Priority**: P2 (Zero-Hardcoding Standard & Code Cleanliness)
+- **Status**: [ ] PROPOSED
+- **Files**: [`app/backtest/engine.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/app/backtest/engine.py)
+- **Problem**: `BacktestEngine` lines 76-80 hardcodes a dictionary of 12 medicine base demands (`base_demands = {"MED-001": 80, ...}`).
+- **Action**:
+  1. In `BacktestEngine.run_backtest()`, query `self.store.get_medicines()` to discover registered medicines dynamically.
+  2. Derive baseline demand from medicine master attributes (e.g., standard daily demand or default fallback).
+  3. Eliminate the hardcoded 12-item static dictionary.
+- **Acceptance Criteria**: `BacktestEngine` contains zero hardcoded medicine demand maps; demands are derived dynamically.
+
+---
+
+### Item 11: Dedicated 30-Second Judge Demo Script (`scripts/quick_demo.py`)
+- **Priority**: P1 (Demo 15 pts, Product & UX 10 pts)
+- **Status**: [ ] PROPOSED
+- **Files**: [`scripts/quick_demo.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/scripts/quick_demo.py), [`README.md`](file:///C:/Users/Asus/Desktop/Open%20Agent/README.md)
+- **Problem**: Judges need a zero-friction, one-command demonstration showing the complete MedTrace workflow in under 30 seconds without starting background servers.
+- **Action**:
+  1. Create `scripts/quick_demo.py` executing:
+     - Step 1: Proactive District Triage Scan (top 3 critical stockout risks).
+     - Step 2: Deep Multi-Agent Investigation on the #1 critical item.
+     - Step 3: Multi-Agent Debate & Skeptic Number Auditor Verification.
+     - Step 4: Final Approval-Ready Action Pack formulation.
+     - Step 5: Visual Trace Timeline rendering.
+  2. Add prominent instruction in `README.md`: `python scripts/quick_demo.py`.
+- **Acceptance Criteria**: Running `python scripts/quick_demo.py` executes a complete, self-explanatory 30-second live terminal demonstration.
+
+---
+
+### Item 12: Zetaris Federated Cross-Source SQL Integration Test
+- **Priority**: P2 (Sponsor Tech 10 pts)
+- **Status**: [ ] PROPOSED
+- **Files**: [`tests/test_data_store.py`](file:///C:/Users/Asus/Desktop/Open%20Agent/tests/test_data_store.py)
+- **Problem**: `SPONSOR_TECH.md` §2.3 documents a 4-way cross-source federated SQL query spanning PostgreSQL hospital ledgers, physical audits, purchase orders, and Parquet supplier slip storage, but there is no automated unit test asserting this query syntax is valid and handled cleanly by `DataStore`.
+- **Action**:
+  1. In `tests/test_data_store.py`, add `test_data_store_federated_cross_source_query`.
+  2. Test execution of the 4-way cross-source join through `_query_zetaris` with mocked Zetaris proxy response.
+  3. Validate parsing of joined columns (`phantom_drift`, `p90_delay_days`, etc.).
+- **Acceptance Criteria**: Automated test verifies that `DataStore` correctly constructs and parses the 4-way federated cross-source join.
 
 ---
 
@@ -227,4 +236,5 @@ To verify the full test suite baseline at any time:
 ```bash
 python -m pytest tests -q
 ```
-Current Status: **65 passed, 1 warning in 34.28s** (100% passing rate).
+Current Status: **72 passed, 1 warning in 80.84s** (100% passing rate).
+Target Status after Item 1 (CSV caching): **72+ passed in <15s**.
