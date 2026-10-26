@@ -49,9 +49,11 @@ The button appears only when the backend answers `GET /health`. Start it with `p
 
 The UI is a dark, Linear/Datadog-style triage layout: KPI strip (counts by severity, from the live alert data), severity-banded alert list (master), detail pane with side-by-side Investigator vs Skeptic cards, a vertical decision-trace timeline, and separate Memory flip and Evaluation views (deep links: `/#memory`, `/#eval`). Icons: lucide-react. Screenshots are in `dashboard/screenshots/`.
 
-## Triage tiers (and why Secure is 0)
+## Triage tiers
 
-Tiers come unchanged from `app/agents/triage_planner.py`; the UI reads the thresholds from that file at runtime (and stores them in the bundle) so the legend cannot drift: **Critical** if trust-adjusted cover < 7 days or shortfall > 0; **Warning** if cover < 14 days or any anomaly is detected; otherwise **Secure**. The engine flags `supplier_delay_risk` on every pair, so with the "any anomaly means Warning" rule nothing can be Secure. The UI says so (info button in the list header) and only splits Warning into sub-bands for readability: low cover, other anomaly, supplier-delay flag only. The Warning band is collapsed by default; Critical is ranked by the engine's urgency score. The first load selects FAC-WH-02 / MED-007 (the live real-LLM run) when it exists, otherwise the top critical pair with a stored full action pack. Keyboard: up/down (or j/k) moves through the list; on mobile the list drills into the detail with a back button.
+Tiers come unchanged from `app/agents/triage_planner.py`. The thresholds live in its `TRIAGE_RULES` dict (the code uses the same dict), the engine returns them with the triage result, and the dashboard shows what it receives (backend `/triage`, `scripts/triage_snapshot.py`, or the `rules` field in `data-bundle/triage.json`). Nothing parses Python source any more, so the legend cannot drift: **Critical** if trust-adjusted cover < 7 days or shortfall > 0; **Warning** if cover < 14 days or any anomaly is detected; otherwise **Secure**.
+
+Supplier delay is evidence-based: the Planner takes the p90 delivery slip of the supplier on the pair's latest purchase order (`data/simulated/suppliers.csv`, the same source the Reconciler uses) and counts `supplier_delay_risk` as an anomaly only when that slip is 7 days or more (the Reconciler's chronic-slip threshold). Shorter slips still widen the delivery window used for the shortfall and Monte Carlo, they just do not flag the pair. Pairs with no purchase order have no supplier evidence and are not flagged. Earlier versions applied a fixed 3-day slip and flagged every pair, which made every pair at least Warning (11 Critical / 133 Warning / 0 Secure); the current snapshot is 16 Critical / 53 Warning / 75 Secure (16 Critical rather than 11 because suppliers with a 14-day p90 slip now widen the shortfall window, exactly as in the deep investigation). The UI splits Warning into sub-bands for readability: low cover, other anomaly, supplier-delay flag only. The Warning band is collapsed by default; Critical is ranked by the engine's urgency score. The first load selects FAC-WH-02 / MED-007 (the live real-LLM run) when it exists, otherwise the top critical pair with a stored full action pack. Keyboard: up/down (or j/k) moves through the list; on mobile the list drills into the detail with a back button.
 
 ## Deploying without the parent repo (Vercel)
 
@@ -60,6 +62,7 @@ npm run bundle-data   # needs the parent repo + python; writes dashboard/data-bu
 npm run build
 npm run smoke         # live repo mode
 npm run smoke:e2e     # repo mode + combined e2e: starts the backend (python run.py, sample mode, Zetaris off) on :8000, checks Backend online + alerts from /triage, runs an analysis through POST /api/run, checks the new pack, stops the backend, checks offline mode, then removes the files it created
+npm test               # node --test tests/ (run-token guard, rules shipped in the bundle, no source parsing)
 npm run smoke:bundle  # copies the build + bundle to a temp dir with NO parent files and checks bundle mode
 ```
 
@@ -68,3 +71,7 @@ npm run smoke:bundle  # copies the build + bundle to a temp dir with NO parent f
 ## Live runs (real LLM + Zetaris)
 
 A trace counts as **live** only if the trace itself shows it: an LLM step ran, no step has `fallback: true`, and its `DATA_SOURCE_SUMMARY` event has `use_zetaris: true` with `queries_ok > 0`. Packs written to `output_examples/live_*.json` with `llm_used: true` and `fallback: false` get the **Live run** chip; the Why panel shows the Zetaris query telemetry from that event. Traces are read from `logs/live_trace_<run_id>.jsonl` (falling back to `trace_<run_id>.jsonl`). The Memory view's primary example is the live before/after pair under `output_examples/live_runs/memory_ab/`; "same inputs" is only claimed when the full Reconciler record is identical in both traces (the app compares it). The older sample-mode pair stays as secondary evidence with its caveat. Run analysis resets the alert/pack/trace caches so the new pack shows up immediately.
+
+## Protecting "Run analysis" (optional)
+
+Set `MEDTRACE_RUN_TOKEN` in the dashboard's environment to require `Authorization: Bearer <token>` (or `x-medtrace-token`) on `POST /api/run`; without it the route is open, which is the local default. The UI asks for the token once per browser tab when the server answers 401. In snapshot mode (hosted bundle) the route already answers 503.

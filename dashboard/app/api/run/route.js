@@ -3,12 +3,15 @@ import path from 'node:path';
 import { backendHealth, backendJson } from '../../../lib/backend.js';
 import { DATA_MODE, RUN_CACHE_DIR } from '../../../lib/paths.js';
 import { resetAlertsCache } from '../../../lib/triage.js';
+import { checkRunToken } from '../../../lib/runauth.js';
 
 export const dynamic = 'force-dynamic';
 
 const ID = /^[A-Za-z0-9_-]{1,40}$/;
 
 export async function POST(request) {
+  const denied = checkRunToken(request.headers);
+  if (denied) return Response.json({ ok: false, error: denied.error }, { status: denied.status });
   let body;
   try {
     body = await request.json();

@@ -168,7 +168,7 @@ Check these in this order. Laptop is memory-tight (about 2 GB free earlier), so 
 **Dashboard**
 - [ ] `cd dashboard`, then `npm run build`, then `npm start` (serves on `http://localhost:3001`). Port 3000 belongs to Zetaris.
 - [ ] Open `http://localhost:3001` in one clean window. Check: header shows the default pair FAC-WH-02 / MED-007 selected with the **Live run** chip; the "How MedTrace decides" strip is expanded (it remembers collapsed state in local storage - click it open if shut); `/#memory` and `/#eval` load.
-- [ ] Check today's triage counts yourself and only say numbers you see. The bundle snapshot (generated 2026-10-25) shows 144 pairs: 11 Critical, 133 Warning, 0 Secure. The script does not quote these counts, so a different number on screen will not break a line.
+- [ ] Check today's triage counts yourself and only say numbers you see. The bundle snapshot (regenerated 2026-10-26 after the supplier-delay rule change) shows 144 pairs: 16 Critical, 53 Warning, 75 Secure. The script does not quote these counts, so a different number on screen will not break a line.
 - [ ] Browser zoom 110-125% so text is readable at 1080p. Hide bookmarks bar. Dark theme is the dashboard's own.
 
 **Terminal**
@@ -293,7 +293,7 @@ All paths are relative to `C:\Users\Asus\Desktop\Open Agent`. "Verified" means I
 | Data is simulated (12 facilities x 12 medicines = 144 pairs, 180 days, 25,920 ledger rows per seed) | as stated | `README.md`, `output/backtest_seed_*.json` (`total_transactions_evaluated` 25,920), `dashboard/data-bundle/triage.json` (144 items) |
 | Curated 25-scenario suite: abstention on clean controls 75.0% (6/8) vs rules baseline 87.5% (7/8) | as stated | `output/curated_evaluation.md`, `README.md` |
 | Stockout recall (100%) and lead time (74.2 days clean) are the same for MedTrace and the baselines, i.e. no earlier-warning advantage claimed | as stated | `output/backtest_summary.md`, `output/backtest_seed_*.json` |
-| Almost everything is Warning because the engine flags supplier_delay_risk on every pair; Secure is 0 in the snapshot (11 Critical, 133 Warning of 144) | as stated | `dashboard/README.md` ("Triage tiers (and why Secure is 0)"), `dashboard/data-bundle/triage.json` (generated 2026-10-25, re-check at recording time) |
+| Triage snapshot: 16 Critical, 53 Warning, 75 Secure of 144; supplier delay flags a pair only when the supplier's p90 slip is 7+ days | as stated | `dashboard/README.md` ("Triage tiers"), `dashboard/data-bundle/triage.json` (generated 2026-10-26, re-check at recording time) |
 | Dashboard views: Triage, Memory flip, Evaluation; deep links `/#memory`, `/#eval`; port 3001 | as stated | `dashboard/components/Dashboard.js`, `dashboard/package.json`, `dashboard/README.md` |
 | Hosted dashboard is stored real runs (bundle mode); the agent runs from the repo | as stated | `dashboard/README.md` ("Deploying without the parent repo (Vercel)") |
 | "Next" items (real LMIS exports, an approve button in the dashboard) | plans, not features | `data/lmis_export_contract.md` exists for the export format; the dashboard has no approve button today (officer decisions go through `POST /decision` or `python run.py --record-decision`) |

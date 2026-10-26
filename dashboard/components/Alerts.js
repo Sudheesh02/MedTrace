@@ -42,7 +42,7 @@ export function orderedItems(items) {
 }
 
 export function TierLegend({ rules, counts, supplierAll, total }) {
-  if (!rules) return <div className="legend-pop small muted">Thresholds unavailable (engine source not readable).</div>;
+  if (!rules) return <div className="legend-pop small muted">Thresholds unavailable (this data source did not provide the engine rules).</div>;
   return (
     <div className="legend-pop small" role="note">
       <div className="lp-t">How tiers are assigned <span className="muted">(from {rules.source})</span></div>
@@ -50,7 +50,7 @@ export function TierLegend({ rules, counts, supplierAll, total }) {
       <div className="lp-r"><span className="dot d-warn" /><span><b>Warning</b> if cover &lt; {rules.warning_cover_days} days <i>or</i> any anomaly is detected.</span></div>
       <div className="lp-r"><span className="dot d-ok" /><span><b>Secure</b> otherwise.</span></div>
       <p className="muted">
-        Warning is large because the engine flags the supplier-delay anomaly on {num(supplierAll, 0)} of {num(total, 0)} pairs, and any anomaly means Warning, so {num(counts.SECURE || 0, 0)} pairs are Secure. We show the engine's tiers unchanged and split Warning into sub-bands only for readability.
+        Supplier delay counts as an anomaly only when the supplier on the latest purchase order has a p90 delivery slip of {rules.supplier_slip_flag_days ?? 7} days or more ({num(supplierAll, 0)} of {num(total, 0)} pairs). Shorter slips only widen the delivery window used for shortfall. Result: {num(counts.CRITICAL || 0, 0)} Critical, {num(counts.WARNING || 0, 0)} Warning, {num(counts.SECURE || 0, 0)} Secure. We show the engine's tiers unchanged and split Warning into sub-bands only for readability.
       </p>
     </div>
   );
@@ -164,14 +164,14 @@ export default function Alerts({ api, tier, setTier, selected, onSelect, source 
                 const flagged = i.discrepancies_detected || [];
                 const chip = runChip(i);
                 return (
-                  <div key={key} data-key={key} className={`arow ${TIER_CLASS[i.urgency_tier] || ''} ${selected === key ? 'sel' : ''}`} onClick={() => onSelect(i)} role="button" tabIndex={selected === key || (!selected && n === 0 && b === grouped[0]) ? 0 : -1} aria-pressed={selected === key} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelect(i))}>
+                  <button type="button" key={key} data-key={key} className={`arow ${TIER_CLASS[i.urgency_tier] || ''} ${selected === key ? 'sel' : ''}`} onClick={() => onSelect(i)} tabIndex={selected === key || (!selected && n === 0 && b === grouped[0]) ? 0 : -1} aria-pressed={selected === key}>
                     <div className="strip" />
                     <div style={{ minWidth: 0 }}>
                       <div className="t1">{b.id === 'CRITICAL' ? <span className="rank">#{n + 1}</span> : null}{i.generic_name} <span className="mono muted" style={{ fontWeight: 400 }}>{i.medicine_id}</span></div>
                       <div className="t2">{i.facility_name} <span className="mono">{i.facility_id}</span></div>
                       <div className="chips">
                         {chip ? <span className={`badge ${chip.cls}`} title={chip.title}>{chip.text === 'Full plan' ? <Sparkles className="ic" /> : chip.text === 'Live run' ? <Radio className="ic" /> : null}{chip.text}</span> : null}
-                        {flagged.length ? flagged.slice(0, 2).map((d) => <span key={d} className={`tag ${d === SUPPLIER ? 'dim' : ''}`} title={d === SUPPLIER ? 'Flagged on nearly every pair by the engine' : undefined}>{pretty(d)}</span>) : <span className="tag" style={{ opacity: .6 }}>none flagged</span>}
+                        {flagged.length ? flagged.slice(0, 2).map((d) => <span key={d} className={`tag ${d === SUPPLIER ? 'dim' : ''}`} title={d === SUPPLIER ? 'Supplier p90 delivery slip is chronic (see the tier legend for the threshold)' : undefined}>{pretty(d)}</span>) : <span className="tag" style={{ opacity: .6 }}>none flagged</span>}
                         {flagged.length > 2 ? <span className="tag">+{flagged.length - 2}</span> : null}
                       </div>
                     </div>
@@ -180,7 +180,7 @@ export default function Alerts({ api, tier, setTier, selected, onSelect, source 
                       <span className="small muted">cover {num(i.trust_cover_days, 1)}d <span title="naive LMIS cover">(naive {num(i.naive_cover_days, 1)}d)</span></span>
                       <span className="small"><b>{num(i.shortfall_units, 0)}</b> <span className="muted">u short</span></span>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>

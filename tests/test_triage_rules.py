@@ -87,3 +87,19 @@ def test_district_tiers_are_consistent_with_the_documented_rules():
         assert it["urgency_tier"] == expected, it
         if "supplier_delay_risk" in it["discrepancies_detected"]:
             assert it["supplier_slip_days"] >= TRIAGE_RULES["supplier_slip_flag_days"]
+
+
+def test_scan_district_and_dashboard_snapshot_export_the_rules():
+    import json
+    import subprocess
+    import sys
+
+    from app.adapters.data_store import DataStore
+
+    assert TriagePlannerAgent(DataStore(use_zetaris=False)).scan_district(top_n=1)["rules"] == TRIAGE_RULES
+    out = subprocess.run([sys.executable, "dashboard/scripts/triage_snapshot.py"], capture_output=True, text=True, timeout=120)
+    assert out.returncode == 0, out.stderr[-300:]
+    snap = json.loads(out.stdout)
+    assert snap["rules"] == TRIAGE_RULES
+    assert len(snap["items"]) == 144
+

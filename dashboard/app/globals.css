@@ -116,6 +116,9 @@ button.kpi:hover:not(:disabled) { background: var(--surface2); border-color: var
 .band .ct { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); }
 .band .chev { transition: transform .15s; } .band.closed .chev { transform: rotate(-90deg); }
 .arow { display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 10px; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); cursor: pointer; align-items: stretch; }
+button.arow { width: 100%; text-align: left; font: inherit; color: inherit; background: transparent; border: 0; border-radius: 0; border-bottom: 1px solid var(--line); min-width: 0; }
+button.arow:hover:not(:disabled) { background: var(--surface2); border-color: transparent; border-bottom-color: var(--line); }
+button.arow.sel, button.arow.sel:hover:not(:disabled) { background: var(--accent-bg); }
 .arow:hover { background: var(--surface2); }
 .arow.sel { background: var(--accent-bg); box-shadow: inset 0 0 0 1px rgba(90,167,255,.45); }
 .arow .strip { border-radius: 0 3px 3px 0; background: var(--line2); }

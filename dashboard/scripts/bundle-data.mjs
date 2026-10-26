@@ -58,10 +58,13 @@ if (!snap) {
   console.error('bundle-data: could not run scripts/triage_snapshot.py (python not found or failed).');
   process.exit(1);
 }
-const { readRules } = await import(pathToFileURL(path.join(root, 'lib', 'triage.js')).href);
+if (!snap.rules || !(snap.rules.critical_cover_days > 0)) {
+  console.error('bundle-data: the triage snapshot carries no rules (TRIAGE_RULES missing from app/agents/triage_planner.py).');
+  process.exit(1);
+}
 const { indexTraces, traceFileForRun } = await import(pathToFileURL(path.join(root, 'lib', 'traces.js')).href);
 const { dir } = await import(pathToFileURL(path.join(root, 'lib', 'paths.js')).href);
-put('triage.json', JSON.stringify({ generated_at: new Date().toISOString(), sim_dir: 'data/simulated (synthetic)', facilities: snap.facilities, medicines: snap.medicines, rules: readRules(), items: snap.items }));
+put('triage.json', JSON.stringify({ generated_at: new Date().toISOString(), sim_dir: 'data/simulated (synthetic)', facilities: snap.facilities, medicines: snap.medicines, rules: snap.rules, items: snap.items }));
 
 // 2. Traces: latest per pair + the trace of every stored action pack's run + memory A/B traces
 const idx = indexTraces();

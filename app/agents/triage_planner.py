@@ -185,5 +185,6 @@ class TriagePlannerAgent:
             "warning_count": warning_count,
             "secure_count": secure_count,
             "top_urgent_items": top_critical,
+            "rules": dict(TRIAGE_RULES),
             "qualitative_synthesis": qualitative_synthesis
         }

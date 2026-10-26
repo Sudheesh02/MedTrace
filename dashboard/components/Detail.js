@@ -185,7 +185,16 @@ export default function Detail({ item, api, backend, snapshot, onRan, onBack }) 
     setRunning(true);
     setMsg(null);
     try {
-      const r = await fetch('/api/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ facility_id: item.facility_id, medicine_id: item.medicine_id, sample_mode: sample }) });
+      const post = (token) => fetch('/api/run', { method: 'POST', headers: { 'content-type': 'application/json', ...(token ? { 'x-medtrace-token': token } : {}) }, body: JSON.stringify({ facility_id: item.facility_id, medicine_id: item.medicine_id, sample_mode: sample }) });
+      let r = await post(sessionStorage.getItem('medtrace-run-token'));
+      if (r.status === 401) {
+        // The server sets MEDTRACE_RUN_TOKEN: ask once, keep it for this browser tab only.
+        const t = window.prompt('This server requires a run token (MEDTRACE_RUN_TOKEN):');
+        if (t) {
+          sessionStorage.setItem('medtrace-run-token', t.trim());
+          r = await post(t.trim());
+        }
+      }
       const body = await r.json();
       if (!r.ok || !body.ok) setMsg({ err: true, text: body.error || `HTTP ${r.status}` });
       else {

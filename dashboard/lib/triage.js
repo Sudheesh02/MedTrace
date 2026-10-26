@@ -72,19 +72,6 @@ function viaTraces() {
   return { items };
 }
 
-/** Thresholds are read from the real engine source so the UI legend cannot drift from the code. */
-export function readRules() {
-  try {
-    const src = fs.readFileSync(path.join(REPO_ROOT, 'app', 'agents', 'triage_planner.py'), 'utf8');
-    const crit = /trust_cover\s*<\s*([\d.]+)\s*or\s*shortfall_units\s*>\s*([\d.]+)/.exec(src);
-    const warn = /elif\s+trust_cover\s*<\s*([\d.]+)\s*or\s*discrepancy_count\s*>\s*([\d.]+)/.exec(src);
-    if (crit && warn) return { critical_cover_days: Number(crit[1]), critical_shortfall_over: Number(crit[2]), warning_cover_days: Number(warn[1]), warning_discrepancies_over: Number(warn[2]), source: 'app/agents/triage_planner.py' };
-  } catch {
-    /* fall through */
-  }
-  return null;
-}
-
 function decorate(items) {
   const idx = indexTraces();
   const packs = packPairs();
@@ -145,6 +132,7 @@ export async function getAlerts({ force = false } = {}) {
         source_label: `FastAPI backend ${health.url}/triage`,
         items: t.top_urgent_items || [],
         total_evaluated: t.total_evaluated,
+        rules: t.rules || null,
       };
     } catch (e) {
       attempts.push(`backend /triage failed: ${e.message}`);
@@ -161,6 +149,7 @@ export async function getAlerts({ force = false } = {}) {
         source_label: 'Local triage engine snapshot',
         items: snap.items,
         total_evaluated: snap.items.length,
+        rules: snap.rules || null,
       };
     } catch (e) {
       attempts.push(`python snapshot failed: ${e.message}`);
@@ -184,7 +173,7 @@ export async function getAlerts({ force = false } = {}) {
   }
   const items = decorate(result.items);
   const counts = items.reduce((a, i) => ((a[i.urgency_tier] = (a[i.urgency_tier] || 0) + 1), a), {});
-  const value = { ok: true, mode: 'repo', rules: readRules(), ...result, items, counts, attempts, backend: health, generated_at: new Date().toISOString() };
+  const value = { ok: true, mode: 'repo', ...result, rules: result.rules || null, items, counts, attempts, backend: health, generated_at: new Date().toISOString() };
   cache = { at: Date.now(), value };
   return value;
 }

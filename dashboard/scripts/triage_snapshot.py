@@ -1,4 +1,4 @@
-﻿"""
+"""
 Read-only helper for the MedTrace dashboard.
 Runs the project's own deterministic TriagePlannerAgent.triage_pair() over every
 facility x medicine pair using the local data files (data/simulated). No LLM, no network,
@@ -13,7 +13,7 @@ os.environ["SAMPLE_MODE"] = "true"
 os.environ["USE_ZETARIS"] = "false"
 
 from app.adapters.data_store import DataStore  # noqa: E402
-from app.agents.triage_planner import TriagePlannerAgent  # noqa: E402
+from app.agents.triage_planner import TRIAGE_RULES, TriagePlannerAgent  # noqa: E402
 
 ds = DataStore(use_zetaris=False)
 planner = TriagePlannerAgent(ds, None)
@@ -28,5 +28,6 @@ print(json.dumps({
     "sim_dir": ds.sim_dir,
     "facilities": len(facilities),
     "medicines": len(medicines),
+    "rules": dict(TRIAGE_RULES),
     "items": items,
 }))

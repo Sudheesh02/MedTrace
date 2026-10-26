@@ -65,7 +65,7 @@ function Kpis({ api, tier, setTier }) {
       <button className={`kpi ok ${tier === 'SECURE' ? 'on' : ''}`} onClick={() => setTier(tier === 'SECURE' ? 'ACTIONABLE' : 'SECURE')} aria-pressed={tier === 'SECURE'}>
         <div className="kpi-l"><ShieldCheck className="ic" />Secure</div>
         <div className="kpi-v">{v(ok)}</div>
-        <div className="kpi-s">{ready && ok === 0 ? `engine flags ${SUPPLIER.replace(/_/g, ' ')} on ${k.supplierAll}/${k.total}` : 'no rule triggered'}</div>
+        <div className="kpi-s">{ready && ok === 0 ? `supplier delay flagged on ${k.supplierAll}/${k.total}` : 'no rule triggered'}</div>
       </button>
       <div className="kpi info">
         <div className="kpi-l"><Boxes className="ic" />Coverage</div>
