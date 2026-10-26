@@ -7,6 +7,7 @@ Validates:
 4. Investigator and Skeptic adversarial review loop.
 """
 
+import os
 import pytest
 from app.adapters.data_store import DataStore
 from app.engine.deterministic import DeterministicEngine
@@ -15,6 +16,17 @@ from app.agents.reconciler import ReconcilerAgent
 from app.agents.investigator import InvestigatorAgent
 from app.agents.skeptic import SkepticAgent
 from app.adapters.llm_client import LLMClient
+
+# The large raw public datasets (USAID deliveries, pharma sales) are .gitignored; a fresh clone does not have them.
+# Tests that need them skip with a pointer to the download script instead of failing.
+RAW_DATA_PRESENT = all(
+    os.path.exists(p) for p in ("data/real/raw/usaid_deliveries.csv", "data/real/raw/salesdaily.csv")
+)
+needs_raw_data = pytest.mark.skipif(
+    not RAW_DATA_PRESENT,
+    reason="raw public datasets not present; run `python scripts/download_real_data.py` to enable",
+)
+
 
 @pytest.fixture
 def store():
@@ -180,6 +192,7 @@ def test_reconciler_uom_mismatch_uses_packaging_standards(store):
         store.get_purchase_orders = orig_pos
 
 
+@needs_raw_data
 def test_data_audit_execution_and_artifacts(tmp_path):
     """
     Priority 0b Gate: Verifies that scripts/data_audit.py executes cleanly,
@@ -218,6 +231,7 @@ def test_data_audit_execution_and_artifacts(tmp_path):
     assert "columns_detail" in sample_data
 
 
+@needs_raw_data
 def test_process_real_data_cleaning_pipeline(tmp_path):
     """
     Priority 0b Gate: Verifies that scripts/process_real_data.py cleans raw datasets,
@@ -322,6 +336,7 @@ def test_usaid_multiline_po_preservation(tmp_path):
     assert "Stavudine 1mg/ml" in items
 
 
+@needs_raw_data
 def test_eda_charts_generation(tmp_path):
     """
     Priority 0b Item 3 Gate: Verifies that scripts/generate_eda_charts.py generates
@@ -367,6 +382,7 @@ def test_eda_charts_generation(tmp_path):
         assert name in readme_content, f"README.md must reference {name}"
 
 
+@needs_raw_data
 def test_generate_eda_charts_cli(tmp_path):
     """
     Verifies that scripts/generate_eda_charts.py executes cleanly as a standalone CLI script.
@@ -428,18 +444,11 @@ def test_generate_eda_charts_fails_loudly_when_backtest_missing_or_corrupt(tmp_p
 
 
 
-def test_direct_po_lead_time_distribution_estimator(tmp_path):
-    """
-    Monitor Item B & Zero-Hardcoding Audit:
-    1. Verifies that compute_direct_po_lead_times dynamically computes lead-time quantiles
-       and IQR on real USAID direct purchase orders without hardcoding.
-    2. Verifies dynamic computation on synthetic variable input files to prove it asserts
-       behavior rather than constants (fails if values are hardcoded).
-    """
-    import csv
+@needs_raw_data
+def test_direct_po_lead_time_real_data_calibration():
+    """Lead-time quantiles and IQR computed on the real USAID direct purchase orders (needs the raw download)."""
     from scripts.data_audit import compute_direct_po_lead_times
 
-    # 1. Real data empirical verification
     real_stats = compute_direct_po_lead_times("data/real/raw/usaid_deliveries.csv")
     assert real_stats["total_direct_drop_orders"] == 4920
     assert real_stats["valid_lead_time_records"] == 4587
@@ -450,6 +459,14 @@ def test_direct_po_lead_time_distribution_estimator(tmp_path):
     assert lt_stats["iqr"] == 93.0
     assert lt_stats["iqr"] == round(lt_stats["p75"] - lt_stats["p25"], 1)
     assert lt_stats["min"] <= lt_stats["p25"] <= lt_stats["median_p50"] <= lt_stats["p75"] <= lt_stats["p90"] <= lt_stats["max"]
+
+
+def test_direct_po_lead_time_distribution_estimator(tmp_path):
+    """
+    Zero-hardcoding audit: compute_direct_po_lead_times must derive its statistics from the input file (synthetic CSV, no raw data needed).
+    """
+    import csv
+    from scripts.data_audit import compute_direct_po_lead_times
 
     # 2. Dynamic behavior test: vary inputs with synthetic CSV
     custom_csv = tmp_path / "custom_direct_pos.csv"

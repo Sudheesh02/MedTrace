@@ -381,6 +381,9 @@ def test_smoke_test_provider_handling_and_zero_hardcoding(monkeypatch):
     assert "ZETARIS_PASSWORD is not set" in str(exc.value)
 
     # 3. Verify power_model raises clean ValueError when NVIDIA key is placeholder
+    # (the other model variables are set here so the test does not depend on a developer's .env)
+    monkeypatch.setenv("MODEL_BASE_URL", "https://example.invalid/v1")
+    monkeypatch.setenv("NEMOTRON_MODEL", "nvidia/test-model")
     monkeypatch.delenv("METERLESS_RUNTIME_TOKEN", raising=False)
     monkeypatch.setenv("MODEL_API_KEY", "your-nvapi-key")
     with pytest.raises(ValueError) as exc_nv:

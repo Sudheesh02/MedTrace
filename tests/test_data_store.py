@@ -82,8 +82,12 @@ def test_data_store_graceful_fallback_when_zetaris_unreachable():
     pos = store.get_purchase_orders("FAC-DH-01", "MED-007")
     assert isinstance(pos, list)
 
-def test_data_store_zetaris_mocked_query_success():
+def test_data_store_zetaris_mocked_query_success(monkeypatch):
     """Verify that when Zetaris is reachable, DataStore issues SQL and parses response correctly."""
+    # Credentials are mocked: the test must not depend on a developer's .env (a fresh clone has none).
+    monkeypatch.setenv("ZETARIS_USERNAME", "mock-user@example.com")
+    monkeypatch.setenv("ZETARIS_PASSWORD", "mock-password-not-real")
+    monkeypatch.setenv("ZETARIS_API_KEY", "")
     store = DataStore(use_zetaris=True)
     store.base_url = "http://mock-zetaris:3000"
 
