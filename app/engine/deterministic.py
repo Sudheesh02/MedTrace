@@ -8,6 +8,12 @@ from typing import Dict, List, Optional, Tuple, Any
 import random
 import math
 
+# A supplier whose p90 delivery slip reaches this many days is a chronic delay: the Reconciler raises a
+# CHRONIC_SUPPLIER_SLIP discrepancy and the Triage Planner counts it as an anomaly. Shorter slips are normal variance
+# (they still widen the delivery window used for shortfall and Monte Carlo).
+CHRONIC_SUPPLIER_SLIP_DAYS = 7.0
+
+
 class DeterministicEngine:
     """
     Pure deterministic calculations for:

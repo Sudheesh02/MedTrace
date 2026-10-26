@@ -7,7 +7,7 @@ Ingests grounded state into the Meterless World Model.
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from app.adapters.data_store import DataStore
-from app.engine.deterministic import DeterministicEngine
+from app.engine.deterministic import DeterministicEngine, CHRONIC_SUPPLIER_SLIP_DAYS
 from app.engines.world_model import IngestPipelineService
 from app.models.schemas import Discrepancy, AnomalyType
 
@@ -233,7 +233,7 @@ class ReconcilerAgent:
                     ))
 
         # Check chronic or learned supplier delay discrepancy
-        if historical_slip_days >= 7.0 or supplier_delay_source == "hmem_memory":
+        if historical_slip_days >= CHRONIC_SUPPLIER_SLIP_DAYS or supplier_delay_source == "hmem_memory":
             slip_reason_note = ""
             if self.hmem and contracted_supplier:
                 delay_info = self.hmem.get_supplier_delay_info(contracted_supplier)

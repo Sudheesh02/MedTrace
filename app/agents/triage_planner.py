@@ -8,7 +8,18 @@ detects latent discrepancies, and ranks items by stockout urgency (Critical, War
 from typing import Dict, List, Optional, Any
 from app.adapters.data_store import DataStore
 from app.adapters.llm_client import LLMClient
-from app.engine.deterministic import DeterministicEngine
+from app.engine.deterministic import DeterministicEngine, CHRONIC_SUPPLIER_SLIP_DAYS
+
+# Single source of truth for the tier thresholds. The dashboard reads these from the data bundle (exported by
+# dashboard/scripts/triage_snapshot.py) instead of parsing this file.
+TRIAGE_RULES = {
+    "critical_cover_days": 7.0,          # CRITICAL if trust-adjusted cover is below this ...
+    "critical_shortfall_over": 0.0,      # ... or the trust-adjusted shortfall exceeds this many units
+    "warning_cover_days": 14.0,          # WARNING if cover is below this ...
+    "warning_discrepancies_over": 0,     # ... or more than this many anomalies are detected
+    "supplier_slip_flag_days": CHRONIC_SUPPLIER_SLIP_DAYS,  # supplier delay counts as an anomaly from this p90 slip
+    "source": "app/agents/triage_planner.py",
+}
 
 class TriagePlannerAgent:
     def __init__(self, data_store: DataStore, llm_client: Optional[LLMClient] = None):
@@ -32,7 +43,11 @@ class TriagePlannerAgent:
 
         pos = self.data_store.get_purchase_orders(facility_id, medicine_id)
         promised_days = 6.0
+        # Same supplier evidence the Reconciler uses: p90 slip of the supplier on the latest PO. Without a PO there is
+        # no supplier evidence, so the generic dataset prior applies and it is not reported as a supplier anomaly.
         historical_slip_days = 3.0
+        supplier_id = None
+        supplier_evidence = False
         if pos:
             latest_po = pos[-1]
             try:
@@ -44,6 +59,16 @@ class TriagePlannerAgent:
                     promised_days = float(lead_days)
             except Exception:
                 pass
+            supplier_id = latest_po.get("supplier_id") or None
+            if supplier_id:
+                rec = next((s for s in self.data_store.get_suppliers() if s.get("supplier_id") == supplier_id), None)
+                if rec:
+                    raw_slip = rec.get("historical_p90_slip", rec.get("historical_mean_slip", 3.0))
+                    try:
+                        historical_slip_days = max(0.0, float(raw_slip))
+                        supplier_evidence = True
+                    except (ValueError, TypeError):
+                        historical_slip_days = 3.0
 
         # Calculate date-synchronized audit drift
         calculated_drift = None
@@ -65,17 +90,20 @@ class TriagePlannerAgent:
 
         stock_eval = recon["stock_evaluation"]
         shortfall = recon["trust_shortfall"]
-        anoms = recon["anomalies_detected"]
+        anoms = dict(recon["anomalies_detected"])
+        # supplier_delay_risk is true for any slip > 0 inside the engine; for triage it only counts as an anomaly
+        # when the supplier's evidenced p90 slip is chronic (same threshold as the Reconciler's discrepancy).
+        anoms["supplier_delay_risk"] = supplier_evidence and historical_slip_days >= TRIAGE_RULES["supplier_slip_flag_days"]
 
         # Classification based on trust cover and discrepancies
         trust_cover = recon["trust_cover_days"]
         shortfall_units = shortfall["shortfall_units"]
         discrepancy_count = sum(1 for v in anoms.values() if v)
 
-        if trust_cover < 7.0 or shortfall_units > 0:
+        if trust_cover < TRIAGE_RULES["critical_cover_days"] or shortfall_units > TRIAGE_RULES["critical_shortfall_over"]:
             urgency_tier = "CRITICAL"
             urgency_score = 100.0 - min(90.0, trust_cover * 5.0) + min(30.0, shortfall_units * 0.1)
-        elif trust_cover < 14.0 or discrepancy_count > 0:
+        elif trust_cover < TRIAGE_RULES["warning_cover_days"] or discrepancy_count > TRIAGE_RULES["warning_discrepancies_over"]:
             urgency_tier = "WARNING"
             urgency_score = 50.0 - min(30.0, trust_cover * 2.0) + (discrepancy_count * 10.0)
         else:
@@ -100,6 +128,8 @@ class TriagePlannerAgent:
             "shortfall_units": shortfall_units,
             "gap_days": shortfall["gap_days"],
             "p_stockout_risk": recon.get("monte_carlo_delivery", {}).get("p_stockout_before_arrival", 0.0),
+            "supplier_id": supplier_id,
+            "supplier_slip_days": round(historical_slip_days, 1),
             "discrepancies_detected": [k for k, v in anoms.items() if v],
             "urgency_tier": urgency_tier,
             "urgency_score": round(urgency_score, 1)
