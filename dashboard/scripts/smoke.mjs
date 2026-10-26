@@ -96,9 +96,10 @@ try {
   check('/api/alerts non-empty', al.status === 200 && items.length > 0, `${items.length} items via ${al.body?.source}`);
   check('alerts sorted by severity score', items.every((x, i) => i === 0 || items[i - 1].urgency_score >= x.urgency_score));
   const r = al.body?.rules;
-  check('tier thresholds come from the engine source', !!r && r.critical_cover_days > 0 && r.warning_cover_days > r.critical_cover_days, JSON.stringify(r));
+  check('tier thresholds are shipped by the engine (TRIAGE_RULES), not parsed from source', !!r && r.critical_cover_days > 0 && r.warning_cover_days > r.critical_cover_days && r.supplier_slip_flag_days > 0, JSON.stringify(r));
   check('every alert carries run info', items.every((x) => typeof x.stored_runs === 'number' && typeof x.has_pack === 'boolean'));
   const counts = al.body?.counts || {};
+  check('tiers follow the shipped rules', !!r && items.every((x) => { const c = x.trust_cover_days < r.critical_cover_days || x.shortfall_units > r.critical_shortfall_over; const w = x.trust_cover_days < r.warning_cover_days || (x.discrepancies_detected || []).length > r.warning_discrepancies_over; return x.urgency_tier === (c ? 'CRITICAL' : w ? 'WARNING' : 'SECURE'); }));
   check('severity counts add up', (counts.CRITICAL || 0) + (counts.WARNING || 0) + (counts.SECURE || 0) === items.length, JSON.stringify(counts));
   const defaultPick = items.filter((x) => x.urgency_tier === 'CRITICAL' && x.has_pack);
   check('a critical pair with a stored action pack exists (auto-select target)', defaultPick.length > 0, defaultPick[0] ? `${defaultPick[0].facility_id}/${defaultPick[0].medicine_id}` : '');
