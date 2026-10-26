@@ -81,9 +81,6 @@ class MedTraceOrchestrator:
             with open(trace_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, default=str) + "\n")
 
-        facility_id = str(facility_id).strip().upper()
-        medicine_id = str(medicine_id).strip().upper()
-
         # Input validation: ensure requested facility and medicine exist
         facility_id = str(facility_id).strip().upper()
         medicine_id = str(medicine_id).strip().upper()
@@ -132,6 +129,7 @@ class MedTraceOrchestrator:
         # 3. Investigator <-> Skeptic Loop (Max 3 rounds)
         winning_hyp = None
         skeptic_review = None
+        last_top_hyp = None
         rounds = 0
         max_rounds = 3
         last_critique = None
@@ -178,6 +176,7 @@ class MedTraceOrchestrator:
                 "token_usage": skep_usage
             }, model=skep_model, llm_used=skep_used, fallback=skep_fallback)
 
+            last_top_hyp = top_hyp
             if review.accepted:
                 winning_hyp = top_hyp
                 skeptic_review = review
@@ -186,19 +185,30 @@ class MedTraceOrchestrator:
                 last_critique = review.critique_notes
 
         if not winning_hyp:
-            winning_hyp = hypotheses[0]
+            # Debate never produced an accepted verdict: carry forward the Skeptic's own top-ranked hypothesis
+            # from the final round (not the Investigator's listing order) and escalate below.
+            winning_hyp = last_top_hyp or max(hypotheses, key=lambda h: h.likelihood)
             skeptic_review = review
 
         # Execution Plan Phase 3.6: Escalate to human if debate unconcluded or confidence below threshold
         escalated_to_human = False
         escalation_reason = None
-        if not (skeptic_review and skeptic_review.accepted) or (winning_hyp and winning_hyp.likelihood < 0.50):
+        debate_unconcluded = not (skeptic_review and skeptic_review.accepted)
+        low_likelihood = bool(winning_hyp and winning_hyp.likelihood < 0.50)
+        if debate_unconcluded or low_likelihood:
             escalated_to_human = True
-            conf_str = f"{skeptic_review.confidence_score:.2f}" if skeptic_review else "N/A"
-            escalation_reason = (
-                f"Multi-agent debate unconcluded after {rounds} rounds (Skeptic confidence: {conf_str} < 0.50). "
-                f"Action pack requires manual human officer verification."
-            )
+            reasons = []
+            if debate_unconcluded:
+                conf_str = f"{skeptic_review.confidence_score:.2f}" if skeptic_review else "N/A"
+                reasons.append(
+                    f"Multi-agent debate unconcluded after {rounds} rounds "
+                    f"(Skeptic did not accept; last confidence: {conf_str})."
+                )
+            if low_likelihood:
+                reasons.append(
+                    f"Leading hypothesis likelihood {winning_hyp.likelihood:.2f} is below the 0.50 escalation threshold."
+                )
+            escalation_reason = " ".join(reasons) + " Action pack requires manual human officer verification."
             log_step("Orchestrator", "HUMAN_ESCALATION", {"reason": escalation_reason}, llm_used=False, fallback=False)
 
         # 4. Action Planner
