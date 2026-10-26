@@ -11,7 +11,7 @@
     "smoke:bundle": "node scripts/smoke.mjs --isolated",
     "smoke:e2e": "node scripts/smoke.mjs --e2e",
     "bundle-data": "node scripts/bundle-data.mjs",
-    "test": "node --test tests/"
+    "test": "node --test"
   },
   "dependencies": {
     "lucide-react": "^1.61.0",
