@@ -1,6 +1,6 @@
 """
 Unit tests for MedTrace Deterministic Engine.
-Verifies Section 5.2 worked example in MedTrace_Research_and_Execution_Plan.md:
+Verifies Section 5.2 worked example in docs/internal/MedTrace_Research_and_Execution_Plan.md:
 Assumptions:
 - Ledger: 120 units
 - Usage: 30 units/day

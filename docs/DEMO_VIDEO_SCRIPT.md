@@ -269,7 +269,7 @@ All paths are relative to `C:\Users\Asus\Desktop\Open Agent`. "Verified" means I
 
 | Claim in the script | Value | Source file |
 | :-- | :-- | :-- |
-| Punjab public facilities: essential-medicine availability about 45 percent vs WHO benchmark 80 | 45.2% vs 80% | `MedTrace_Research_and_Execution_Plan.md` section 2.1 (S1: PGIMER study, via Medical Dialogues news report; secondhand) |
+| Punjab public facilities: essential-medicine availability about 45 percent vs WHO benchmark 80 | 45.2% vs 80% | `docs/internal/MedTrace_Research_and_Execution_Plan.md` section 2.1 (S1: PGIMER study, via Medical Dialogues news report; secondhand) |
 | Video length rule | 1 to 4 minutes | `hackathon details/Welcome Guide FINAL.md` section 12; onboarding deck `16page.md` ("One to four minutes, agent in action") |
 | NVIDIA prize: show which model handled the request | required | `hackathon details/Welcome Guide FINAL.md` (prizes section) |
 | Live run time about two minutes | 124.24 s (WH-02/MED-007), 119.86 s and 170.19 s (CHC-01/MED-001 after / before) | `output_examples/live_FAC-WH-02_MED-007.json`, `output_examples/live_FAC-CHC-01_MED-001.json`, `output_examples/live_runs/memory_ab/before_FAC-CHC-01_MED-001.json` |

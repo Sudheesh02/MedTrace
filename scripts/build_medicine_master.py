@@ -1,6 +1,6 @@
 """
 Generate DC-1: Medicine Master CSV
-Based on Section DC-1 in MedTrace_Research_and_Execution_Plan.md:
+Based on Section DC-1 in docs/internal/MedTrace_Research_and_Execution_Plan.md:
 12 essential medicines spanning OPD staples and programme commodities.
 """
 
