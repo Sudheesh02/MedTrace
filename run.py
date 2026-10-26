@@ -12,6 +12,9 @@ import sys
 import json
 import time
 import argparse
+import re
+import threading
+from contextlib import contextmanager
 from dotenv import load_dotenv
 
 # Load environment variables prior to package initialization
@@ -44,6 +47,24 @@ app = FastAPI(
     )
 )
 orchestrator = MedTraceOrchestrator()
+
+# The orchestrator, its LLM client / data store flags and H-MEM are process-wide shared state, and /run temporarily
+# flips them per request. Requests that touch that state are therefore serialised; a waiting request gives up with
+# 503 after RUN_LOCK_TIMEOUT_S instead of hanging forever.
+_exclusive_lock = threading.Lock()
+RUN_LOCK_TIMEOUT_S = float(os.environ.get("MEDTRACE_RUN_LOCK_TIMEOUT_S", "600"))
+REPO_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+_SAFE_ID = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+
+
+@contextmanager
+def _exclusive():
+    if not _exclusive_lock.acquire(timeout=RUN_LOCK_TIMEOUT_S):
+        raise HTTPException(status_code=503, detail="MedTrace is busy with another analysis; retry shortly.")
+    try:
+        yield
+    finally:
+        _exclusive_lock.release()
 
 class RunRequest(BaseModel):
     facility_id: Optional[str] = Field("FAC-DH-01", description="Target facility identifier (e.g. FAC-DH-01, FAC-CHC-01)")
@@ -91,18 +112,21 @@ def health_check():
 @app.post("/decision")
 def api_record_decision(req: DecisionRequest):
     try:
-        res = orchestrator.record_decision(
-            facility_id=req.facility_id,
-            medicine_id=req.medicine_id,
-            action_type=req.action_type,
-            decision=req.decision,
-            reason=req.reason or ""
-        )
+        with _exclusive():
+            res = orchestrator.record_decision(
+                facility_id=req.facility_id,
+                medicine_id=req.medicine_id,
+                action_type=req.action_type,
+                decision=req.decision,
+                reason=req.reason or ""
+            )
         return {
             "status": "success",
             "message": f"Officer decision '{req.decision.upper()}' recorded for {req.facility_id} {req.action_type}",
             "memory_state": res
         }
+    except HTTPException:
+        raise
     except ValueError as ve:
         status_code = 400 if "Invalid decision" in str(ve) else 404
         raise HTTPException(status_code=status_code, detail=str(ve))
@@ -119,6 +143,11 @@ def api_triage(facility_id: Optional[str] = None, top_n: int = 10):
 
 @app.post("/run")
 def api_run(req: RunRequest):
+    with _exclusive():
+        return _run_locked(req)
+
+
+def _run_locked(req: RunRequest):
     start_time = time.time()
     orig_env_sample = os.environ.get("SAMPLE_MODE")
     orig_sample_mode = orchestrator.llm_client.sample_mode
@@ -167,17 +196,46 @@ def api_run(req: RunRequest):
             else:
                 os.environ.pop("SAMPLE_MODE", None)
 
+def _memo_candidates(facility_id: str, medicine_id: str):
+    name = f"memo_{facility_id}_{medicine_id}.md"
+    dirs = [d for d in (os.environ.get("MEDTRACE_OUTPUT_DIR"), REPO_OUTPUT_DIR) if d]
+    return [os.path.join(d, name) for d in dirs]
+
+
+def _clean_ids(facility_id: str, medicine_id: str):
+    fac, med = str(facility_id).strip().upper(), str(medicine_id).strip().upper()
+    if not (_SAFE_ID.match(fac) and _SAFE_ID.match(med)):
+        raise HTTPException(status_code=400, detail="Invalid facility_id or medicine_id.")
+    return fac, med
+
+
 @app.get("/memo/{facility_id}/{medicine_id}", response_class=PlainTextResponse)
 def api_get_memo(facility_id: str, medicine_id: str):
-    """Generates and returns an executive procurement memorandum as formatted Markdown."""
+    """Read-only: returns the stored procurement memorandum (Markdown) for a pair. Generate one with POST."""
+    fac, med = _clean_ids(facility_id, medicine_id)
+    for path in _memo_candidates(fac, med):
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return PlainTextResponse(content=f.read(), media_type="text/markdown")
+    raise HTTPException(
+        status_code=404,
+        detail=f"No stored memo for {fac}/{med}. Generate one with POST /memo/{fac}/{med} (runs a new investigation).",
+    )
+
+
+@app.post("/memo/{facility_id}/{medicine_id}", response_class=PlainTextResponse)
+def api_create_memo(facility_id: str, medicine_id: str):
+    """Runs a new investigation, stores the memorandum under output/ and returns it as Markdown."""
+    fac, med = _clean_ids(facility_id, medicine_id)
     try:
-        from scripts.export_action_pack import generate_memorandum_text
-        pack = orchestrator.run_investigation(
-            facility_id=facility_id,
-            medicine_id=medicine_id
-        )
-        content = generate_memorandum_text(pack)
-        return PlainTextResponse(content=content, media_type="text/markdown")
+        from scripts.export_action_pack import generate_memorandum
+        with _exclusive():
+            pack = orchestrator.run_investigation(facility_id=fac, medicine_id=med)
+        path = generate_memorandum(pack)
+        with open(path, "r", encoding="utf-8") as f:
+            return PlainTextResponse(content=f.read(), media_type="text/markdown")
+    except HTTPException:
+        raise
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
@@ -206,6 +264,8 @@ def api_get_latest_trace():
             "verdict_flip_card": card,
             "events": events
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -230,6 +290,8 @@ def api_get_trace_verdict_flip():
             "trace_file": trace_path,
             "verdict_flip_card": card
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
