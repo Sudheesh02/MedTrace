@@ -8,6 +8,8 @@ import csv
 import json
 import uuid
 import requests
+
+from app.envutil import env_bool
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 
@@ -33,12 +35,12 @@ class DataStore:
         }
 
     def __init__(self, use_zetaris: Optional[bool] = None, sim_dir: Optional[str] = None):
-        sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
+        sample_mode = env_bool("SAMPLE_MODE")
         if use_zetaris is None:
             if sample_mode:
                 self.use_zetaris = False
             else:
-                self.use_zetaris = os.getenv("USE_ZETARIS", "false").lower() in ("true", "1")
+                self.use_zetaris = env_bool("USE_ZETARIS")
         else:
             self.use_zetaris = use_zetaris
         self.sim_dir = sim_dir or os.getenv("SIM_DIR", "data/simulated")
@@ -486,7 +488,7 @@ class DataStore:
         if cache_key in DataStore._shared_openfda_cache:
             return [dict(r) for r in DataStore._shared_openfda_cache[cache_key]]
 
-        sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
+        sample_mode = env_bool("SAMPLE_MODE")
         if sample_mode:
             local_res = self.get_openfda_shortages(medicine_name, live=False)
             self._openfda_cache[cache_key] = local_res
@@ -536,7 +538,7 @@ class DataStore:
         if cache_key in DataStore._shared_openfda_cache:
             return [dict(r) for r in DataStore._shared_openfda_cache[cache_key]]
 
-        sample_mode = os.getenv("SAMPLE_MODE", "false").lower() in ("true", "1")
+        sample_mode = env_bool("SAMPLE_MODE")
         if sample_mode:
             local_res = self.get_openfda_recalls(medicine_id=medicine_id, generic_name=generic_name, live=False)
             self._openfda_cache[cache_key] = local_res

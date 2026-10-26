@@ -28,6 +28,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional
 
+from app.envutil import env_bool
 from app.orchestrator import MedTraceOrchestrator
 
 app = FastAPI(
@@ -254,7 +255,7 @@ def main():
     args = parser.parse_args()
 
     if not (os.environ.get("MODEL_API_KEY") or os.environ.get("METERLESS_RUNTIME_TOKEN")):
-        if "SAMPLE_MODE" not in os.environ or os.environ.get("SAMPLE_MODE", "false").lower() == "true":
+        if "SAMPLE_MODE" not in os.environ or env_bool("SAMPLE_MODE"):
             args.sample_mode = True
 
     if args.sample_mode:

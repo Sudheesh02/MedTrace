@@ -10,6 +10,8 @@ from typing import Dict, List, Optional, Any
 from openai import OpenAI
 import re
 
+from app.envutil import env_bool
+
 _THINK_BLOCK_RE = re.compile(r"<think(?:ing)?>.*?</think(?:ing)?>", re.DOTALL | re.IGNORECASE)
 _THINK_TAG_RE = re.compile(r"</?think(?:ing)?>", re.IGNORECASE)
 
@@ -33,7 +35,7 @@ def strip_think_tags(text: str) -> str:
 
 class LLMClient:
     def __init__(self):
-        self.sample_mode = os.environ.get("SAMPLE_MODE", "false").lower() == "true"
+        self.sample_mode = env_bool("SAMPLE_MODE")
         
         # Priority 1: Meterless Nightshift if reachable
         self.meterless_url = os.environ.get("METERLESS_BASE_URL", "http://127.0.0.1:8088/v1")
@@ -82,7 +84,7 @@ class LLMClient:
         Executes a prompt. If sample mode is active, returns deterministic structured fallback.
         Outside sample mode, fails loudly if unconfigured or if API call fails.
         """
-        env_sample = os.environ.get("SAMPLE_MODE", "false").lower() == "true"
+        env_sample = env_bool("SAMPLE_MODE")
         effective_sample_mode = self.sample_mode or env_sample
         if effective_sample_mode:
             return self._sample_fallback(prompt, system_prompt)
