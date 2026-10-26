@@ -7,7 +7,12 @@ Persists officer approvals, rejections, overrides, and supplier reliability beli
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 import json
+import logging
 import os
+import tempfile
+import time
+
+logger = logging.getLogger(__name__)
 
 class HMemEngine:
     def __init__(self, persistence_file: Optional[str] = "logs/hmem_store.json"):
@@ -25,23 +30,47 @@ class HMemEngine:
         self._load()
 
     def _load(self):
-        if self.persistence_file and os.path.exists(self.persistence_file):
+        if not (self.persistence_file and os.path.exists(self.persistence_file)):
+            return
+        try:
+            with open(self.persistence_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict):
+                raise ValueError("H-MEM store root is not a JSON object")
+            self.episodic_memory = data.get("episodic_memory", [])
+            self.long_term_beliefs = data.get("long_term_beliefs", self.long_term_beliefs)
+        except Exception as exc:
+            # Never silently discard officer memory: keep the unreadable file for recovery, say so, start empty.
+            backup = f"{self.persistence_file}.corrupt-{int(time.time())}"
             try:
-                with open(self.persistence_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    self.episodic_memory = data.get("episodic_memory", [])
-                    self.long_term_beliefs = data.get("long_term_beliefs", self.long_term_beliefs)
-            except Exception:
-                pass
+                os.replace(self.persistence_file, backup)
+                kept = f"preserved as {backup}"
+            except OSError:
+                kept = "could not be preserved"
+            logger.warning("H-MEM store %s is corrupt or unreadable (%s); starting with empty memory; file %s",
+                           self.persistence_file, exc, kept)
+            self.episodic_memory = []
 
     def _save(self):
-        if self.persistence_file:
-            os.makedirs(os.path.dirname(self.persistence_file), exist_ok=True)
-            with open(self.persistence_file, "w", encoding="utf-8") as f:
+        """Atomic write: dump to a temp file in the same directory, then os.replace over the real store."""
+        if not self.persistence_file:
+            return
+        directory = os.path.dirname(os.path.abspath(self.persistence_file))
+        os.makedirs(directory, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(prefix=".hmem-", suffix=".tmp", dir=directory)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump({
                     "episodic_memory": self.episodic_memory[-50:],
                     "long_term_beliefs": self.long_term_beliefs
                 }, f, indent=2)
+            os.replace(tmp_path, self.persistence_file)
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
 
     def record_officer_decision(
         self,
