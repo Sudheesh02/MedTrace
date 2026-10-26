@@ -1,0 +1,5 @@
+# Test / development dependencies on top of the pinned runtime set.
+# Install with: pip install -r requirements-dev.txt
+-r requirements.lock
+pytest==9.1.1
+PyYAML==6.0.3

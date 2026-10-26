@@ -8,10 +8,10 @@ ENV PORT=8000
 ENV SAMPLE_MODE=true
 ENV USE_ZETARIS=false
 
-COPY requirements.txt .
+COPY requirements.lock .
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.lock
 
 COPY . .
 

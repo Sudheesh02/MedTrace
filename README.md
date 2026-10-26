@@ -125,10 +125,12 @@ In strict accordance with the **Open Agent Hackathon 2026** submission guideline
 - Docker Desktop with WSL2 (for running Zetaris locally)
 
 ### 2. Environment Configuration
-Clone the repository and copy the environment template:
+Clone the repository, install the dependencies and copy the environment template:
 ```bash
 git clone https://github.com/Sudheesh02/MedTrace.git
 cd MedTrace
+python -m venv .venv && source .venv/bin/activate   # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt                  # pinned runtime (requirements.lock) + pytest; runtime only: pip install -r requirements.lock
 cp .env.example .env
 ```
 Fill in your credentials in `.env` (see `.env.example` for every variable; never commit real values):
@@ -270,7 +272,9 @@ docker compose up --build
 ├── tests/                     # Deterministic, agent & World Model tests
 ├── Dockerfile                 # Containerized deployment spec
 ├── docker-compose.yml         # Compose orchestration with healthchecks
-├── requirements.txt           # Python dependencies
+├── requirements.txt           # Python runtime dependencies (ranges)
+├── requirements.lock          # exact pins of the runtime dependencies (used by the Dockerfile)
+├── requirements-dev.txt       # pinned runtime + pytest / PyYAML for the test suite
 ├── smoke_test.py              # Gate G1 smoke verification
 └── run.py                     # Unified entry point (FastAPI + CLI)
 ```

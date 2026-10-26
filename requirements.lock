@@ -1,0 +1,13 @@
+# Exact pins of the runtime dependencies, taken from the environment the test suite was run in
+# (Python 3.14.6, Windows). Install with: pip install -r requirements.lock
+requests==2.34.2
+httpx==0.28.1
+openai==2.53.0
+python-dotenv==1.2.2
+pydantic==2.13.4
+fastapi==0.141.1
+uvicorn==0.52.4
+pandas==2.3.3
+numpy==2.5.1
+matplotlib==3.11.1
+rich==15.0.0
