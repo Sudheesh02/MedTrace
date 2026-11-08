@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedTrace — Hackathon Pitch Deck (Open Agent Track 2)</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #06b6d4;
+      --primary-glow: rgba(6, 182, 212, 0.25);
+      --accent: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 40%);
+    }
+
+    /* Top Progress Bar */
+    #progress-bar {
+      height: 4px;
+      background: linear-gradient(90deg, #06b6d4, #10b981);
+      width: 0%;
+      transition: width 0.3s ease;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    /* Header Nav */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(9, 13, 22, 0.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .slide-counter {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    button.btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    button.btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    button.btn-primary {
+      background: var(--primary);
+      color: #041019;
+      font-weight: 600;
+      border: none;
+    }
+
+    button.btn-primary:hover {
+      background: #22d3ee;
+      box-shadow: 0 0 16px var(--primary-glow);
+    }
+
+    /* Presentation Deck Container */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1100px;
+      min-height: 580px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 48px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.3s ease;
+      position: relative;
+    }
+
+    .slide.active {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Slide Typography & Layouts */
+    .slide-header {
+      margin-bottom: 24px;
+    }
+
+    .slide-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .slide-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    /* Cards & Callouts */
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card.highlight {
+      border-color: rgba(6, 182, 212, 0.4);
+      background: rgba(6, 182, 212, 0.04);
+    }
+
+    .card.danger {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.04);
+    }
+
+    .card.success {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .stat-number {
+      font-size: 2.75rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    /* Tables */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    table.data-table th, table.data-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    table.data-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Presenter Notes Tray */
+    .presenter-tray {
+      margin-top: 24px;
+      padding: 16px 20px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .presenter-tray strong {
+      color: var(--primary);
+    }
+
+    /* Keyboard Shortcuts Footer */
+    footer {
+      padding: 12px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--card-border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .keys-hint kbd {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Print Styles for PDF Export */
+    @media print {
+      body { background: white; color: black; }
+      header, footer, #progress-bar, .nav-controls { display: none !important; }
+      .slide {
+        display: flex !important;
+        page-break-after: always;
+        break-after: page;
+        min-height: 98vh;
+        border: 1px solid #ccc;
+        box-shadow: none;
+        background: white;
+        color: black;
+      }
+      .slide-title {
+        background: none;
+        -webkit-text-fill-color: black;
+        color: black;
+      }
+      .card { background: #f8fafc; border-color: #e2e8f0; color: black; }
+      .presenter-tray { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress-bar"></div>
+
+  <header>
+    <div class="brand">
+      <strong style="font-size: 1.15rem; letter-spacing: -0.02em;">MedTrace</strong>
+      <span class="badge">Track 2: Explain Why</span>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">Open Agent Hackathon 2026</span>
+    </div>
+    <div class="nav-controls">
+      <span class="slide-counter" id="counter">Slide 01 / 11</span>
+      <button class="btn" onclick="prevSlide()" title="Previous slide (Left Arrow)">← Prev</button>
+      <button class="btn btn-primary" onclick="nextSlide()" title="Next slide (Right Arrow / Spacebar)">Next →</button>
+      <button class="btn" onclick="toggleFullScreen()" title="Full screen toggle (F)">⛶ Fullscreen</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Slide 1: Hook & Problem -->
+    <div class="slide active" id="slide-1">
+      <div class="slide-header">
+        <div class="slide-tag">01 • Hook & Problem</div>
+        <h1 class="slide-title">The Empty Pharmacy Shelf</h1>
+        <p class="slide-subtitle">How does a clinic run out of life-saving medicine when the central ledger says stock is fine?</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card danger">
+            <h3 style="color: var(--danger); margin-bottom: 12px;">The Shelf Reality</h3>
+            <div style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Metformin 500mg: Stockout Today</div>
+            <p style="color: var(--text-muted);">A diabetic patient arrives at a Community Health Centre and is sent home empty-handed because zero usable pills exist on the shelf.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--primary); margin-bottom: 12px;">The Central Ledger Myth</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.95rem;">
+              <div>• Ledger Balance: <strong>450 units</strong> (Looks healthy)</div>
+              <div style="color: var(--warning);">• QA Quarantine Hold: <strong>-400 units</strong> (Unusable)</div>
+              <div style="color: var(--danger);">• Unrecorded Breakage / Drift: <strong>-50 units</strong> (Ghost stock)</div>
+              <hr style="border-color: var(--card-border); margin: 4px 0;">
+              <div>• True Usable Stock: <strong style="color: var(--danger);">0 Units (Fatal Stockout)</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="card highlight">
+          <strong>The Root Challenge:</strong> Passive health software tracks accounting balances, not physical reality. It ignores batch quarantines, expiration windows, delivery slip, and transit breakage until clinic shelves are already bare.
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "A clinic runs out of metformin, and the patient is sent home. But when you look at the district's centralized software, the screen says 450 units are in stock! The clinic didn't run out because medicine was unavailable — it ran out because the ledger lied until it was too late."
+      </div>
+    </div>
+
+    <!-- Slide 2: Real-World Evidence -->
+    <div class="slide" id="slide-2">
+      <div class="slide-header">
+        <div class="slide-tag">02 • Grounded Evidence</div>
+        <h1 class="slide-title">Audited Clinical Evidence</h1>
+        <p class="slide-subtitle">Real-world health data proves that inventory blindness is systemic across public health networks.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <div class="stat-number">45%</div>
+            <div class="stat-label">Essential Medicine Availability</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Measured across public health clinics in Punjab (PGIMER study) — far below the WHO 80% target.</p>
+          </div>
+          <div class="card">
+            <div class="stat-number">+12d</div>
+            <div class="stat-label">P90 Supplier Lead Time Slip</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Calibrated from 10,324 real deliveries in the USAID Global Health Supply Chain repository.</p>
+          </div>
+          <div class="card">
+            <div class="stat-number">189</div>
+            <div class="stat-label">Live FDA Enforcement Recalls</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Real-world Class I/II/III openFDA enforcement notices that freeze batches without warning.</p>
+          </div>
+        </div>
+        <div class="card">
+          <strong style="color: var(--primary);">Curated Global Datasets Integrated:</strong>
+          <div style="display: flex; gap: 16px; margin-top: 8px; font-size: 0.85rem; color: var(--text-muted);">
+            <span>• WHO GHO Athena Surveillance</span>
+            <span>• OpenFDA Shortages & Recalls</span>
+            <span>• NIH DailyMed Storage Standards</span>
+            <span>• RxNorm Clinical Concepts</span>
+          </div>
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "This isn't an imaginary problem. Field studies from PGIMER show essential medicine availability in public clinics as low as 45% against the WHO benchmark of 80%. When we audited 10,324 real USAID deliveries, supplier delays routinely slipped 9 to 12 days past promised dates."
+      </div>
+    </div>
+
+    <!-- Slide 3: The Cost of Inaction -->
+    <div class="slide" id="slide-3">
+      <div class="slide-header">
+        <div class="slide-tag">03 • Operational & Financial Cost</div>
+        <h1 class="slide-title">The Multi-Million Dollar Toll</h1>
+        <p class="slide-subtitle">Leaving inventory reconciliation to manual monthly counts inflicts massive human and financial costs.</p>
+      </div>
+      <div class="slide-body">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Status Quo (Passive LMIS)</th>
+              <th>With MedTrace Autonomous Resilience</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Stockout Notice</strong></td>
+              <td style="color: var(--danger);">Day 0 (Discovered at pharmacy window)</td>
+              <td style="color: var(--accent);"><strong>+14.4 to +18.3 Days Early Warning</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Emergency Reorders</strong></td>
+              <td style="color: var(--danger);">Frequent panic buys at +40% spot premium</td>
+              <td style="color: var(--accent);"><strong>78% Reduction in False Emergency Reorders</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Patient Therapy</strong></td>
+              <td style="color: var(--danger);">Therapy interrupted $\to$ ICU / AMR emergence</td>
+              <td style="color: var(--accent);"><strong>Unbroken Course of Treatment</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Locked-Up Capital</strong></td>
+              <td style="color: var(--danger);">Tied up in expiring buffer batches</td>
+              <td style="color: var(--accent);"><strong>Dynamic Peer Balancing Across CHCs/PHCs</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "What is the cost of leaving this unsolved? Financially, hospitals execute emergency local purchases at a 40% price premium. Operationally, millions in capital expire on warehouse shelves. Clinically, diabetic and cardiac patients miss doses, breeding drug-resistant infections and preventable fatalities."
+      </div>
+    </div>
+
+    <!-- Slide 4: Introducing MedTrace -->
+    <div class="slide" id="slide-4">
+      <div class="slide-header">
+        <div class="slide-tag">04 • The Solution</div>
+        <h1 class="slide-title">Introducing MedTrace</h1>
+        <p class="slide-subtitle">Autonomous multi-agent clinical supply chain intelligence for District Drug Warehouse Officers.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <h3 style="color: var(--primary); margin-bottom: 8px;">1. Continuous Audit</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Reconciles ledger stock against physical counts, batch expiration dates, QA holds, and cold-chain temperature breaches.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--primary); margin-bottom: 8px;">2. Explain Why</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Investigator & Skeptic agents formulate and debate $\ge 3$ competing root-cause hypotheses with confirming SQL evidence.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--primary); margin-bottom: 8px;">3. Action Pack</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Generates ranked, feasibility-scored actions (peer transfers, supplier PO expedites, batch releases) ready for one-click officer signoff.</p>
+          </div>
+        </div>
+        <div class="card highlight">
+          <strong>The DDWO Persona:</strong> Designed specifically for the District Drug Warehouse Officer overseeing 1 District Hospital, 3 Community Health Centres, 6 Primary Health Centres, and 2 Central Warehouses.
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "MedTrace is built for the District Drug Warehouse Officer. Instead of drowning in spreadsheets, the officer sees a triage heat-map. MedTrace detects forming shortages weeks in advance, runs an adversarial multi-agent debate to explain the root cause, and delivers an approval-ready action pack."
+      </div>
+    </div>
+
+    <!-- Slide 5: The Zero-Hallucination Law -->
+    <div class="slide" id="slide-5">
+      <div class="slide-header">
+        <div class="slide-tag">05 • Core Innovation</div>
+        <h1 class="slide-title">The Strict Zero-Hallucination Law</h1>
+        <p class="slide-subtitle">LLMs never perform arithmetic. Code computes numbers; models explain causes.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card danger">
+            <h4 style="color: var(--danger); margin-bottom: 8px;">✕ The Fragile LLM Anti-Pattern</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">LLM prompts calculate stock cover and dosages: <em>"Based on your stock, you have 4.2 days left."</em> Leads to dosage drift, non-deterministic reorder quantities, and audit failures.</p>
+          </div>
+          <div class="card success">
+            <h4 style="color: var(--accent); margin-bottom: 8px;">✓ The MedTrace Deterministic Standard</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Zero LLM arithmetic. DeterministicEngine computes usable stock, shortfall, lead times, and costs. Adversarial Skeptic/Number Auditor rejects any LLM output quoting an unverified figure.</p>
+          </div>
+        </div>
+        <div class="card">
+          <strong style="color: var(--primary);">Deterministic Invariant:</strong>
+          <div style="font-family: monospace; font-size: 1rem; margin-top: 6px; color: #38bdf8;">
+            Usable Stock = max(0, Ledger - Audit Drift - Quarantined - Expiring Batch Units)
+          </div>
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "Here is our most important technical rule: the LLM never does math. In medicine, an AI hallucinating days of cover is unacceptable. All arithmetic — usable stock, shortfall units, financial costs, Monte Carlo lead times — is pure deterministic code. The models only synthesize and explain."
+      </div>
+    </div>
+
+    <!-- Slide 6: Multi-Agent Architecture -->
+    <div class="slide" id="slide-6">
+      <div class="slide-header">
+        <div class="slide-tag">06 • Reasoning Architecture</div>
+        <h1 class="slide-title">Adversarial Multi-Agent Loop</h1>
+        <p class="slide-subtitle">Tasks delegated by context; hypotheses challenged and revised across iterative debate rounds.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="card">
+            <strong>1. Reconciler</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Audits physical counts, batches, and FDA recall signals into the Meterless World Model.</p>
+          </div>
+          <div class="card">
+            <strong>2. Investigator</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Formulates 3 competing hypotheses (e.g. Phantom Drift vs Supplier Slip vs Market Shortage).</p>
+          </div>
+          <div class="card highlight">
+            <strong>3. Skeptic Auditor</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Challenges hypotheses, verifies arithmetic consistency, and demands SQL evidence.</p>
+          </div>
+          <div class="card">
+            <strong>4. Action Planner</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Ranks peer transfers and PO expedites, factoring in transport capacity and H-MEM memory.</p>
+          </div>
+        </div>
+        <div class="card">
+          <strong style="color: var(--primary);">Iterative Self-Correction:</strong> If the Skeptic identifies arithmetic or evidentiary inconsistencies, the Investigator revises likelihoods across up to 3 rounds. If consensus fails, it safely escalates to human review with full provenance.
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "MedTrace is not a linear chain. It's an adversarial debate. The Investigator generates three competing hypotheses with SQL confirmation queries. The Skeptic rigorously challenges every assumption and audits every number. If an inconsistency is detected, the Investigator must revise."
+      </div>
+    </div>
+
+    <!-- Slide 7: Sponsor Technology -->
+    <div class="slide" id="slide-7">
+      <div class="slide-header">
+        <div class="slide-tag">07 • Sponsor Technology (10 Points)</div>
+        <h1 class="slide-title">Deep Sponsor Integration</h1>
+        <p class="slide-subtitle">Zetaris, Meterless, NVIDIA, and Cursor integrated at the foundational architectural layer.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="color: var(--primary); margin-bottom: 8px;">Zetaris (Data Layer)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Unified <strong>Zetaris Lightning SQL</strong> (`MEDTRACE_LH`) running over 10 filestore tables. Live execution traces record <strong>44/44 queries</strong> executed via Zetaris with zero CSV fallbacks.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--accent); margin-bottom: 8px;">Meterless (Cognition & Memory)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);"><strong>World Model:</strong> Shared canonical entity states (`ent_inv_*`) and relational graphs.<br><strong>H-MEM:</strong> Persistent hierarchical episodic memory capturing human officer decisions.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: #38bdf8; margin-bottom: 8px;">NVIDIA Nemotron (Inference)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Nemotron 30B / 550B accessed via Meterless Nightshift. Powers clinical qualitative reasoning and hypothesis synthesis; tagged on every trace line.</p>
+          </div>
+          <div class="card">
+            <h3 style="color: #f43f5e; margin-bottom: 8px;">Cursor & Zero-Hardcoding</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Built in Cursor with automated test harnesses. 184 passing unit/integration tests offline; zero hardcoded tokens; zero regex shortcuts.</p>
+          </div>
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "Every sponsor technology is deeply integrated. Zetaris is our Lightning SQL data layer. Meterless provides the World Model for shared agent state and H-MEM for human decision learning. NVIDIA Nemotron delivers clinical qualitative reasoning, all developed in Cursor."
+      </div>
+    </div>
+
+    <!-- Slide 8: Live Prototype & Walkthrough -->
+    <div class="slide" id="slide-8">
+      <div class="slide-header">
+        <div class="slide-tag">08 • Prototype & UX</div>
+        <h1 class="slide-title">Live Walkthrough & Memory Flip</h1>
+        <p class="slide-subtitle">Deployed on Vercel; features live debate traces and counterfactual officer memory learning.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <strong>1. District Triage Grid</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">144 facility-medicine pairs audited in real time: 16 Critical, 53 Warning, 75 Secure.</p>
+          </div>
+          <div class="card">
+            <strong>2. Explain Why Panel</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Full transcript showing why Artemether or Metformin is forming a shortage with SQL citations.</p>
+          </div>
+          <div class="card highlight">
+            <strong>3. Counterfactual Memory Flip</strong>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Officer rejects a peer transfer; H-MEM penalizes the pattern; run 2 elevates QA release instead!</p>
+          </div>
+        </div>
+        <div class="card success">
+          <strong>Live Verification:</strong> Deployed at <a href="https://medtrace-dashboard.vercel.app" target="_blank" style="color: var(--primary);">medtrace-dashboard.vercel.app</a>. Offline self-contained mode allows instant review without cloud dependencies.
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "Our live dashboard showcases the Counterfactual Memory Flip. When an officer rejected a peer transfer on Paracetamol at CHC-01 because roads were flooded, Meterless H-MEM recorded that decision. In the next run, MedTrace automatically elevated Batch Release instead."
+      </div>
+    </div>
+
+    <!-- Slide 9: Backtest Benchmark -->
+    <div class="slide" id="slide-9">
+      <div class="slide-header">
+        <div class="slide-tag">09 • Verification & Results</div>
+        <h1 class="slide-title">180-Day Backtest Benchmark</h1>
+        <p class="slide-subtitle">Rigorously evaluated against 180-day facility simulation calibrated with empirical USAID delay variance.</p>
+      </div>
+      <div class="slide-body">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Naive LMIS</th>
+              <th>Rule Heuristic</th>
+              <th>MedTrace Multi-Agent</th>
+              <th>Operational Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Early Warning Lead Time</strong></td>
+              <td>38.5 Days</td>
+              <td>45.2 Days</td>
+              <td style="color: var(--primary); font-weight: 700;">56.8 Days</td>
+              <td style="color: var(--accent);"><strong>+18.33 Days Earlier</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Stockout Recall</strong></td>
+              <td>86.4%</td>
+              <td>91.2%</td>
+              <td style="color: var(--primary); font-weight: 700;">99.1%</td>
+              <td style="color: var(--accent);"><strong>+12.7% Higher Recall</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Planted Anomaly Precision</strong></td>
+              <td>14.3%</td>
+              <td>28.6%</td>
+              <td style="color: var(--primary); font-weight: 700;">100.0%</td>
+              <td style="color: var(--accent);"><strong>Zero False Alarms</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Anomaly F1-Score</strong></td>
+              <td>24.1%</td>
+              <td>43.5%</td>
+              <td style="color: var(--primary); font-weight: 700;">94.7%</td>
+              <td style="color: var(--accent);"><strong>94.7% Detection F1</strong></td>
+            </tr>
+            <tr>
+              <td><strong>False Emergency Orders</strong></td>
+              <td>18 Orders</td>
+              <td>11 Orders</td>
+              <td style="color: var(--primary); font-weight: 700;">4 Orders</td>
+              <td style="color: var(--accent);"><strong>78% Capital Savings</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "In our 180-day facility backtest across 12 facilities, MedTrace provided an average early warning lead time advantage of +18.33 days over legacy LMIS. It achieved 99.1% stockout recall and 94.7% anomaly F1, while cutting false emergency orders by 78%."
+      </div>
+    </div>
+
+    <!-- Slide 10: Field Deployment -->
+    <div class="slide" id="slide-10">
+      <div class="slide-header">
+        <div class="slide-tag">10 • Field Scalability</div>
+        <h1 class="slide-title">Field Deployment & Rollout</h1>
+        <p class="slide-subtitle">Engineered for the ground-level realities of primary health clinics in emerging markets.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <h4 style="color: var(--primary); margin-bottom: 8px;">Phase 1: District Pilot</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Deploys alongside existing district software; ingests daily CSV/SQL dumps into Zetaris; exports daily PDF decision memos.</p>
+          </div>
+          <div class="card">
+            <h4 style="color: var(--primary); margin-bottom: 8px;">Phase 2: Offline USSD/SMS</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Lightweight USSD & SMS protocol enabling remote village PHC nurses to report physical audit counts without internet connectivity.</p>
+          </div>
+          <div class="card">
+            <h4 style="color: var(--primary); margin-bottom: 8px;">Phase 3: National Scale</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Standardized FHIR SupplyDelivery API integration; automated multi-district purchase order coordination across state drug corporations.</p>
+          </div>
+        </div>
+        <div class="card highlight">
+          <strong>Production-Ready Engineering:</strong> Containerized Docker image (`python:3.11-slim`), locked dependencies (`requirements.lock`), and automated healthcheck probes.
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "MedTrace is built for ground realities. In Phase 1, it acts as an intelligent audit overlay for district officers. In Phase 2, we support offline USSD/SMS so remote PHC nurses can report counts without internet. And in Phase 3, we connect to national health architectures via FHIR."
+      </div>
+    </div>
+
+    <!-- Slide 11: Summary & Q&A Defense -->
+    <div class="slide" id="slide-11">
+      <div class="slide-header">
+        <div class="slide-tag">11 • Conclusion & Q&A</div>
+        <h1 class="slide-title">Audited. Explainable. Resilient.</h1>
+        <p class="slide-subtitle">Why MedTrace wins: preventing clinical stockouts before the first patient arrives.</p>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card highlight">
+            <h4 style="color: var(--primary); margin-bottom: 8px;">Judging Rubric Checklist (100 Pts)</h4>
+            <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px;">
+              <div>• <strong>Impact (30):</strong> Prevents medicine stockouts; saves capital.</div>
+              <div>• <strong>Technical (20):</strong> Zero LLM math; 184 tests; Docker ready.</div>
+              <div>• <strong>Innovation (15):</strong> Counterfactual memory flip; Number Auditor.</div>
+              <div>• <strong>Demo (15):</strong> 3-min video + live Vercel interactive dashboard.</div>
+              <div>• <strong>Product & UX (10):</strong> Fast, keyboard-navigable triage interface.</div>
+              <div>• <strong>Sponsor Tech (10):</strong> Zetaris + Meterless + NVIDIA.</div>
+            </div>
+          </div>
+          <div class="card">
+            <h4 style="color: var(--accent); margin-bottom: 8px;">Project Links & Open Source</h4>
+            <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
+              <div>• <strong>GitHub:</strong> <a href="https://github.com/Sudheesh02/MedTrace" target="_blank" style="color: var(--primary);">github.com/Sudheesh02/MedTrace</a></div>
+              <div>• <strong>Live Dashboard:</strong> <a href="https://medtrace-dashboard.vercel.app" target="_blank" style="color: var(--primary);">medtrace-dashboard.vercel.app</a></div>
+              <div>• <strong>Demo Video Script:</strong> <code>docs/DEMO_VIDEO_SCRIPT.md</code></div>
+              <div>• <strong>License:</strong> MIT Open Source</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="presenter-tray">
+        <strong>Say:</strong> "MedTrace turns fragmented supply chain data into actionable, evidence-backed decisions that save lives and public funds. Thank you — we are ready for questions!"
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="keys-hint">
+      Navigate: <kbd>←</kbd> <kbd>→</kbd> or <kbd>Space</kbd> • Fullscreen: <kbd>F</kbd> • Print / Save PDF: <kbd>Ctrl</kbd>+<kbd>P</kbd>
+    </div>
+    <div>
+      MedTrace • Open Agent Hackathon 2026
+    </div>
+  </footer>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 11;
+
+    function updateSlide() {
+      document.querySelectorAll('.slide').forEach((slide, index) => {
+        if (index + 1 === currentSlide) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      // Update counter and progress bar
+      const counter = document.getElementById('counter');
+      if (counter) {
+        counter.textContent = `Slide ${String(currentSlide).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+      }
+
+      const progressBar = document.getElementById('progress-bar');
+      if (progressBar) {
+        const pct = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+        progressBar.style.width = `${pct}%`;
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullScreen();
+      } else if (e.key === 'Home') {
+        currentSlide = 1;
+        updateSlide();
+      } else if (e.key === 'End') {
+        currentSlide = totalSlides;
+        updateSlide();
+      }
+    });
+
+    // Touch swipe support for mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+    document.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      if (touchEndX < touchStartX - 50) nextSlide();
+      if (touchEndX > touchStartX + 50) prevSlide();
+    }, false);
+
+    // Initial setup
+    updateSlide();
+  </script>
+</body>
+</html>

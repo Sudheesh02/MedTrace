@@ -2,7 +2,8 @@
 
 **Live dashboard:** https://medtrace-dashboard.vercel.app (snapshot mode: stored real runs)  
 **Repo:** https://github.com/Sudheesh02/MedTrace  
-**Demo video script:** [docs/DEMO_VIDEO_SCRIPT.md](docs/DEMO_VIDEO_SCRIPT.md)
+**Demo video script:** [docs/DEMO_VIDEO_SCRIPT.md](docs/DEMO_VIDEO_SCRIPT.md)  
+**Interactive Pitch Deck (HTML):** [docs/slides.html](docs/slides.html) ([Markdown Specification](docs/SLIDE_DECK.md))
 
 > **Open Agent Hackathon 2026 — Track 2: The Agent That Can Explain Why**  
 > *Preventing catastrophic essential medicine stockouts through multi-source data auditing, deterministic arithmetic, and adversarial multi-agent reasoning.*
