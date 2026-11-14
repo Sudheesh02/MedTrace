@@ -1,13 +1,7 @@
 'use client';
-import { Bot, Calculator, Cpu, Database, GitBranch, Gavel, Route, Search, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
-import { ErrorBox, Loading, RunModeChip, num, pretty, when } from './ui.js';
+import { Bot, Calculator, Database, GitBranch, Gavel, Route, Search, ShieldCheck, Sparkles, Workflow } from 'lucide-react';
+import { ErrorBox, Loading, pretty } from './ui.js';
 
-const PALETTE = ['#5aa7ff', '#b99cff', '#3fd18f', '#f7b035', '#ff8fb1', '#4fd1d9', '#ff9a62'];
-const colorFor = (name) => {
-  let h = 0;
-  for (const c of String(name || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return PALETTE[h % PALETTE.length];
-};
 const iconFor = (name) => {
   const n = String(name || '').toLowerCase();
   if (n.includes('investig')) return Search;
@@ -21,6 +15,7 @@ const iconFor = (name) => {
   if (n.includes('guard') || n.includes('safety')) return ShieldCheck;
   return Bot;
 };
+
 const seconds = (a, b) => {
   const x = Date.parse(a);
   const y = Date.parse(b);
@@ -29,71 +24,88 @@ const seconds = (a, b) => {
   return s < 0 ? null : s;
 };
 
-export default function Why({ item, api, backend }) {
+export default function Why({ item, api }) {
   const run = api.data?.run;
   const pack = api.data?.pack;
+
   if (!item) return null;
-  const agents = run ? [...new Set(run.steps.map((s) => s.agent))] : [];
-  return (
-    <aside className="panel why" aria-label="Why">
-      <div className="panel-h">
-        <h2>Why - decision trace</h2>
-        {run ? <span className="badge b-mute">{run.steps.length} steps</span> : null}
+
+  if (api.status === 'loading' && !api.data) {
+    return <Loading what="Loading clinical deliberation trace" />;
+  }
+
+  if (api.status === 'error') {
+    return <ErrorBox title="Deliberation trace unavailable" error={api.error} />;
+  }
+
+  if (!run || !run.steps?.length) {
+    return (
+      <div className="empty-state">
+        <p>No decision trace is recorded for this case yet.</p>
       </div>
-      {api.status === 'loading' && !api.data ? <Loading what="Loading trace" /> : null}
-      {api.status === 'error' ? <div style={{ padding: 12 }}><ErrorBox title="Trace unavailable" error={api.error} /></div> : null}
-      {api.data?.ok && !run ? <div className="empty">No trace stored for this pair yet.</div> : null}
-      {run ? (
-        <>
-          <div className="legend">
-            <span>Models: {run.models.length ? run.models.join(', ') : 'n/a'}</span>
-            <span>Data layer: {run.data_source ? `this trace records ${run.data_source.use_zetaris ? 'Zetaris' : 'local files'} (see telemetry)` : `not recorded in this trace${backend?.reachable ? ` (backend now: Zetaris ${backend.zetaris_enabled ? 'on' : 'off'})` : ''}`}</span>
-            {run.reasoning_tag_leak_stripped ? <span>Leaked reasoning tags were stripped from displayed text.</span> : null}
-            <span className="row" style={{ gap: 10 }}>
-              {agents.map((a) => <span key={a} className="row" style={{ gap: 4 }}><span className="dot" style={{ background: colorFor(a) }} />{a}</span>)}
-            </span>
-          </div>
-          {run.data_source ? (
-            <div className="telem" aria-label="Data source telemetry">
-              <div className="telem-h"><span><Database className="ic" />Data source telemetry</span><RunModeChip run={run} /></div>
-              <div className="telem-g">
-                <div><b>{num(run.data_source.queries_attempted, 0)}</b><span>queries</span></div>
-                <div><b>{num(run.data_source.queries_ok, 0)}</b><span>succeeded</span></div>
-                <div><b>{num(run.data_source.queries_fallback_to_csv, 0)}</b><span>CSV fallback</span></div>
+    );
+  }
+
+  return (
+    <div className="decision-trace-container">
+      <div className="cluster-spread mb-md">
+        <div>
+          <h3>Clinical Deliberation Trace</h3>
+          <p className="muted text-sm">
+            Step-by-step record of deliberation between Investigator and Number Auditor.
+          </p>
+        </div>
+        <span className="badge badge-mute">{run.steps.length} steps</span>
+      </div>
+
+      {/* Timeline Steps */}
+      <div className="timeline">
+        {run.steps.map((s, idx) => {
+          const Icon = iconFor(s.agent);
+          const dt = idx > 0 ? seconds(run.steps[idx - 1].ts, s.ts) : null;
+          const isInv = s.agent === 'InvestigatorAgent' && s.action === 'HYPOTHESES_GENERATED' && pack?.winning_hypothesis?.confirming_query;
+
+          return (
+            <div key={s.i || idx} className="timeline-step">
+              <div className="timeline-node" aria-hidden="true">
+                <Icon size={11} />
               </div>
-              <div className="small muted" style={{ marginTop: 6 }}>{run.data_source.use_zetaris ? 'Zetaris' : 'Local'} data layer{run.data_source.source ? `: ${run.data_source.source}` : ''}{run.data_source.database ? `, database ${run.data_source.database}` : ''}. From the trace's DATA_SOURCE_SUMMARY event.</div>
-              {run.data_source.tables ? <div className="telem-t">{Object.entries(run.data_source.tables).map(([t, n]) => <span key={t} className="badge b-mute mono" title="queries per table">{t} x{n}</span>)}</div> : null}
-            </div>
-          ) : null}
-          <div className="tl">
-            {run.steps.map((s, idx) => {
-              const Icon = iconFor(s.agent);
-              const isInv = s.agent === 'InvestigatorAgent' && s.action === 'HYPOTHESES_GENERATED' && pack?.winning_hypothesis?.confirming_query;
-              const dt = idx > 0 ? seconds(run.steps[idx - 1].ts, s.ts) : null;
-              return (
-                <div key={s.i} className={`tli ${s.fallback ? 'fb' : ''}`} style={{ '--nc': colorFor(s.agent) }}>
-                  <div className="node"><Icon className="ic" /></div>
-                  <div className="th">
-                    <span className="agent">{s.i}. {s.agent}</span>
-                    <span className="badge b-mute">{pretty(s.action)}</span>
-                    {dt !== null ? <span className="delta" title="time since previous step">+{dt < 10 ? dt.toFixed(1) : Math.round(dt)}s</span> : null}
-                  </div>
-                  <div className="sm">{s.summary}</div>
-                  <div className="meta">
-                    <span className="badge b-mute mono" title="model recorded in trace"><Cpu className="ic" />{s.model || 'model n/a'}</span>
-                    <span className={`badge ${s.llm_used ? 'b-ok' : 'b-mute'}`}>{s.llm_used === null ? 'llm n/a' : s.llm_used ? 'LLM used' : 'no LLM'}</span>
-                    <span className={`badge ${s.fallback ? 'b-warn' : 'b-mute'}`}>{s.fallback === null ? 'fallback n/a' : `fallback: ${s.fallback}`}</span>
-                    {s.tokens ? <span className="badge b-mute">{s.tokens} tok</span> : null}
-                  </div>
-                  {isInv ? <details><summary>tool / Zetaris query (from action pack)</summary><pre>{pack.winning_hypothesis.confirming_query}</pre></details> : null}
-                  {s.text ? <div className="txt">{s.text}</div> : null}
-                  <div className="sub" style={{ marginTop: 2 }}>{when(s.ts)}</div>
+
+              <div className="timeline-header">
+                <strong>{s.i}. {s.agent}</strong>
+                <span className="badge badge-mute">{pretty(s.action)}</span>
+                {dt !== null ? (
+                  <span className="mono muted text-xs">
+                    +{dt < 10 ? dt.toFixed(1) : Math.round(dt)}s
+                  </span>
+                ) : null}
+                {s.fallback ? (
+                  <span className="badge badge-warn" title="Fallback rule applied">
+                    Fallback rule applied
+                  </span>
+                ) : null}
+              </div>
+
+              <p className="mt-xs text-sm">
+                {s.summary}
+              </p>
+
+              {isInv ? (
+                <details className="mt-xs">
+                  <summary>Verification query</summary>
+                  <pre>{pack.winning_hypothesis.confirming_query}</pre>
+                </details>
+              ) : null}
+
+              {s.text ? (
+                <div className="timeline-text-block">
+                  {s.text}
                 </div>
-              );
-            })}
-          </div>
-        </>
-      ) : null}
-    </aside>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

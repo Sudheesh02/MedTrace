@@ -1,4 +1,12 @@
+import { Public_Sans } from 'next/font/google';
 import './globals.css';
+
+const publicSans = Public_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-sans',
+});
 
 export const metadata = {
   title: 'MedTrace | Stock-integrity triage for essential medicines',
@@ -8,16 +16,19 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#090d12',
-  colorScheme: 'dark',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F4F6F5' },
+    { media: '(prefers-color-scheme: dark)', color: '#0E1513' }
+  ],
+  colorScheme: 'light dark',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={publicSans.className}>{children}</body>
     </html>
   );
 }

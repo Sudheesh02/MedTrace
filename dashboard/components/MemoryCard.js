@@ -2,50 +2,87 @@
 import { ArrowRight, Brain, BrainCircuit, CircleCheck, CircleX, History, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { ErrorBox, Loading, RunModeChip, pretty } from './ui.js';
 
-const VERDICT_BADGE = { flip: 'b-ok', flip_with_confounders: 'b-warn', no_flip: 'b-mute', changed_without_memory_evidence: 'b-warn', not_comparable: 'b-mute' };
-const VERDICT_TEXT = { flip: 'Flip, identical inputs', flip_with_confounders: 'Flip, inputs differ', no_flip: 'No flip', changed_without_memory_evidence: 'Changed, no memory evidence', not_comparable: 'Not comparable' };
+const VERDICT_BADGE = {
+  flip: 'badge-ok',
+  flip_with_confounders: 'badge-warn',
+  no_flip: 'badge-mute',
+  changed_without_memory_evidence: 'badge-warn',
+  not_comparable: 'badge-mute'
+};
+
+const VERDICT_TEXT = {
+  flip: 'Verdict flipped on identical inputs',
+  flip_with_confounders: 'Verdict flipped, inputs differ',
+  no_flip: 'No verdict flip',
+  changed_without_memory_evidence: 'Changed, no memory evidence',
+  not_comparable: 'Not comparable'
+};
 
 const finalRound = (s) => (s.round_detail?.length ? s.round_detail[s.round_detail.length - 1] : null);
+
 const facts = (s) => [
   ['Pair', `${s.facility_id} / ${s.medicine_id}`],
-  ['Run', s.run_id || '-'],
+  ['Run ID', s.run_id || '-'],
   ['Debate rounds', String(s.rounds)],
   ['Leading hypothesis', s.leading_hypothesis?.title || '-'],
   ['Escalated to human', s.escalated ? 'yes' : 'no'],
-  ['Top action', `${pretty(s.top_action) || '-'} (${s.recommendations ?? '-'} rec.)`],
+  ['Top recommended action', `${pretty(s.top_action) || '-'} (${s.recommendations ?? '-'} recommendations)`],
 ];
-const CHANGING = new Set(['Run']);
+
+const CHANGING = new Set(['Run ID']);
 
 function Side({ kind, title, icon: Icon, s, other }) {
   const fr = finalRound(s);
   const mine = facts(s);
   const theirs = facts(other);
+
   return (
-    <div className={`side ${kind}`}>
-      <div className="stitle"><Icon className="ic" style={{ width: 18, height: 18, color: kind === 'after' ? 'var(--accent)' : 'var(--muted)' }} />{title}</div>
-      <div className="chiprow" style={{ marginTop: 0 }}><RunModeChip run={s} /></div>
-      <div className="small mono muted">{s.file}</div>
+    <div className={`verdict-card flex-1 ${kind === 'after' ? 'investigator' : ''}`}>
+      <div className="verdict-card-header">
+        <h3 className="cluster-sm">
+          <Icon size={18} color={kind === 'after' ? 'var(--primary)' : 'var(--muted)'} aria-hidden="true" />
+          <span>{title}</span>
+        </h3>
+        <RunModeChip run={s} />
+      </div>
+
+      <div className="mono muted text-xs">{s.file}</div>
+
       {fr ? (
-        <div className={`decision ${fr.accepted ? 'acc' : 'rej'}`}>
-          {fr.accepted ? <CircleCheck /> : <CircleX />}
+        <div className={`decision-box ${fr.accepted ? 'acc' : 'rej'}`}>
+          {fr.accepted ? <CircleCheck size={18} /> : <CircleX size={18} />}
           <div>
-            <b>{fr.accepted ? 'Accepted' : 'Rejected'} at confidence {fr.confidence}</b>
-            <span>Final Skeptic result, round {fr.round}{s.escalated ? ', then escalated to a human' : ''}</span>
+            <strong>
+              {fr.accepted ? 'Accepted' : 'Rejected'} at confidence {fr.confidence}
+            </strong>
+            <p className="muted text-xs">
+              Final Skeptic result, round {fr.round}{s.escalated ? ', then escalated to a human officer' : ''}
+            </p>
           </div>
         </div>
       ) : null}
-      <div className="rounds" style={{ marginTop: 0 }}>
+
+      <div className="cluster-xs">
         {(s.round_detail || []).map((r, idx) => (
-          <span key={r.round} className="row" style={{ gap: 6 }}>
-            {idx > 0 ? <ArrowRight className="ic arrow" /> : null}
-            <span className={`round ${r.accepted ? 'acc' : 'rej'}`}>R{r.round} {r.accepted ? 'accepted' : 'rejected'} <span className="mono">{r.confidence}</span></span>
+          <span key={r.round} className="cluster-xs text-xs">
+            {idx > 0 ? <ArrowRight size={12} color="var(--muted)" /> : null}
+            <span className={`badge ${r.accepted ? 'badge-ok' : 'badge-crit'}`}>
+              R{r.round} {r.accepted ? 'accepted' : 'rejected'} ({r.confidence})
+            </span>
           </span>
         ))}
       </div>
-      <div>
-        {mine.map(([k, v], i) => (
-          <div key={k} className={`fact ${!CHANGING.has(k) && v !== theirs[i][1] ? 'chg' : ''}`}><span>{k}</span><b>{v}</b></div>
-        ))}
+
+      <div className="stack-xs mt-sm fact-list">
+        {mine.map(([k, v], i) => {
+          const changed = !CHANGING.has(k) && v !== theirs[i][1];
+          return (
+            <div key={k} className={`fact-item ${changed ? 'changed' : ''}`}>
+              <span className="muted">{k}</span>
+              <strong>{v}</strong>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -54,75 +91,136 @@ function Side({ kind, title, icon: Icon, s, other }) {
 function Comparison({ c }) {
   const live = c.kind === 'live';
   const inp = c.without.inputs;
+
   return (
-    <>
-      <div className="note" style={{ marginTop: 0 }}>{c.headline}</div>
-      <div className="flipwrap">
+    <div className="stack-md">
+      <div className="case-file-summary-banner">
+        <strong>{c.headline}</strong>
+      </div>
+
+      <div className="cluster-md">
         <Side kind="before" title={c.before_label} icon={Brain} s={c.without} other={c.with} />
-        <div className="flipmid"><ArrowRight className="ic" /></div>
+        <div className="pad-sm cluster-sm">
+          <ArrowRight size={20} color="var(--primary)" />
+        </div>
         <Side kind="after" title={c.after_label} icon={BrainCircuit} s={c.with} other={c.without} />
       </div>
+
       {c.changes.length ? (
-        <>
-          <h3 style={{ marginTop: 16 }}>What changed</h3>
-          <div className="tablewrap">
+        <div>
+          <h3>Summary of changes between runs</h3>
+          <div className="table-wrap mt-sm">
             <table>
-              <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
-              <tbody>{c.changes.map((x) => <tr key={x.field}><td>{x.field}</td><td className="muted" style={{ wordBreak: 'break-word' }}>{pretty(x.without)}</td><td style={{ wordBreak: 'break-word' }}><b>{pretty(x.with)}</b></td></tr>)}</tbody>
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Before (No memory)</th>
+                  <th>After (Officer rejection remembered)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {c.changes.map((x) => (
+                  <tr key={x.field}>
+                    <td><strong>{x.field}</strong></td>
+                    <td className="muted">{pretty(x.without)}</td>
+                    <td className="diff-highlight">{pretty(x.with)}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
-        </>
+        </div>
       ) : null}
+
       {c.inputs_identical ? (
-        <div className="note small" style={{ borderLeftColor: 'var(--ok)', borderColor: 'var(--ok-line)', background: 'var(--ok-bg)' }}>
-          <b><ShieldCheck className="ic" /> Same inputs, checked in the data:</b> the complete Reconciler record is identical in both traces ({inp.discrepancies_found} discrepancies, usable stock {inp.usable_stock}, shortfall {inp.shortfall}). The recorded world-model context differs only in <span className="mono">{c.context_diff.join(', ') || 'nothing'}</span> (the injected H-MEM beliefs and the hash that includes them).
+        <div className="note-ok">
+          <ShieldCheck size={16} aria-hidden="true" className="icon-inline" />
+          <strong>Identical inputs verified:</strong> The complete Reconciler input record is identical in both traces ({inp.discrepancies_found} discrepancies, usable stock {inp.usable_stock}, shortfall {inp.shortfall}). The recorded context differs only in the injected H-MEM beliefs.
         </div>
       ) : c.confounders.length || !c.inputs_identical ? (
-        <div className="note warn small"><b><TriangleAlert className="ic" /> Caveat: reconciler inputs differ between the two traces</b>{c.confounders.length ? ` (${c.confounders.join('; ')})` : ''}. The two runs were not on identical inputs, so this is evidence consistent with memory influencing the decision, not a controlled A/B proof.</div>
+        <div className="note-warn">
+          <TriangleAlert size={16} aria-hidden="true" className="icon-inline" />
+          <strong>Caveat: Reconciler inputs differ between traces</strong> ({c.confounders.join('; ')}). Evidence consistent with memory influencing the decision, not a controlled A/B proof.
+        </div>
       ) : null}
-      {live ? <div className="note warn small" style={{ marginTop: 8 }}><b>Read with care:</b> one real-LLM run each. LLM output is not deterministic, so a single before/after pair shows the mechanism working end to end, not a statistical estimate.{c.changes.some((x) => /^Skeptic/.test(x.field)) ? '' : ' The Skeptic verdict and confidence are the same in both runs; only the fields listed above changed.'}</div> : null}
-      <div className="small" style={{ marginTop: 10 }}>
-        <b>H-MEM beliefs injected in the "after" run:</b>{' '}
-        {c.memory_present ? <code className="mono">{JSON.stringify(c.with.hmem_beliefs)}</code> : <span className="muted">none recorded</span>}
+
+      {live ? (
+        <p className="muted text-xs">
+          <strong>Read with care:</strong> One real-LLM run each. Single before/after pair demonstrates the mechanism working end-to-end, not a statistical estimate.
+        </p>
+      ) : null}
+
+      <div className="text-sm">
+        <strong>H-MEM beliefs injected in the "after" run:</strong>{' '}
+        {c.memory_present ? (
+          <code className="code-badge">{JSON.stringify(c.with.hmem_beliefs)}</code>
+        ) : (
+          <span className="muted">none recorded</span>
+        )}
       </div>
-      <div className="small muted" style={{ marginTop: 6 }}>Sources: {c.sources.join(', ')}.</div>
-    </>
+
+      <div className="mono muted text-xs">
+        Sources: {c.sources.join(', ')}
+      </div>
+    </div>
   );
 }
 
 export default function MemoryCard({ api }) {
   const d = api.data;
   const sec = d?.secondary;
+
   return (
-    <section className="panel" aria-label="Memory decision flip">
-      <div className="panel-h">
-        <div>
-          <h2>Memory decision flip: before vs after H-MEM</h2>
-          <div className="sub">{d?.ok ? d.title : 'Compares stored traces with and without remembered officer feedback. Highlighted values changed.'}</div>
+    <section className="case-file-pane" aria-label="Memory decision flip">
+      <div className="case-file-header">
+        <div className="case-file-header-top">
+          <div>
+            <h1>How officer decisions flip AI recommendations</h1>
+            <p className="case-file-subtitle">
+              Demonstrates Meterless H-MEM cross-session episodic memory adapting to human officer feedback.
+            </p>
+          </div>
+          {d?.ok ? (
+            <span className={`badge ${VERDICT_BADGE[d.verdict] || 'badge-mute'}`}>
+              {VERDICT_TEXT[d.verdict] || pretty(d.verdict)}
+            </span>
+          ) : null}
         </div>
-        {d?.ok ? <span className={`badge ${VERDICT_BADGE[d.verdict] || 'b-mute'}`}>{VERDICT_TEXT[d.verdict] || pretty(d.verdict)}</span> : null}
       </div>
-      <div className="panel-b">
-        {api.status === 'loading' && !d ? <Loading what="Comparing traces" /> : null}
+
+      <div className="case-tab-content">
+        {api.status === 'loading' && !d ? <Loading what="Comparing deliberation traces" /> : null}
         {api.status === 'error' && !d?.without ? <ErrorBox title="Memory comparison unavailable" error={api.error} /> : null}
+
         {d?.ok ? (
           <>
             <Comparison c={d} />
+
             {sec ? (
-              <details className="secondary" style={{ marginTop: 18 }}>
-                <summary><History className="ic" style={{ width: 13, height: 13, verticalAlign: -2, marginRight: 6 }} />Secondary evidence: {sec.title} <span className={`badge ${VERDICT_BADGE[sec.verdict] || 'b-mute'}`} style={{ marginLeft: 6 }}>{VERDICT_TEXT[sec.verdict] || pretty(sec.verdict)}</span></summary>
-                <div style={{ marginTop: 10 }}><Comparison c={sec} /></div>
+              <details className="mt-lg">
+                <summary>
+                  <History size={14} className="icon-inline" />
+                  Secondary evidence: {sec.title}{' '}
+                  <span className={`badge ${VERDICT_BADGE[sec.verdict] || 'badge-mute'} ml-sm`}>
+                    {VERDICT_TEXT[sec.verdict] || pretty(sec.verdict)}
+                  </span>
+                </summary>
+                <div className="mt-sm">
+                  <Comparison c={sec} />
+                </div>
               </details>
             ) : null}
+
             {d.store ? (
-              <details style={{ marginTop: 10 }}>
-                <summary>Current H-MEM store (logs/hmem_store.json): {d.store.episodic_memory?.length ?? 0} officer decision(s) recorded</summary>
+              <details className="mt-sm">
+                <summary>Current H-MEM Store ({d.store.episodic_memory?.length ?? 0} officer decision records)</summary>
                 <pre>{JSON.stringify(d.store, null, 2)}</pre>
               </details>
-            ) : <div className="small muted" style={{ marginTop: 10 }}>No logs/hmem_store.json in this checkout (the store is created at run time); the beliefs above are the ones recorded in the trace itself.</div>}
+            ) : null}
           </>
         ) : null}
-        {d && !d.ok ? <div className="note warn">{d.reason}</div> : null}
+
+        {d && !d.ok ? <div className="note-warn">{d.reason}</div> : null}
       </div>
     </section>
   );
