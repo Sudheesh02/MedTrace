@@ -45,9 +45,25 @@ The button appears only when the backend answers `GET /health`. Start it with `p
 - `logs/*.jsonl` (except the tracked sample/golden/memory traces) are git-ignored, so a fresh clone has far fewer stored runs than a working copy. Pairs without a stored run say so.
 - Traces record only the count and top action of the Action Planner; full order quantities come from an action pack.
 - The memory card reports "no flip" or "not comparable" when the files do not support a flip, and flags differing reconciler inputs.
-## UI
+## UI Redesign & Architecture
 
-The UI is a dark, Linear/Datadog-style triage layout: KPI strip (counts by severity, from the live alert data), severity-banded alert list (master), detail pane with side-by-side Investigator vs Skeptic cards, a vertical decision-trace timeline, and separate Memory flip and Evaluation views (deep links: `/#memory`, `/#eval`). Icons: lucide-react. Screenshots are in `dashboard/screenshots/`.
+The UI is built for pharmacy and district warehouse logistics officers to make high-stakes stockout decisions in ~10 seconds.
+
+Key layout components:
+- **Clean Two-Pane Triage**:
+  - **Left Pane (Queue)**: 360px sticky queue with clean 2-line cards (Medicine + days left; Facility + units short), severity left borders, and collapsible Warning sub-bands. Fully accessible via Up/Down and J/K keyboard navigation.
+  - **Right Pane (Case File)**: Container-query enabled Case File with four structured tabs:
+    1. **Summary**: Plain-language situation summary, key numbers grid (verified days left, ledger days, count gap, quarantine units, shortfall), and side-by-side Investigator vs Skeptic Number Auditor verdict blocks.
+    2. **Evidence**: Winning diagnosis, supporting points, refuting/open criteria, confirming Zetaris SQL disclosure, and Reconciler discrepancies.
+    3. **Action plan**: Ranked option cards (Peer Transfer, Expedite PO, Emergency Purchase, Batch Release) with quantities, costs, feasibility meters, justifications, and deterministic provenance breakdown.
+    4. **How it was decided**: Compact vertical deliberation timeline with technical model and Zetaris SQL query telemetry disclosure at the bottom.
+- **Top Bar & Shell**:
+  - Fixed 56px sticky header.
+  - Single status chip with popover (explaining "Stored demo data" vs "Live backend" without redundant status badges).
+  - "How it works" button opening a clean, native `<dialog>` modal illustrating the 5-step deliberation process and sponsor tech integrations.
+  - Theme toggle (Light theme by default, Dark theme via system `prefers-color-scheme` or manual toggle).
+- **One-Row Summary Strip**: Three severity filter buttons (Critical, Warning, Secure) + total shortfall units stat.
+- **Responsive & Mobile**: At 960px and below, the queue displays full screen and tapping an alert drills cleanly into the full-width case file with a back button.
 
 ## Triage tiers
 
